@@ -13,3 +13,12 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# ai-mobile:start
+# Memoria de trabajo local de las herramientas am-* (planes, propuestas, sesiones, registro de auditorías)
+.ai-mobile/work/
+.ai-mobile/proposals/
+.ai-mobile/sessions/
+.ai-mobile/ledger/
+.claude/settings.local.json
+# ai-mobile:end
