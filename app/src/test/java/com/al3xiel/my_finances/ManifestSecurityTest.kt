@@ -50,6 +50,26 @@ class ManifestSecurityTest {
         assertTrue(parse("src/main/res/xml/backup_rules.xml").excludesAllDomains())
     }
 
+    @Test
+    fun theOnlyProviderIsTheShareFileProviderAndItIsNotExported() {
+        val providers = application.getElementsByTagName("provider")
+        assertEquals(1, providers.length)
+        val provider = providers.item(0) as Element
+        assertEquals("androidx.core.content.FileProvider", provider.getAttributeNS(androidNs, "name"))
+        assertEquals("\${applicationId}.share", provider.getAttributeNS(androidNs, "authorities"))
+        assertEquals("false", provider.getAttributeNS(androidNs, "exported"))
+        assertEquals("true", provider.getAttributeNS(androidNs, "grantUriPermissions"))
+    }
+
+    @Test
+    fun shareFilePathsExposeOnlyTheShareFolderOfTheCache() {
+        val paths = parse("src/main/res/xml/file_paths.xml")
+        val children = (0 until paths.childNodes.length).map { paths.childNodes.item(it) }.filterIsInstance<Element>()
+        assertEquals(listOf("cache-path"), children.map { it.tagName })
+        assertEquals("share", children.single().getAttribute("name"))
+        assertEquals("share/", children.single().getAttribute("path"))
+    }
+
     private fun Element.excludesAllDomains(): Boolean {
         val excludes = getElementsByTagName("exclude")
         val domains = (0 until excludes.length).map { (excludes.item(it) as Element).getAttribute("domain") }
