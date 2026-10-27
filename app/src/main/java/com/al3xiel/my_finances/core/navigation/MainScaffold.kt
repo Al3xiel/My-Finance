@@ -9,6 +9,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -46,6 +47,13 @@ fun MainScaffoldContent(
     entryProvider: (Route) -> NavEntry<Route>,
 ) {
     BackHandler(enabled = state.canGoBack) { onAction(MainScaffoldUiAction.Back) }
+    val navigator = remember(onAction) {
+        object : Navigator {
+            override fun push(route: Route) = onAction(MainScaffoldUiAction.Push(route))
+
+            override fun back() = onAction(MainScaffoldUiAction.Back)
+        }
+    }
 
     Scaffold(
         bottomBar = {
@@ -64,20 +72,22 @@ fun MainScaffoldContent(
             if (state.showRegisterFab) RegisterFab(onClick = { onAction(MainScaffoldUiAction.OpenRegisterSheet) })
         },
     ) { padding ->
-        NavDisplay(
-            backStack = state.stacks.activeStack,
-            onBack = { onAction(MainScaffoldUiAction.Back) },
-            entryProvider = { route ->
-                if (route == More) {
-                    NavEntry(route) {
-                        MoreContent(state.moreEntries, onOpen = { onAction(MainScaffoldUiAction.Push(it)) })
+        CompositionLocalProvider(LocalNavigator provides navigator) {
+            NavDisplay(
+                backStack = state.stacks.activeStack,
+                onBack = { onAction(MainScaffoldUiAction.Back) },
+                entryProvider = { route ->
+                    if (route == More) {
+                        NavEntry(route) {
+                            MoreContent(state.moreEntries, onOpen = { onAction(MainScaffoldUiAction.Push(it)) })
+                        }
+                    } else {
+                        entryProvider(route)
                     }
-                } else {
-                    entryProvider(route)
-                }
-            },
-            modifier = Modifier.padding(padding),
-        )
+                },
+                modifier = Modifier.padding(padding),
+            )
+        }
     }
 
     if (state.registerSheetVisible) {
