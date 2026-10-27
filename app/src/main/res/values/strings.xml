@@ -1,3 +1,49 @@
 <resources>
     <string name="app_name">my-finances</string>
+
+    <string name="app_lock_title">Aplicación bloqueada</string>
+    <string name="app_lock_unlock">Desbloquear</string>
+    <string name="app_lock_prompt_title">Desbloquear my-finances</string>
+    <string name="app_lock_message_locked_out">Demasiados intentos. Espera un momento y vuelve a intentarlo.</string>
+    <string name="app_lock_message_failed">No se pudo verificar tu identidad.</string>
+    <string name="app_lock_message_not_available">Este dispositivo no tiene biometría ni bloqueo de pantalla configurado.</string>
+
+    <string name="host_tab_privacy">Privacidad</string>
+    <string name="host_tab_settings">Ajustes</string>
+
+    <string name="privacy_what_is_stored_title">Qué se guarda</string>
+    <string name="privacy_what_is_stored">Tus cuentas, movimientos y notas viven solo en este teléfono, cifrados. La app no usa Internet ni hace copias en la nube.</string>
+    <string name="privacy_lock">Bloquear la app</string>
+    <string name="privacy_no_credential">Configura una huella, rostro o bloqueo de pantalla en el sistema para activar el bloqueo.</string>
+    <string name="privacy_auto_lock">Volver a bloquear tras estar en segundo plano</string>
+    <string name="privacy_auto_lock_always">Siempre</string>
+    <plurals name="privacy_auto_lock_minutes">
+        <item quantity="one">%d min</item>
+        <item quantity="other">%d min</item>
+    </plurals>
+    <string name="privacy_secure_screen">Pantalla segura (sin capturas ni vista previa en recientes)</string>
+    <string name="privacy_hide_amounts">Ocultar montos</string>
+    <string name="privacy_auth_title">Confirma tu identidad</string>
+    <string name="privacy_auth_failed">No se pudo verificar tu identidad.</string>
+    <string name="privacy_wipe">Borrar todos mis datos</string>
+    <string name="privacy_wipe_warning_title">¿Borrar todo?</string>
+    <string name="privacy_wipe_warning">Se eliminarán tus cuentas, movimientos, ajustes y la clave de cifrado. No se puede deshacer.</string>
+    <string name="privacy_wipe_continue">Continuar</string>
+    <string name="privacy_wipe_phrase_title">Confirmar borrado</string>
+    <string name="privacy_wipe_phrase">Escribe %1$s para confirmar.</string>
+    <string name="privacy_wipe_confirm">Borrar</string>
+    <string name="privacy_wipe_running">Borrando…</string>
+    <string name="privacy_wipe_incomplete_title">Borrado incompleto</string>
+    <string name="privacy_wipe_incomplete">No se pudo borrar todo. Puedes desinstalar la app para eliminar el resto.</string>
+    <string name="privacy_cancel">Cancelar</string>
+    <string name="privacy_ok">Entendido</string>
+
+    <string name="settings_theme">Tema</string>
+    <string name="theme_system">Sistema</string>
+    <string name="theme_light">Claro</string>
+    <string name="theme_dark">Oscuro</string>
+    <string name="settings_currency">Moneda</string>
+    <string name="settings_currency_value">Soles (PEN)</string>
+    <string name="settings_format">Formato</string>
+    <string name="settings_format_value">es-PE</string>
 </resources>
