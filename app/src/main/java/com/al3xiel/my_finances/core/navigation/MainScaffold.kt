@@ -1,5 +1,6 @@
 package com.al3xiel.my_finances.core.navigation
 
+import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
@@ -13,6 +14,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavEntry
@@ -85,4 +87,11 @@ fun MainScaffoldContent(
             onDismiss = { onAction(MainScaffoldUiAction.DismissRegisterSheet) },
         )
     }
+}
+
+@Preview(showBackground = true)
+@Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun MainScaffoldContentPreview() {
+    MainScaffoldContent(MainScaffoldUiState(), onAction = {}, entryProvider = rememberRouteEntryProvider(emptySet()))
 }
