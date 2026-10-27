@@ -9,6 +9,7 @@ import com.al3xiel.my_finances.domain.model.MovementStatus
 import com.al3xiel.my_finances.domain.model.MovementType
 import com.al3xiel.my_finances.domain.model.PartId
 import com.al3xiel.my_finances.domain.model.PartKind
+import com.al3xiel.my_finances.domain.model.PoolId
 import com.al3xiel.my_finances.domain.model.TagId
 import java.time.LocalDate
 
@@ -32,4 +33,5 @@ data class MovementPart(
     val categoryId: CategoryId,
     val kind: PartKind,
     val tagIds: List<TagId>,
+    val poolId: PoolId? = null,
 )
