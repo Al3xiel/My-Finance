@@ -150,6 +150,9 @@ private fun LedgerEntryKind.labelRes() = when (this) {
     LedgerEntryKind.FEE -> R.string.ledger_fee
     LedgerEntryKind.TRANSFER_OUT -> R.string.ledger_transfer_out
     LedgerEntryKind.TRANSFER_IN -> R.string.ledger_transfer_in
+    LedgerEntryKind.REIMBURSEMENT_IN -> R.string.ledger_reimbursement_in
+    LedgerEntryKind.LOAN_OUT -> R.string.ledger_loan_out
+    LedgerEntryKind.LOAN_IN -> R.string.ledger_loan_in
 }
 
 private val previewState = AccountDetailUiState(

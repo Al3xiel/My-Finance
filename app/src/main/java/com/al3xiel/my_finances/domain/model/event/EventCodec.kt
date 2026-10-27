@@ -50,6 +50,13 @@ object EventCodec {
         "TransferRegistered" to TransferRegistered.serializer(),
         "MovementCorrected" to MovementCorrected.serializer(),
         "MovementVoided" to MovementVoided.serializer(),
+        "ReimbursementPoolCreated" to ReimbursementPoolCreated.serializer(),
+        "ReimbursementPoolRenamed" to ReimbursementPoolRenamed.serializer(),
+        "ReimbursementPoolArchived" to ReimbursementPoolArchived.serializer(),
+        "SettlementStatementGenerated" to SettlementStatementGenerated.serializer(),
+        "ReimbursementReceived" to ReimbursementReceived.serializer(),
+        "LoanGranted" to LoanGranted.serializer(),
+        "LoanRepaymentReceived" to LoanRepaymentReceived.serializer(),
         "ProjectionsRebuilt" to ProjectionsRebuilt.serializer(),
     )
 

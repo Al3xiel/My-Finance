@@ -11,6 +11,7 @@ import com.al3xiel.my_finances.domain.model.MovementStatus
 import com.al3xiel.my_finances.domain.model.MovementType
 import com.al3xiel.my_finances.domain.model.PartId
 import com.al3xiel.my_finances.domain.model.PartKind
+import com.al3xiel.my_finances.domain.model.PoolId
 import com.al3xiel.my_finances.domain.model.TagId
 import com.al3xiel.my_finances.domain.model.event.AccountCreated
 import com.al3xiel.my_finances.domain.model.event.AccountType
@@ -172,6 +173,45 @@ class MovementProjectorTest {
         assertEquals(700, balance(bbva))
         val own = ledger.entries.values.filter { it.movementId == "m1" }
         assertEquals(listOf(true, false), own.map { it.isVoided })
+    }
+
+    @Test
+    fun newPartRecordsItsPoolAndTheSequenceOfTheEventThatCreatedIt() = runTest {
+        apply(open(bbva, 1_000))
+        val inPool = part("p1", 400).copy(poolId = PoolId("pool1"))
+        apply(expense("m1", bbva, inPool, part("p2", 100)))
+
+        val saved = movements.parts.getValue("p1")
+        assertEquals("pool1", saved.poolId)
+        assertEquals(2L, saved.createdSequence)
+        assertNull(movements.parts.getValue("p2").poolId)
+    }
+
+    @Test
+    fun correctionKeepsWhatOtherProjectorsOwnForTheSurvivingParts() = runTest {
+        apply(open(bbva, 1_000))
+        apply(expense("m1", bbva, part("p1", 400).copy(poolId = PoolId("pool1")), part("p2", 100)))
+        movements.parts["p1"] = movements.parts.getValue("p1").copy(poolPeriodId = "per1", reimbursedMinor = 150)
+
+        apply(
+            MovementCorrected(
+                MovementId("m1"),
+                MovementSnapshot.Expense(
+                    bbva, pen(900),
+                    listOf(part("p1", 500).copy(poolId = PoolId("pool1")), part("p3", 400)),
+                    null,
+                ),
+                "monto mal", null,
+            ),
+        )
+
+        val kept = movements.parts.getValue("p1")
+        assertEquals(500, kept.amountMinor)
+        assertEquals("per1", kept.poolPeriodId)
+        assertEquals(150, kept.reimbursedMinor)
+        assertEquals(2L, kept.createdSequence)
+        assertEquals(setOf("p1", "p3"), movements.parts.keys)
+        assertEquals(3L, movements.parts.getValue("p3").createdSequence)
     }
 
     @Test

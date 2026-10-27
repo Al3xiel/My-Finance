@@ -2,6 +2,7 @@ package com.al3xiel.my_finances.feature.movements.ui
 
 import com.al3xiel.my_finances.domain.model.AccountId
 import com.al3xiel.my_finances.domain.model.CategoryId
+import com.al3xiel.my_finances.domain.model.PoolId
 import com.al3xiel.my_finances.domain.model.TagId
 import java.time.LocalDate
 
@@ -13,6 +14,9 @@ sealed interface ExpenseEditorUiAction {
     data class EditPartAmount(val key: Int, val text: String) : ExpenseEditorUiAction
     data class SelectPartCategory(val key: Int, val id: CategoryId) : ExpenseEditorUiAction
     data class TogglePartTag(val key: Int, val id: TagId) : ExpenseEditorUiAction
+
+    /** `null` quita el cúmulo; elegir uno aplica su categoría y conceptos por defecto a la parte. */
+    data class SelectPartPool(val key: Int, val id: PoolId?) : ExpenseEditorUiAction
     data object AddPart : ExpenseEditorUiAction
     data class RemovePart(val key: Int) : ExpenseEditorUiAction
     data object Save : ExpenseEditorUiAction

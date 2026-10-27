@@ -32,6 +32,13 @@ fun BusinessError.message(): String = when (this) {
     BusinessError.TransferNotEditable -> stringResource(R.string.error_transfer_not_editable)
     BusinessError.AlreadyVoided -> stringResource(R.string.error_already_voided)
     BusinessError.TypeChangeNotAllowed -> stringResource(R.string.error_type_change_not_allowed)
+    BusinessError.ExceedsPending -> stringResource(R.string.error_exceeds_pending)
+    BusinessError.PendingNotZero -> stringResource(R.string.error_pending_not_zero)
+    BusinessError.HasReimbursements -> stringResource(R.string.error_has_reimbursements)
+    BusinessError.BelowReimbursedAmount -> stringResource(R.string.error_below_reimbursed_amount)
+    BusinessError.ReimbursedPartLocked -> stringResource(R.string.error_reimbursed_part_locked)
+    BusinessError.HasRepayments -> stringResource(R.string.error_has_repayments)
+    BusinessError.NothingPending -> stringResource(R.string.error_nothing_pending)
     is BusinessError.WouldGoNegative -> stringResource(
         R.string.error_would_go_negative,
         moneyDisplayText(Money(resultingBalanceMinor, CurrencyCode.PEN), hidden = LocalHideAmounts.current),

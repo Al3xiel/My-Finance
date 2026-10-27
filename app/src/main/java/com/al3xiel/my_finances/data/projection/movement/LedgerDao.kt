@@ -19,6 +19,9 @@ interface LedgerDao {
     @Query("SELECT COALESCE(SUM(delta_minor), 0) FROM ledger_entries WHERE account_id = :accountId AND is_voided = 0")
     suspend fun balanceOf(accountId: String): Long
 
+    @Query("SELECT last_sequence FROM account_balances WHERE account_id = :accountId")
+    suspend fun lastSequenceOf(accountId: String): Long?
+
     @Upsert suspend fun upsertBalance(balance: AccountBalanceEntity)
 
     @Query("DELETE FROM ledger_entries") suspend fun clearEntries()

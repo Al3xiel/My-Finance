@@ -16,3 +16,10 @@ app/src/main/java/com/al3xiel/my_finances/domain/model/SystemCatalog.kt  # domin
 app/src/main/java/com/al3xiel/my_finances/domain/model/MovementEnums.kt  # dominio compartido por features: ubicación fijada en plan accounts-movements (Scope check: domain/)
 app/src/main/java/com/al3xiel/my_finances/domain/usecase/EventRecorder.kt  # dominio compartido por features: ubicación fijada en plan accounts-movements (Scope check: domain/)
 app/src/main/java/com/al3xiel/my_finances/domain/usecase/SeedCatalogUseCase.kt  # dominio compartido por features: ubicación fijada en plan accounts-movements (Scope check: domain/)
+app/src/main/java/com/al3xiel/my_finances/domain/model/event/PoolEvents.kt  # dominio compartido por features: ubicación fijada en plan pools-loans (T2, junto a los demás eventos de domain/model/event)
+app/src/main/java/com/al3xiel/my_finances/domain/model/event/LoanEvents.kt  # dominio compartido por features: ubicación fijada en plan pools-loans (T2, junto a los demás eventos de domain/model/event)
+app/src/main/java/com/al3xiel/my_finances/domain/usecase/MovementGuards.kt  # dominio compartido por features: ubicación fijada en plan pools-loans (T5, ganchos entre features)
+app/src/main/java/com/al3xiel/my_finances/feature/pools/data/StatementRenderer.kt  # adaptador de plataforma (Canvas, PdfDocument, FileProvider) sin repositorio ni DAO: ubicación fijada en plan pools-loans (T14)
+app/src/main/java/com/al3xiel/my_finances/feature/pools/data/StatementLayout.kt  # adaptador de plataforma (Canvas, PdfDocument, FileProvider) sin repositorio ni DAO: ubicación fijada en plan pools-loans (T14)
+app/src/main/java/com/al3xiel/my_finances/feature/pools/ui/StatementSharer.kt  # interfaz de plataforma que la UI inyecta para no importar data/ (dibuja el archivo temporal y arma el Intent): plan pools-loans T18
+app/src/main/java/com/al3xiel/my_finances/feature/pools/di/StatementSharerImpl.kt  # adaptador que une la interfaz ui StatementSharer con el render de data (di/ ve ambas capas): plan pools-loans T14/T18

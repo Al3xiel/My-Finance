@@ -12,6 +12,8 @@ import com.al3xiel.my_finances.domain.model.event.ExpensePartData
 import com.al3xiel.my_finances.domain.model.event.MovementCorrected
 import com.al3xiel.my_finances.domain.model.event.MovementSnapshot
 import com.al3xiel.my_finances.domain.usecase.EventRecorder
+import com.al3xiel.my_finances.domain.usecase.MovementCorrectionGuard
+import com.al3xiel.my_finances.domain.usecase.PoolReferenceGuard
 import com.al3xiel.my_finances.feature.accounts.domain.repository.AccountRepository
 import com.al3xiel.my_finances.feature.movements.domain.model.Movement
 import com.al3xiel.my_finances.feature.movements.domain.model.MovementDraft
@@ -29,6 +31,8 @@ class CorrectMovementUseCase @Inject constructor(
     private val recorder: EventRecorder,
     private val ids: IdGenerator,
     private val lock: MovementWriteLock,
+    private val guards: Set<@JvmSuppressWildcards MovementCorrectionGuard> = emptySet(),
+    private val poolGuards: Set<@JvmSuppressWildcards PoolReferenceGuard> = emptySet(),
 ) {
     suspend operator fun invoke(
         id: MovementId,
@@ -61,6 +65,7 @@ class CorrectMovementUseCase @Inject constructor(
             }
         }
 
+        guards.firstNotNullOfOrNull { it.check(id, snapshot) }?.let { return Outcome.Failed(it) }
         if (!confirmNegativeBalance) {
             val balance = accounts.balanceMinor(draft.accountId)
             val resulting = balance - effectOnAccount(current, draft.accountId) + effectOf(snapshot)
@@ -88,9 +93,17 @@ class CorrectMovementUseCase @Inject constructor(
             tags = current.parts.associate { it.id to it.tagIds.toSet() },
         )
         rules.checkExpense(draft.total, draft.parts, unchanged)?.let { return Outcome.Failed(it) }
+        for (input in draft.parts) {
+            val pool = input.poolId ?: continue
+            // Un cúmulo archivado solo se tolera en la parte que ya lo tenía y sin subirle el monto: subirlo dejaría
+            // pendiente fuera de Por cobrar.
+            val before = input.partId?.let { id -> current.parts.firstOrNull { it.id == id } }
+            val unchanged = before?.poolId == pool && input.amount.amountMinor <= before.amount.amountMinor
+            poolGuards.firstNotNullOfOrNull { it.check(pool, unchanged) }?.let { return Outcome.Failed(it) }
+        }
 
         val parts = draft.parts.map {
-            ExpensePartData(it.partId ?: PartId(ids.newId()), it.amount, it.categoryId, it.tagIds, null, null)
+            ExpensePartData(it.partId ?: PartId(ids.newId()), it.amount, it.categoryId, it.tagIds, it.poolId, null)
         }
         return Outcome.Ok(MovementSnapshot.Expense(draft.accountId, draft.total, parts, draft.note))
     }

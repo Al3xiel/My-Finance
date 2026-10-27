@@ -28,6 +28,7 @@ class EventStoreImpl @Inject constructor(
     @Named("appVersion") private val appVersion: String,
 ) : EventStore {
     private val dao = database.eventDao()
+    private val ordered = projectors.sortedBy { it.order }
 
     override suspend fun append(correlationId: String, events: List<NewEvent>): List<StoredEvent> =
         database.withTransaction {
@@ -67,7 +68,7 @@ class EventStoreImpl @Inject constructor(
                     hash = hash,
                 )
                 val stored = entity.copy(sequence = dao.insert(entity)).toStored()
-                projectors.forEach { it.apply(stored) }
+                ordered.forEach { it.apply(stored) }
                 previousHash = hash
                 stored
             }

@@ -16,7 +16,8 @@ class ProjectionRebuilderImpl @Inject constructor(
     override suspend fun rebuild(): Map<String, Int> = database.withTransaction {
         val events = eventStore.readAll()
         val rebuiltAt = clock.millis()
-        projectors.forEach { projector ->
+        val ordered = projectors.sortedBy { it.order }
+        ordered.forEach { projector ->
             projector.reset()
             events.forEach { projector.apply(it) }
             database.projectionStateDao().upsert(

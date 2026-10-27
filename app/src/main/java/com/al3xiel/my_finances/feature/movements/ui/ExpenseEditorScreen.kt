@@ -41,6 +41,8 @@ import com.al3xiel.my_finances.core.money.Money
 import com.al3xiel.my_finances.domain.model.AccountId
 import com.al3xiel.my_finances.domain.model.CategoryId
 import com.al3xiel.my_finances.domain.model.MovementId
+import com.al3xiel.my_finances.domain.model.PoolId
+import com.al3xiel.my_finances.feature.movements.ui.components.ExpensePartCard
 import com.al3xiel.my_finances.domain.model.TagId
 import com.al3xiel.my_finances.ui.theme.MyfinancesTheme
 import java.time.LocalDate
@@ -52,9 +54,11 @@ fun ExpenseEditorScreen(
     movementId: MovementId?,
     onFinished: () -> Unit,
     modifier: Modifier = Modifier,
+    /** Si se abre desde un cúmulo, la primera parte ya lleva ese cúmulo. */
+    presetPoolId: PoolId? = null,
     viewModel: ExpenseEditorViewModel = hiltViewModel<ExpenseEditorViewModel, ExpenseEditorViewModel.Factory>(
-        key = "expense-${movementId?.value}",
-        creationCallback = { it.create(movementId?.value) },
+        key = "expense-${movementId?.value}-${presetPoolId?.value}",
+        creationCallback = { it.create(movementId?.value, presetPoolId?.value) },
     ),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -108,7 +112,7 @@ fun ExpenseEditorContent(
 
         Text(stringResource(R.string.expense_parts), style = MaterialTheme.typography.titleMedium)
         state.parts.forEachIndexed { index, part ->
-            PartCard(index + 1, part, state, onAction)
+            ExpensePartCard(index + 1, part, state, onAction)
         }
         if (state.parts.size > 1) UnassignedIndicator(state.unassignedMinor)
         OutlinedButton(onClick = { onAction(ExpenseEditorUiAction.AddPart) }) { Text(stringResource(R.string.expense_add_part)) }
@@ -128,50 +132,6 @@ fun ExpenseEditorContent(
             onConfirm = { onAction(ExpenseEditorUiAction.ConfirmNegativeBalance) },
             onDismiss = { onAction(ExpenseEditorUiAction.DismissWarning) },
         )
-    }
-}
-
-@Composable
-private fun PartCard(number: Int, part: PartDraft, state: ExpenseEditorUiState, onAction: (ExpenseEditorUiAction) -> Unit) {
-    val several = state.parts.size > 1
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(stringResource(R.string.expense_part_title, number), style = MaterialTheme.typography.titleSmall)
-                if (several) {
-                    TextButton(onClick = { onAction(ExpenseEditorUiAction.RemovePart(part.key)) }) {
-                        Text(stringResource(R.string.expense_remove_part))
-                    }
-                }
-            }
-            if (several) {
-                MoneyInput(
-                    value = part.amountText,
-                    onValueChange = { onAction(ExpenseEditorUiAction.EditPartAmount(part.key, it)) },
-                    label = stringResource(R.string.expense_part_amount),
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-            EntityPicker(
-                label = stringResource(R.string.expense_part_category),
-                options = state.categoryOptions,
-                selectedId = part.categoryId?.value,
-                onSelect = { onAction(ExpenseEditorUiAction.SelectPartCategory(part.key, CategoryId(it))) },
-                modifier = Modifier.fillMaxWidth(),
-            )
-            if (state.tagOptions.isNotEmpty()) {
-                Text(stringResource(R.string.expense_part_tags), style = MaterialTheme.typography.labelMedium)
-                Row(modifier = Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    state.tagOptions.forEach { tag ->
-                        FilterChip(
-                            selected = TagId(tag.id) in part.tagIds,
-                            onClick = { onAction(ExpenseEditorUiAction.TogglePartTag(part.key, TagId(tag.id))) },
-                            label = { Text(tag.label) },
-                        )
-                    }
-                }
-            }
-        }
     }
 }
 

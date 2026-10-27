@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.al3xiel.my_finances.core.security.DatabaseKeyProvider
 import com.al3xiel.my_finances.data.database.AppDatabase
+import com.al3xiel.my_finances.data.database.migration.MIGRATION_1_2
 import com.al3xiel.my_finances.data.eventstore.EventStoreImpl
 import com.al3xiel.my_finances.data.eventstore.EventTriggersCallback
 import com.al3xiel.my_finances.data.projection.EventProjector
@@ -16,6 +17,15 @@ import com.al3xiel.my_finances.data.projection.movement.LedgerQueryDao
 import com.al3xiel.my_finances.data.projection.movement.MovementDao
 import com.al3xiel.my_finances.data.projection.movement.MovementProjector
 import com.al3xiel.my_finances.data.projection.movement.MovementQueryDao
+import com.al3xiel.my_finances.data.projection.loan.LoanDao
+import com.al3xiel.my_finances.data.projection.loan.LoanProjector
+import com.al3xiel.my_finances.data.projection.loan.LoanQueryDao
+import com.al3xiel.my_finances.data.projection.pool.PersonQueryDao
+import com.al3xiel.my_finances.data.projection.pool.PoolDao
+import com.al3xiel.my_finances.data.projection.pool.PoolProjector
+import com.al3xiel.my_finances.data.projection.pool.PoolQueryDao
+import com.al3xiel.my_finances.data.projection.pool.ReimbursementDao
+import com.al3xiel.my_finances.data.projection.pool.ReimbursementProjector
 import com.al3xiel.my_finances.domain.model.event.EventStore
 import com.al3xiel.my_finances.domain.usecase.ProjectionRebuilder
 import dagger.Binds
@@ -48,6 +58,18 @@ abstract class DatabaseModule {
     @IntoSet
     abstract fun movementProjector(impl: MovementProjector): EventProjector
 
+    @Binds
+    @IntoSet
+    abstract fun poolProjector(impl: PoolProjector): EventProjector
+
+    @Binds
+    @IntoSet
+    abstract fun reimbursementProjector(impl: ReimbursementProjector): EventProjector
+
+    @Binds
+    @IntoSet
+    abstract fun loanProjector(impl: LoanProjector): EventProjector
+
     companion object {
         @Provides
         @Singleton
@@ -55,6 +77,7 @@ abstract class DatabaseModule {
             System.loadLibrary("sqlcipher")
             return Room.databaseBuilder(context, AppDatabase::class.java, DATABASE_NAME)
                 .openHelperFactory(SupportOpenHelperFactory(keyProvider.getOrCreate()))
+                .addMigrations(MIGRATION_1_2)
                 .addCallback(EventTriggersCallback)
                 .build()
         }
@@ -76,6 +99,24 @@ abstract class DatabaseModule {
 
         @Provides
         fun provideLedgerQueryDao(database: AppDatabase): LedgerQueryDao = database.ledgerQueryDao()
+
+        @Provides
+        fun providePoolDao(database: AppDatabase): PoolDao = database.poolDao()
+
+        @Provides
+        fun provideReimbursementDao(database: AppDatabase): ReimbursementDao = database.reimbursementDao()
+
+        @Provides
+        fun provideLoanDao(database: AppDatabase): LoanDao = database.loanDao()
+
+        @Provides
+        fun providePoolQueryDao(database: AppDatabase): PoolQueryDao = database.poolQueryDao()
+
+        @Provides
+        fun providePersonQueryDao(database: AppDatabase): PersonQueryDao = database.personQueryDao()
+
+        @Provides
+        fun provideLoanQueryDao(database: AppDatabase): LoanQueryDao = database.loanQueryDao()
 
         @Provides
         @Named("appVersion")

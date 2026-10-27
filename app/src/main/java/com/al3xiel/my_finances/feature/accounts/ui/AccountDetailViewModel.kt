@@ -24,7 +24,7 @@ data class AccountDetailUiState(
     /** Fecha elegida para "saldo a una fecha"; `null` = no se pidió. */
     val asOf: LocalDate? = null,
     val balanceAsOfMinor: Long? = null,
-    val today: LocalDate = LocalDate.EPOCH,
+    val today: LocalDate = LocalDate.ofEpochDay(0),
 )
 
 sealed interface AccountDetailUiAction {

@@ -57,7 +57,7 @@
 ### Préstamos y reembolsos
 | Término (ES) | Código (EN) | Tipo | Definición |
 |---|---|---|---|
-| Cúmulo | `ReimbursementPool` | entidad | Grupo de gastos que **siempre** reembolsa una persona. |
+| Cúmulo | `ReimbursementPool` (corto: `Pool`, `PoolId`) | entidad | Grupo de gastos que **siempre** reembolsa una persona. |
 | Responsable del cúmulo | `responsiblePersonId` | `PersonId` | Quien reembolsa. Obligatorio. |
 | Tipo de cúmulo | `PoolKind` | enum: `PERMANENT`, `EVENT` | Permanente con periodos / por evento. |
 | Periodo del cúmulo | `PoolPeriod` | entidad | Tramo de un cúmulo permanente entre rendiciones. |
@@ -67,7 +67,41 @@
 | Asignación de reembolso | `ReimbursementAllocation` | entidad | Qué parte de un reembolso salda qué gasto. |
 | Estrategia de asignación | `AllocationStrategy` | enum: `OLDEST_FIRST`, `MANUAL` | |
 | Estado de reembolso de un gasto | `ReimbursementStatus` | enum: `PENDING`, `PARTIALLY_REIMBURSED`, `REIMBURSED` | |
+| Formato de rendición | `StatementFormat` | enum: `IMAGE`, `PDF` | Archivo en que se comparte la rendición. |
+| Parte pendiente | `PendingPart` | valor de dominio | Parte de un gasto en cúmulo con lo que falta reembolsar; entrada del reparto. |
+| Reparto del más antiguo primero | `OldestFirstAllocator` | regla de dominio | Calcula las asignaciones de `OLDEST_FIRST`. |
+| Excede lo pendiente | `ExceedsPending` | `BusinessError` | Reembolso o pago mayor a lo pendiente; se rechaza (D1). |
+| Pendiente sin saldar | `PendingNotZero` | `BusinessError` | Un cúmulo con algo pendiente no se archiva. |
+| Gasto con reembolsos | `HasReimbursements` | `BusinessError` | Un gasto con reembolsos no se anula hasta anular el reembolso (D20). |
+| Bajo lo reembolsado | `BelowReimbursedAmount` | `BusinessError` | Una parte reembolsada no puede quedar por debajo de lo reembolsado. |
+| Parte reembolsada fija | `ReimbursedPartLocked` | `BusinessError` | Una parte reembolsada no se quita ni cambia de cúmulo. |
+| Nada pendiente | `NothingPending` | `BusinessError` | No hay partes con algo pendiente: no se rinde. |
+| Préstamo con pagos | `HasRepayments` | `BusinessError` | Un préstamo con pagos no se anula hasta anular los pagos (D20). |
+| Parte reembolsada | `ReimbursedPart` | valor de dominio | Parte de un gasto que ya recibió algo de reembolso. |
+| Guardia de gasto en cúmulo | `PoolExpenseGuard` | regla de dominio | Valida el cúmulo de una parte y protege los gastos con reembolsos al anular o corregir. |
+| Guardia de anulación de préstamo | `LoanVoidGuard` | regla de dominio | Impide anular un préstamo con pagos vigentes. |
+| Guardia de archivado de persona | `PersonBalanceGuard` | regla de dominio | Impide archivar una persona con saldo pendiente (cúmulos activos o deudas abiertas). |
+| Parte pendiente con nombres | `PendingPartLine` | valor de dominio | Parte con algo pendiente y los nombres que muestra el registro de un reembolso (S34). |
+| Detalle de deuda | `LoanDetail` | valor de dominio | Una deuda con la persona y sus pagos vigentes (S36). La ruta se llama igual. |
+| Pago de deuda | `LoanRepaymentLine` | valor de dominio | Un pago vigente de una deuda; anularlo es `MovementVoided` (D20). |
+| Cúmulo por cobrar | `PoolReceivable` | valor de dominio | Un cúmulo con lo pendiente del periodo abierto y en total. |
+| Deuda por cobrar | `LoanReceivable` | valor de dominio | Una deuda suelta con lo que falta pagar. |
+| Saldo por persona | `PersonReceivable` | valor de dominio | Pendiente de sus cúmulos activos más sus deudas abiertas, sin movimientos anulados. |
+| Por cobrar (resumen) | `Receivables` | valor de dominio | Total, saldo por persona, cúmulos con pendiente y deudas abiertas (S30). |
+| Detalle de cúmulo | `PoolDetail` | valor de dominio | Un cúmulo con sus periodos, del más reciente al más antiguo (S31). La ruta de esa pantalla se llama igual (`core/navigation`); viven en paquetes distintos. |
+| Detalle de persona | `PersonDetail` | valor de dominio | Saldo, cúmulos, deudas, reembolsos y gastos de una persona (S35). La ruta se llama igual. |
+| Línea de reembolso | `ReimbursementLine` | valor de dominio | Un reembolso recibido de la persona, con su marca de anulado. |
+| Línea de gasto de persona | `PersonPartLine` | valor de dominio | Un gasto de sus cúmulos con su concepto y lo pendiente. |
+| Línea de deuda de persona | `PersonLoanLine` | valor de dominio | Una deuda de la persona con su estado. |
+| Parte de rendición | `StatementPart` | valor de dominio | Parte de un gasto del periodo con los nombres que muestra la rendición. |
+| Línea de rendición | `StatementLine` | valor de dominio | Una parte con algo pendiente, tal como aparece en la rendición. |
+| Contenido de la rendición | `SettlementStatementContent` | valor de dominio | Lo que se muestra y se comparte: sin notas ni saldos de cuentas. |
+| Rendición generada | `GeneratedStatement` | valor de dominio | El id de la rendición confirmada y su contenido. |
+| Armador de la rendición | `SettlementStatementBuilder` | regla de dominio | Arma el contenido: solo partes con pendiente, por fecha y orden de registro. |
+| Pedido de compartir | `ShareRequest` | valor de UI | Lo que la pantalla de la rendición dibuja y comparte; compartir no emite eventos. |
+| Compartidor de rendición | `StatementSharer` | interfaz de UI | Dibuja el archivo temporal y arma el Intent; se inyecta para que la UI no importe `data/`. |
 | Deuda suelta | `Loan` | entidad | Préstamo puntual a una persona. |
+| Estado de la deuda | `LoanStatus` | enum: `OPEN`, `REPAID` | Abierta / Pagada. |
 | Por cobrar | `receivable` / `ReceivableSummary` | `Money` / proyección | Total que te deben. |
 
 ### Fondos

@@ -81,7 +81,7 @@ Formato: **ID · Nombre (UI)** · `RouteKey` · propósito · acciones principal
 |---|---|---|---|---|
 | S20 | Movimientos | `Movements` | Lista agrupada por día, con chips de filtro (cuenta, tipo, categoría, concepto, cúmulo, fondo, rango de fechas) y búsqueda en notas | Tocar → S21 |
 | S21 | Detalle de movimiento | `MovementDetail(id)` | Datos, partes, conceptos, estado de reembolso, **historial de versiones** (eventos del agregado) | Corregir → S22 · Anular → `MovementVoided` (pide motivo; no disponible en transferencias, que se revierten con otra, D12) |
-| S22 | Registrar / corregir gasto | `ExpenseEditor(id?)` | Monto, cuenta, fecha, nota · **partes** (por defecto 1): monto, categoría, conceptos, cúmulo **o** fondo · indicador "falta asignar S/ X" | Guardar → `ExpenseRegistered` / `MovementCorrected` (pide motivo) |
+| S22 | Registrar / corregir gasto | `ExpenseEditor(id?, presetPoolId?)` | Monto, cuenta, fecha, nota · **partes** (por defecto 1): monto, categoría, conceptos, cúmulo (al elegirlo toma su categoría y conceptos por defecto) **o** fondo · indicador "falta asignar S/ X" | Guardar → `ExpenseRegistered` / `MovementCorrected` (pide motivo) |
 | S23 | Registrar ingreso | `IncomeEditor(id?)` | Monto, cuenta, fuente, fecha, nota · opción "apartar en fondo" · opción "confirma ingreso esperado" | Guardar → `IncomeRegistered` (+ `FundToppedUp` / `ExpectedIncomeConfirmed`) |
 | S24 | Transferencia | `TransferEditor` | Desde, hacia, monto, comisión opcional; etiqueta automática "Retiro"/"Depósito". Solo crea: no se edita ni se corrige; un error se revierte con otra transferencia (D12) | Guardar → `TransferRegistered` |
 | S25 | Registro rápido | `QuickEntry` | Campo de texto + vista previa interpretada (ver §5) | Confirmar → evento correspondiente |
@@ -94,7 +94,7 @@ Formato: **ID · Nombre (UI)** · `RouteKey` · propósito · acciones principal
 | S31 | Detalle de cúmulo | `PoolDetail(id)` | Responsable, periodo actual (gastos, total, reembolsado, pendiente), historial de periodos | Agregar gasto (abre S22 con cúmulo preseleccionado) · **Rendir cuentas** → S33 · Registrar reembolso → S34 |
 | S32 | Crear / editar cúmulo | `PoolEditor(id?)` | Nombre, responsable, tipo (permanente/evento), categoría y conceptos por defecto | Guardar → `ReimbursementPoolCreated` / `Renamed` |
 | S33 | Rendición de cuentas | `SettlementStatement(poolId)` | **Vista previa** de la imagen/PDF: detalle de gastos, total pendiente; elegir formato | Compartir → `SettlementStatementGenerated` + Intent de Android |
-| S34 | Registrar reembolso | `ReimbursementEditor(personId)` | Persona, cuenta destino, monto, estrategia (antiguos primero / manual) · lista de partes pendientes con lo que se saldaría · bloqueo si excede (D1) | Guardar → `ReimbursementReceived` |
+| S34 | Registrar reembolso | `ReimbursementEditor(personId?, poolId?)` | Persona, cuenta destino, monto, estrategia (antiguos primero / manual) · lista de partes pendientes con lo que se saldaría · bloqueo si excede (D1) | Guardar → `ReimbursementReceived` |
 | S35 | Detalle de persona | `PersonDetail(id)` | Saldo con la persona, cúmulos, deudas, reembolsos, gastos con concepto de esa persona | — |
 | S36 | Deuda suelta | `LoanEditor(id?)` / `LoanDetail(id)` | Persona, cuenta, monto, pagos recibidos | Guardar → `LoanGranted` · Registrar pago → `LoanRepaymentReceived` |
 
@@ -212,9 +212,15 @@ Coincidencia sin tildes ni mayúsculas, por prefijo y por alias. **Siempre muest
 
 // Detalles y editores (ejemplos)
 @Serializable data class MovementDetail(val movementId: String) : Route
-@Serializable data class ExpenseEditor(val movementId: String? = null, val presetPoolId: String? = null,
+@Serializable data class ExpenseEditor(val id: String? = null, val presetPoolId: String? = null,
                                        val presetFundId: String? = null, val reconciliationId: String? = null) : Route
-@Serializable data class PoolDetail(val poolId: String) : Route
+@Serializable data class PoolDetail(val id: String) : Route
+@Serializable data class PoolEditor(val id: String? = null) : Route
+@Serializable data class SettlementStatement(val poolId: String) : Route
+@Serializable data class ReimbursementEditor(val personId: String? = null, val poolId: String? = null) : Route
+@Serializable data class PersonDetail(val id: String) : Route
+@Serializable data class LoanEditor(val personId: String? = null) : Route
+@Serializable data class LoanDetail(val id: String) : Route
 @Serializable data class ReconciliationDetail(val reconciliationId: String) : Route
 @Serializable data class DiagnosticWorkspace(val packageId: String) : Route
 // … una clase por fila del inventario (§3)

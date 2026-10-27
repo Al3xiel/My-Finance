@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Solo cacheDir/share: ahí viven las rendiciones temporales (docs/02 S7). Nada más sale por el FileProvider. -->
+<paths>
+    <cache-path
+        name="share"
+        path="share/" />
+</paths>

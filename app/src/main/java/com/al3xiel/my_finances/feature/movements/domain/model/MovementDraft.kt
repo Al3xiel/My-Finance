@@ -5,6 +5,7 @@ import com.al3xiel.my_finances.domain.model.AccountId
 import com.al3xiel.my_finances.domain.model.CategoryId
 import com.al3xiel.my_finances.domain.model.IncomeSourceId
 import com.al3xiel.my_finances.domain.model.PartId
+import com.al3xiel.my_finances.domain.model.PoolId
 import com.al3xiel.my_finances.domain.model.TagId
 import java.time.LocalDate
 
@@ -14,6 +15,7 @@ data class ExpensePartInput(
     val amount: Money,
     val categoryId: CategoryId,
     val tagIds: List<TagId>,
+    val poolId: PoolId? = null,
 )
 
 /** Lo que el usuario deja tras corregir un movimiento; el tipo no cambia (D15). */

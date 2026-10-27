@@ -39,6 +39,9 @@ android {
     buildFeatures {
         compose = true
     }
+    sourceSets {
+        getByName("androidTest").assets.srcDir("$projectDir/schemas")
+    }
 }
 
 // S4 (docs/02): el manifest fusionado de release no puede declarar INTERNET.
