@@ -269,9 +269,10 @@ Quien exporta (p. ej. tu pareja)            Quien audita (tú)
 | Evento | Payload |
 |---|---|
 | `ReimbursementPoolCreated` | `poolId, name, responsiblePersonId, kind (PERMANENT/EVENT), defaultCategoryId?, defaultTagIds` |
-| `ReimbursementPoolRenamed` / `ReimbursementPoolArchived` | `poolId, name?` |
+| `ReimbursementPoolRenamed` | `poolId, name` |
+| `ReimbursementPoolArchived` | `poolId` |
 | `SettlementStatementGenerated` | `statementId, poolId, periodId, partIds, pendingTotal, format (IMAGE/PDF)` |
-| `ReimbursementReceived` | `reimbursementId, personId, accountId, amount, strategy (OLDEST_FIRST/MANUAL), allocations: List<AllocationData>, note?` |
+| `ReimbursementReceived` | `reimbursementId, movementId, personId, accountId, amount, strategy (OLDEST_FIRST/MANUAL), allocations: List<AllocationData>, note?` |
 
 ```
 AllocationData = partId, amount
@@ -280,14 +281,15 @@ AllocationData = partId, amount
 Reglas:
 - Al generar la rendición de un cúmulo `PERMANENT`, el periodo pasa a `STATEMENT_SENT` y se abre uno nuevo. Los gastos nuevos caen en el periodo nuevo.
 - Las asignaciones se calculan **en el caso de uso** y se guardan en el evento, aunque la estrategia sea `OLDEST_FIRST`. Así, si mañana cambia el algoritmo, el pasado no cambia.
+- Anular un reembolso, un préstamo o un pago es `MovementVoided` sobre su `movementId`; revierte asignaciones y saldos. No se corrigen (D20).
 - "Periodo saldado" **no es un evento**: es un estado derivado (pendiente = 0). Regla general: **un hecho derivable no se guarda como evento**.
 
 ### 3.5 Deudas sueltas
 
 | Evento | Payload |
 |---|---|
-| `LoanGranted` | `loanId, personId, accountId, amount, note?` (sale dinero, **no es gasto**) |
-| `LoanRepaymentReceived` | `repaymentId, loanId, accountId, amount` (entra dinero, **no es ingreso**) |
+| `LoanGranted` | `loanId, movementId, personId, accountId, amount, note?` (sale dinero, **no es gasto**) |
+| `LoanRepaymentReceived` | `repaymentId, movementId, loanId, accountId, amount` (entra dinero, **no es ingreso**) |
 
 ### 3.6 Fondos
 
@@ -394,7 +396,8 @@ erDiagram
 
 | Tabla | Columnas |
 |---|---|
-| `pools` | `id PK, name, responsible_person_id FK, kind, default_category_id?, is_archived` |
+| `pools` | `id PK, name, responsible_person_id FK, kind, default_category_id?, default_tag_ids (IDs separados por coma), is_archived` |
+| `movement_parts` (columnas nuevas) | `pool_id?, pool_period_id?, reimbursed_minor, reimbursement_status (PENDING/PARTIALLY_REIMBURSED/REIMBURSED), created_sequence` · Dueños: movimientos (`pool_id`, `created_sequence`), cúmulos (`pool_period_id`), reembolsos (`reimbursed_minor`, `reimbursement_status`); una corrección actualiza las partes que siguen sin borrarlas |
 | `pool_periods` | `id PK, pool_id FK, opened_on, closed_on?, status (OPEN/STATEMENT_SENT/SETTLED), statement_id?, total_minor, reimbursed_minor` |
 | `settlement_statements` | `id PK, pool_id FK, period_id FK, pending_total_minor, format, generated_on` |
 | `reimbursements` | `id PK, person_id FK, movement_id FK, amount_minor, strategy, occurred_on` |
@@ -446,12 +449,20 @@ Redondeo: método del **mayor residuo** (la suma de las porciones siempre es igu
 Si una cuenta queda en negativo (por error de registro), el faltante se asigna a `UNKNOWN_ADJUSTMENT` y la UI avisa.
 
 ### 5.2 Asignación de reembolsos (`OLDEST_FIRST`)
-Partes pendientes del cúmulo/persona ordenadas por `occurred_on`, luego `sequence`; se salda cada una hasta agotar el monto. Si sobra dinero, el caso de uso rechaza o pide confirmar "saldo a favor" (decisión pendiente, §7).
+Partes pendientes del cúmulo/persona ordenadas por `occurred_on`, luego `created_sequence`; se salda cada una hasta agotar el monto. Si sobra dinero, el caso de uso lo rechaza (D1); no hay "saldo a favor". Cubre el cúmulo de origen o todos los de la persona (D18).
 
 ### 5.3 Correcciones y anulaciones
 - `MovementVoided` → `movements.status = VOIDED`, sus `ledger_entries.is_voided = 1`.
 - `MovementCorrected` → anula los asientos viejos y crea los nuevos con el snapshot.
 - Como la composición de origen depende del **orden**, una corrección de un movimiento antiguo dispara la **re-proyección de `origin_*` desde ese `sequence`** (o completa, en el MVP, por simplicidad).
+
+### 5.3.1 Orden entre proyectores
+Los proyectores se aplican en vivo evento a evento y, en el replay, uno tras otro sobre todo el registro. Para que ambos caminos dejen las mismas tablas:
+- Cada proyector declara un `order` (movimientos 0, cúmulos 10, reembolsos y deudas 20) y ambos caminos lo respetan: los que leen `movement_parts` van después del que la escribe.
+- Cada columna tiene un solo dueño (ver §4.4) y una corrección actualiza las partes que siguen en vez de borrarlas. Como el monto de una parte cambia al corregir, el proyector de reembolsos también atiende `MovementCorrected` para recalcular el estado de lo reembolsado.
+- Las partes anteriores a la v2 reciben `created_sequence` = `last_sequence` de su movimiento en la migración (su creación si nunca se corrigió); un replay lo deja exacto.
+- Totales y estado de un periodo se recalculan desde las partes asignadas (`PoolPeriodRefresher`); lo pagado de una deuda, desde sus pagos vigentes.
+- La `last_sequence` de un saldo nunca retrocede: es la del último evento que lo tocó, lo haya hecho el proyector que lo haya hecho.
 
 ### 5.4 Conciliación como detector de errores de código
 Tras cada re-proyección (por ejemplo, después de corregir un bug y actualizar la app), el proyector recalcula `current_computed_minor` de **todas** las conciliaciones, incluidas las resueltas:
@@ -522,3 +533,7 @@ Resultado: BBVA 780 · BCP 170 · Efectivo 95 · Apartado Pasajes 45 · Por cobr
 | D14 | Saldo negativo | Se permite; la app avisa antes de guardar (2026-10-26) |
 | D15 | Alcance de una corrección | Edita todo menos el tipo del movimiento; las partes que siguen conservan su `partId` (2026-10-26) |
 | D16 | Asiento de apertura | `OPENING` con `movement_id` nulo, siempre, aun con saldo inicial 0 (2026-10-26) |
+| D17 | Rendición | "Rendir y compartir" avisa que cierra el periodo; `SettlementStatementGenerated` se emite al confirmar y el Intent se abre después; una rendición generada se vuelve a compartir sin evento (2026-10-26) |
+| D18 | Alcance de `OLDEST_FIRST` | El cúmulo de origen (desde S31) o todos los cúmulos de la persona (desde el "+"); parte pendiente de cualquier periodo (2026-10-26) |
+| D19 | Gasto con fecha anterior al último cierre | Cae en el periodo abierto actual; un cúmulo `EVENT` tiene un solo periodo (2026-10-26) |
+| D20 | Anular reembolsos, préstamos y pagos | Se anulan y revierten asignaciones y saldos; no se corrigen. Un gasto con reembolsos no se anula hasta anular el reembolso (2026-10-26) |

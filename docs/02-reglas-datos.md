@@ -95,7 +95,7 @@
 | Gasto dividido | La suma de las partes = monto total, al céntimo. |
 | Cúmulo | Siempre tiene `responsiblePersonId`. |
 | Gasto | No puede estar en un cúmulo **y** en un fondo a la vez. |
-| Reembolso | Monto asignado a gastos ≤ pendiente total; el excedente se rechaza o se registra explícitamente como saldo a favor. |
+| Reembolso | Monto asignado a gastos ≤ pendiente total; el excedente se rechaza (D1); no hay saldo a favor. |
 | Arqueo de fondo | Saldo declarado ≥ 0. |
 | Categoría | Exactamente una por gasto/parte. |
 | Conceptos (tags) | 0..n por gasto; no se suman entre sí en reportes de distribución. |
