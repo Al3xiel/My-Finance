@@ -46,7 +46,7 @@ UseCase ──emite──► DomainEvent ──INSERT──► events
 | `recorded_at` | INTEGER | no | Cuándo se registró |
 | `app_version` | TEXT | no | `versionName` que lo escribió |
 | `previous_hash` | TEXT | no | Hash del evento anterior (`"GENESIS"` en el primero) |
-| `hash` | TEXT | no | `SHA-256(previous_hash ‖ type ‖ schema_version ‖ aggregate_id ‖ payload ‖ occurred_on ‖ recorded_at)` |
+| `hash` | TEXT | no | `SHA-256(previous_hash ‖ event_id ‖ type ‖ schema_version ‖ aggregate_type ‖ aggregate_id ‖ correlation_id ‖ payload ‖ occurred_on ‖ recorded_at ‖ app_version)`: todas las columnas salvo `sequence` y `hash`; `‖` = separador `U+001F`, y `payload` es el texto exacto guardado |
 
 **Índices**: `(aggregate_type, aggregate_id, sequence)`, `(type)`, `(occurred_on)`.
 
@@ -114,7 +114,7 @@ Convención: `?` = opcional. Todo `Money` va en la moneda de la cuenta involucra
 
 | Evento | Payload |
 |---|---|
-| `IncomeRegistered` | `movementId, accountId, amount, incomeSourceId, categoryId?, note?` |
+| `IncomeRegistered` | `movementId, accountId, amount, incomeSourceId, reconciliationId?, note?` (sin categoría, D13) |
 | `ExpenseRegistered` | `movementId, accountId, total, parts: List<ExpensePartData>, note?` |
 | `TransferRegistered` | `movementId, fromAccountId, toAccountId, amount, fee?: FeeData, note?` |
 | `MovementCorrected` | `movementId, snapshot: <payload completo del tipo original>, reason` |
@@ -131,6 +131,7 @@ Reglas:
 - `Σ parts.amount == total` (validado en el caso de uso).
 - `cúmulo` y `fondo` van **a nivel de parte**: en una boleta de mercado, S/ 110 pueden ir al cúmulo "Casa – mamá" y S/ 40 ser tuyos.
 - Retiro o depósito **no se guardan**: se derivan de los tipos de cuenta (BANK→CASH = retiro).
+- Una transferencia **no se anula ni se corrige** (`MovementVoided` y `MovementCorrected` se rechazan para `TRANSFER`): un error se deshace registrando otra transferencia en sentido contrario y, si hace falta, la correcta. La comisión de la original sigue siendo gasto (D12).
 - `MovementCorrected` guarda el **snapshot completo**, no un diff: el proyector reemplaza todo el estado del movimiento y es más difícil equivocarse.
 
 ### 3.3 Conciliación (en dos pasos)
@@ -380,9 +381,9 @@ erDiagram
 | Tabla | Columnas | Notas |
 |---|---|---|
 | `movements` | `id PK, type, account_id FK, counter_account_id FK?, amount_minor, currency, income_source_id FK?, person_id FK?, note, occurred_on, status (ACTIVE/VOIDED), revision INT, last_sequence` | `type`: `INCOME, EXPENSE, TRANSFER, REIMBURSEMENT, LOAN_DISBURSEMENT, LOAN_REPAYMENT, ADJUSTMENT, FUND_UNTRACKED_SPEND`. `revision` crece con cada corrección |
-| `movement_parts` | `id PK, movement_id FK, amount_minor, category_id FK, pool_id FK?, pool_period_id FK?, fund_id FK?, reimbursed_minor, reimbursement_status` | Solo para gastos |
+| `movement_parts` | `id PK, movement_id FK, amount_minor, category_id FK, pool_id FK?, pool_period_id FK?, fund_id FK?, reimbursed_minor, reimbursement_status, kind (NORMAL/FEE/UNTRACKED)` | Gastos. La comisión de una transferencia y el gasto no registrado de un fondo generan una parte sintética (`kind` = `FEE` / `UNTRACKED`, sin `fund_id`) para que cuenten por categoría (D11) |
 | `movement_part_tags` | `part_id FK, tag_id FK` · PK compuesta | M:N |
-| `ledger_entries` | `id PK, sequence, movement_id FK, account_id FK, delta_minor (±), entry_kind, occurred_on, is_voided` | **Corazón contable**: cada cambio de saldo es una fila. Transferencia = 2 filas (−origen, +destino) |
+| `ledger_entries` | `id PK, sequence, movement_id FK?, account_id FK, delta_minor (±), entry_kind, occurred_on, is_voided` | **Corazón contable**: cada cambio de saldo es una fila. Transferencia = 2 filas (−origen, +destino). `movement_id` es nulo en `OPENING` (D16). `id` = `<sequence del evento>-<n>`: determinista, para que el replay reproduzca las mismas filas |
 | `account_balances` | `account_id PK, balance_minor, last_sequence` | Caché de `Σ delta` no anulados |
 
 `entry_kind`: `OPENING, INCOME, EXPENSE, FEE, TRANSFER_OUT, TRANSFER_IN, REIMBURSEMENT_IN, LOAN_OUT, LOAN_IN, ADJUSTMENT`.
@@ -513,3 +514,11 @@ Resultado: BBVA 780 · BCP 170 · Efectivo 95 · Apartado Pasajes 45 · Por cobr
 | D6 | Conciliación | En dos pasos: registrar y visualizar la diferencia sin tocar saldos; ajustar con ingreso/egreso no identificado solo al resolver, con causa (§3.3) |
 | D7 | Exportación de diagnóstico | Paquete `.fdiag` desde una conciliación, anonimizado por defecto, que se abre en un espacio de diagnóstico separado y re-proyecta para encontrar la divergencia (§3.3.1) |
 | D8 | Diccionario de seudónimos | Archivo separado `.fkey`, extraído desde la misma conciliación **después** de la auditoría, parcial por defecto y con contraseña (§3.3.2) |
+| D9 | `reconciliationId?` en los eventos de movimiento | Desde la v1 en `IncomeRegistered`, `ExpenseRegistered`, `TransferRegistered`, `MovementCorrected` y `MovementVoided` (evita schemaVersion 2 y upcaster) (2026-10-26) |
+| D10 | Catálogo inicial y fuentes de ingreso del sistema | Los siembra el módulo de cuentas/movimientos con eventos de ID fijo al primer arranque (`OPENING_BALANCE`, `UNKNOWN_ADJUSTMENT`, `REIMBURSEMENT`, `LOAN_REPAYMENT` y categorías por defecto); el onboarding solo crea cuentas (2026-10-26) |
+| D11 | Comisión y gasto no registrado en reportes | Cuentan como gasto propio en la categoría elegida: el proyector crea una parte sintética (`movement_parts.kind` = `FEE` / `UNTRACKED`, sin `fund_id`) y S41 sigue sumando solo partes (2026-10-26) |
+| D12 | Anular o corregir una transferencia | No existen: se revierte registrando otra transferencia en sentido contrario (y la correcta, si hace falta). La comisión de la original no se devuelve (2026-10-26) |
+| D13 | Ingresos sin categoría | `IncomeRegistered` no lleva `categoryId`: el ingreso se clasifica por fuente (2026-10-26) |
+| D14 | Saldo negativo | Se permite; la app avisa antes de guardar (2026-10-26) |
+| D15 | Alcance de una corrección | Edita todo menos el tipo del movimiento; las partes que siguen conservan su `partId` (2026-10-26) |
+| D16 | Asiento de apertura | `OPENING` con `movement_id` nulo, siempre, aun con saldo inicial 0 (2026-10-26) |

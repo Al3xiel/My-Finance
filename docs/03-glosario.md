@@ -13,16 +13,14 @@
 | Tipo de cuenta | `AccountType` | enum: `BANK`, `CASH`, `DIGITAL_WALLET` | |
 | Saldo | `balance` | `Money` | Dinero en una cuenta según la app. |
 | Movimiento | `Movement` | entidad | Registro de dinero: ingreso, gasto o transferencia. *Se evita `Transaction` para no chocar con transacciones de BD (`@Transaction`).* |
-| Tipo de movimiento | `MovementType` | enum: `INCOME`, `EXPENSE`, `TRANSFER`, `REIMBURSEMENT`, `LOAN_DISBURSEMENT`, `LOAN_REPAYMENT`, `ADJUSTMENT`, `FUND_UNTRACKED_SPEND` | Solo `INCOME` y `EXPENSE` cuentan en reportes de ingreso/gasto. |
-| Asiento contable | `LedgerEntry` | proyección | Cada cambio de saldo de una cuenta (±). Una transferencia genera dos. |
-| Tipo de asiento | `EntryKind` | enum: `OPENING`, `INCOME`, `EXPENSE`, `FEE`, `TRANSFER_OUT`, `TRANSFER_IN`, `REIMBURSEMENT_IN`, `LOAN_OUT`, `LOAN_IN`, `ADJUSTMENT` | |
+| Tipo de movimiento | `MovementType` | enum: `INCOME`, `EXPENSE`, `TRANSFER` (vigentes); `REIMBURSEMENT`, `LOAN_DISBURSEMENT`, `LOAN_REPAYMENT`, `ADJUSTMENT`, `FUND_UNTRACKED_SPEND` (futuro: llegan con sus features) | Solo `INCOME` y `EXPENSE` cuentan en reportes de ingreso/gasto; además cuentan como gasto, en su categoría, la comisión y el gasto no registrado de un fondo (D11). |
 | Saldo inicial | `openingBalance` | `Money` | Saldo al crear la cuenta; fuente de origen `OPENING_BALANCE`. |
 | Ingreso | `Income` | `MovementType.INCOME` | Dinero que entra a una cuenta desde fuera. |
 | Gasto | `Expense` | `MovementType.EXPENSE` | Dinero que sale de una cuenta hacia fuera. |
-| Transferencia | `Transfer` | `MovementType.TRANSFER` | Dinero entre dos cuentas propias. No es ingreso ni gasto. |
+| Transferencia | `Transfer` | `MovementType.TRANSFER` | Dinero entre dos cuentas propias. No es ingreso ni gasto. No se anula ni se corrige: se revierte con otra transferencia en sentido contrario (D12). |
 | Retiro | `Withdrawal` | subtipo de `Transfer` | Banco → Efectivo. |
 | Depósito | `Deposit` | subtipo de `Transfer` | Efectivo → Banco. |
-| Comisión | `Fee` | `Expense` vinculado | Cargo asociado a una transferencia. |
+| Comisión | `Fee` | `Expense` vinculado | Cargo asociado a una transferencia. Es gasto real: no se deshace al revertir la transferencia (D11, D12). |
 | Parte de gasto | `ExpensePart` | entidad hija | Todo gasto tiene ≥ 1 parte; cada una con monto, categoría, conceptos y, opcionalmente, cúmulo **o** fondo. "Dividir gasto" = registrar varias partes. |
 | Monto | `amount` | `Money` | |
 | Dinero (valor) | `Money` | value class (`amountMinor: Long`, `currency`) | Céntimos, nunca decimales. |
@@ -129,6 +127,31 @@
 | Pestaña principal | `MainTab` | enum: `HOME`, `MOVEMENTS`, `RECEIVABLES`, `REPORTS`, `MORE` | Una de las 5 pestañas de la barra inferior; cada una con su back stack y su ruta raíz. |
 | Acción de registro | `RegisterAction` | modelo | Entrada del bottom sheet del botón "+" (texto, ruta destino, orden); la aporta cada feature y sin ninguna el botón no se muestra. |
 | Recordatorio | `Reminder` | |
+| Resultado de caso de uso | `Outcome` | sealed: `Ok(value)` o `Failed(error)`. Un caso de uso informa un rechazo de negocio como valor, sin lanzar excepción. |
+| Error de negocio | `BusinessError` | sealed: la regla que rechazó la operación. Catálogos: `BlankName`, `DuplicateName` (sin tildes ni mayúsculas), `NotFound`, `AlreadyArchived`, `BalanceNotZero` (archivar cuenta), `PersonRequired` / `PersonNotAllowed` (concepto `PERSON` / `TOPIC`), `InvalidParent` (categoría de un solo nivel), `UnsupportedCurrency` (solo `PEN`), `NegativeAmount` (saldo inicial), `Unexpected` (fallo técnico inesperado: no se hizo nada y se puede reintentar). Movimientos: `InvalidAmount`, `FutureDate`, `SameAccount`, `NoParts`, `PartsMismatch`, `InvalidPart`, `ReasonRequired`, `TransferNotEditable` (D12), `AlreadyVoided`, `TypeChangeNotAllowed` (D15). |
+| Aviso de saldo negativo | `WouldGoNegative` | `BusinessError` con el saldo resultante: el saldo queda negativo y la operación lo empeora. La UI pide confirmar y repite con `confirmNegativeBalance` (D14). |
+| Catálogo del sistema | `SystemCatalog` | objeto de dominio | Fuentes de ingreso (`SystemIncomeSource`) y categorías por defecto (`DefaultCategory`, incluida "Comisiones") con ids fijos; `SeedCatalogUseCase` las crea al primer arranque, solo las que falten (D10). |
+| Tipo de fuente de ingreso | `IncomeSourceKind` | enum: `REGULAR`, `OPENING_BALANCE`, `UNKNOWN_ADJUSTMENT`, `REIMBURSEMENT`, `LOAN_REPAYMENT` | Las cuatro últimas son del sistema; el proyector deduce el tipo por el id fijo. |
+| Estado del movimiento | `MovementStatus` | enum: `ACTIVE`, `VOIDED` | Un movimiento anulado se conserva, marcado, y sus asientos dejan de contar. |
+| Tipo de parte | `PartKind` | enum: `NORMAL`, `FEE` | `FEE` es la parte sintética que genera la comisión de una transferencia (D11). |
+| Asiento | `LedgerEntry` / `LedgerEntryKind` | tabla `ledger_entries`; enum: `OPENING`, `INCOME`, `EXPENSE`, `FEE`, `TRANSFER_OUT`, `TRANSFER_IN` | Cada cambio de saldo es una fila; el saldo de una cuenta es la suma de sus asientos no anulados. `OPENING` no tiene movimiento (D16). |
+| Saldo a una fecha | `asOf` / `balanceAt(id, asOf)` | `LocalDate` | Fecha tope (inclusive, del hecho) hasta la que se suman los asientos no anulados para calcular el saldo de una cuenta. |
+| Tipo de agregado | `AggregateType` | enum: `ACCOUNT`, `CATEGORY`, `TAG`, `PERSON`, `INCOME_SOURCE`, `MOVEMENT`, `SYSTEM` | Entidad a la que pertenece un evento; con su id forma el historial (`events.aggregate_type`). |
+| Evento por guardar / guardado | `NewEvent` / `StoredEvent` | modelos | `NewEvent` = evento + fecha del hecho; `StoredEvent` = fila del registro con secuencia, hashes y el texto exacto del payload. |
+| Códec de eventos | `EventCodec` / `UpcasterRegistry` | objetos | Convierten evento ↔ texto del payload (determinista) y aplican los `Upcaster` registrados (vacío en la v1). |
+| Hash de evento | `EventHasher` / `HashedFields` | objeto / modelo | `SHA-256` de todas las columnas del evento salvo `sequence` y `hash`, encadenado con el hash anterior (`GENESIS` en el primero); detecta cualquier alteración. |
+| Verificación de cadena | `ChainVerification` | sealed: `Valid(count)` / `Broken(sequence, reason)` | Resultado de `VerifyEventChainUseCase`; `Reason`: hueco de secuencia, enlace roto o hash distinto. |
+| Registrador de eventos | `EventRecorder` | servicio de dominio | Guarda lo que decide un caso de uso: una acción del usuario = una correlación. |
+| Candado de escritura de movimientos | `MovementWriteLock` | servicio `@Singleton` | Serializa corregir y anular: leer el estado del movimiento, validar y guardar ocurre sin que otra llamada se intercale, así que dos anulaciones simultáneas guardan un solo evento. |
+| Reconstructor de proyecciones | `ProjectionRebuilder` | puerto | Borra y rehace todas las proyecciones en una transacción; lo usa `ReplayProjectionsUseCase`. |
+| Instantánea de movimiento | `MovementSnapshot` | sealed: `Income` / `Expense` | Estado completo que lleva `MovementCorrected`; no existe para transferencias (D12). |
+| Parte de movimiento | `MovementPart` / `ExpensePartInput` | modelos | Parte guardada (con su `PartKind`) / parte que el usuario edita; al corregir, una parte que sigue conserva su id (D15). |
+| Borrador de movimiento | `MovementDraft` | sealed: `Income` / `Expense` | Lo que el usuario deja tras corregir; el tipo no cambia (D15). |
+| Referencias sin cambio | `UnchangedReferences` | modelo | Categorías y conceptos que el movimiento ya tenía antes de corregirlo: se aceptan aunque hoy estén archivados, para poder corregir otro dato (la nota, el monto) sin cambiarlos. |
+| Filtro de movimientos | `MovementFilter` | modelo | Cuenta, tipo, categoría, concepto, fechas y texto en notas; se combinan con "y". |
+| Resumen / detalle de movimiento | `MovementSummary` / `MovementDetail` | modelos | Fila de la lista / movimiento con sus partes y su historial. |
+| Historial de movimiento | `MovementHistoryEntry` / `HistoryKind` | enum: `REGISTERED`, `CORRECTED`, `VOIDED` | Una entrada por evento del movimiento, con su motivo si lo tiene. |
+| Cuenta con saldo / línea de libro | `AccountWithBalance` / `LedgerLine` | modelos | Cuenta con su saldo actual / asiento de una cuenta (los anulados se muestran tachados). |
 
 ---
 

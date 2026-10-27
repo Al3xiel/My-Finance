@@ -17,3 +17,19 @@ sealed interface Route : NavKey
 // Privacy feature
 @Serializable data object Privacy : Route
 @Serializable data object Settings : Route
+
+// Movements feature (ids travel as text: a value class cannot be a route argument)
+@Serializable data class MovementDetail(val id: String) : Route
+@Serializable data class ExpenseEditor(val id: String? = null) : Route
+@Serializable data class IncomeEditor(val id: String? = null) : Route
+
+// Accounts feature
+@Serializable data object Accounts : Route
+@Serializable data class AccountDetail(val id: String) : Route
+@Serializable data object TransferEditor : Route
+@Serializable data object IncomeSources : Route
+
+// Catalogs
+@Serializable data object Categories : Route
+@Serializable data object Tags : Route
+@Serializable data object People : Route
