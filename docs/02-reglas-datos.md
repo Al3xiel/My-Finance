@@ -25,7 +25,7 @@
 | Financieros | Saldos, montos, cuentas (alias "BBVA", "BCP"), movimientos | **Alta** | BD cifrada |
 | Terceros | Nombres o alias de personas (mamá, pareja) | **Alta** (datos personales de terceros) | BD cifrada |
 | Notas libres | Texto que escribe el usuario | Alta | BD cifrada |
-| Preferencias | Tema, frecuencia de recordatorio, último respaldo | Baja | DataStore |
+| Preferencias | Tema, frecuencia de recordatorio, último respaldo, seguridad (bloqueo, minutos, pantalla segura, ocultar montos) | Baja | DataStore |
 | Clave de cifrado | Clave de la BD | **Crítica** | Android Keystore (envuelta), nunca en texto plano |
 
 **No se guarda nunca**: números de cuenta o de tarjeta completos, CCI, claves bancarias, tokens, DNI, ubicación ni contactos del teléfono. Para personas, se recomienda usar alias ("Mamá"), no nombres completos.
@@ -39,7 +39,7 @@
 | Regla | Implementación |
 |---|---|
 | S1. BD cifrada | Room + **SQLCipher**. Clave aleatoria de 256 bits generada al primer inicio, envuelta con una clave AES del **Android Keystore**. |
-| S2. Bloqueo de app | **BiometricPrompt** (huella/rostro) con respaldo de PIN/patrón del dispositivo. Bloqueo al volver de segundo plano tras N minutos. |
+| S2. Bloqueo de app | **BiometricPrompt** (huella/rostro) con credencial del dispositivo (PIN/patrón/clave) como alternativa; sin PIN propio. Bloqueo en arranque en frío y al volver de segundo plano tras N minutos (5 por defecto; 0/1/5/15). El bloqueo es de interfaz: la clave del Keystore no exige autenticación. Desactivarlo o borrar los datos pide autenticar. |
 | S3. Sin respaldo automático de Android | `android:allowBackup="false"` + `dataExtractionRules` excluyendo todo (evita copias silenciosas a Google Drive y transferencia entre dispositivos). |
 | S4. Sin Internet | El manifest **no** declara `android.permission.INTERNET`. Verificado en CI (falla el build si aparece). |
 | S5. Pantallas seguras | `FLAG_SECURE` en pantallas con montos (oculta la vista previa en recientes y bloquea capturas). Configurable por el usuario. |
