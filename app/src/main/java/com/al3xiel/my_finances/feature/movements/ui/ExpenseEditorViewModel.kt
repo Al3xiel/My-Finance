@@ -11,6 +11,7 @@ import com.al3xiel.my_finances.domain.model.BusinessError
 import com.al3xiel.my_finances.domain.model.CategoryId
 import com.al3xiel.my_finances.domain.model.MovementId
 import com.al3xiel.my_finances.domain.model.MovementStatus
+import com.al3xiel.my_finances.domain.model.PoolId
 import com.al3xiel.my_finances.domain.model.MovementType
 import com.al3xiel.my_finances.domain.model.PartId
 import com.al3xiel.my_finances.domain.model.PartKind
@@ -26,6 +27,8 @@ import com.al3xiel.my_finances.feature.movements.domain.model.MovementDraft
 import com.al3xiel.my_finances.feature.movements.domain.repository.MovementRepository
 import com.al3xiel.my_finances.feature.movements.domain.usecase.CorrectMovementUseCase
 import com.al3xiel.my_finances.feature.movements.domain.usecase.RegisterExpenseUseCase
+import com.al3xiel.my_finances.feature.pools.domain.model.Pool
+import com.al3xiel.my_finances.feature.pools.domain.repository.PoolRepository
 import com.al3xiel.my_finances.feature.tags.domain.repository.TagRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -45,22 +48,28 @@ import java.time.LocalDate
 /** S22: registra un gasto nuevo, o corrige uno existente (con motivo) si recibe su id. */
 @HiltViewModel(assistedFactory = ExpenseEditorViewModel.Factory::class)
 class ExpenseEditorViewModel @AssistedInject constructor(
-    @Assisted movementIdValue: String?,
+    @Assisted("movement") movementIdValue: String?,
+    @Assisted("preset") presetPoolIdValue: String?,
     private val movements: MovementRepository,
     private val accounts: AccountRepository,
     private val categories: CategoryRepository,
     tags: TagRepository,
+    private val pools: PoolRepository,
     private val registerExpense: RegisterExpenseUseCase,
     private val correctMovement: CorrectMovementUseCase,
     clock: Clock,
 ) : ViewModel() {
     @AssistedFactory
     interface Factory {
-        fun create(movementIdValue: String?): ExpenseEditorViewModel
+        fun create(
+            @Assisted("movement") movementIdValue: String?,
+            @Assisted("preset") presetPoolIdValue: String?,
+        ): ExpenseEditorViewModel
     }
 
     // KSP no puede nombrar una fábrica asistida con un value class: llega el texto y se envuelve aquí.
     private val movementId = movementIdValue?.let(::MovementId)
+    private val presetPoolId = presetPoolIdValue?.let(::PoolId)
     private val today = LocalDate.now(clock)
 
     private data class Form(
@@ -87,7 +96,8 @@ class ExpenseEditorViewModel @AssistedInject constructor(
         accounts.observeAccounts(),
         categories.observeAll(),
         tags.observeAll(),
-    ) { form, accountList, categoryList, tagList ->
+        pools.observePools(),
+    ) { form, accountList, categoryList, tagList, poolList ->
         ExpenseEditorUiState(
             isCorrection = movementId != null,
             loaded = form.loaded,
@@ -101,6 +111,8 @@ class ExpenseEditorViewModel @AssistedInject constructor(
             accountOptions = accountList.filter { !it.account.isArchived }.map { EntityOption(it.account.id.value, it.account.name) },
             categoryOptions = categoryOptions(categoryList),
             tagOptions = tagList.filter { !it.isArchived }.map { EntityOption(it.id.value, it.name) },
+            poolOptions = poolList.filter { pool -> !pool.isArchived || form.parts.any { it.poolId == pool.id } }
+                .map { EntityOption(it.id.value, it.name) },
             unassignedMinor = unassigned(form),
             error = form.error,
             negativeWarning = form.negativeWarning,
@@ -119,7 +131,9 @@ class ExpenseEditorViewModel @AssistedInject constructor(
             val account = last?.accountId ?: accounts.observeAccounts().first().firstOrNull { !it.account.isArchived }?.account?.id
             val category = last?.parts?.firstOrNull { it.kind == PartKind.NORMAL }?.categoryId
                 ?: categories.observeAll().first().firstOrNull { !it.isArchived }?.id
-            form.update { it.copy(loaded = true, accountId = account, parts = listOf(PartDraft(key = 0, categoryId = category)), nextKey = 1) }
+            val preset = presetPoolId?.let { pools.find(it) }?.takeIf { !it.isArchived }
+            val first = PartDraft(key = 0, categoryId = category).inPool(preset)
+            form.update { it.copy(loaded = true, accountId = account, parts = listOf(first), nextKey = 1) }
             return
         }
         val movement = movements.find(movementId)
@@ -139,7 +153,7 @@ class ExpenseEditorViewModel @AssistedInject constructor(
             occurredOn = movement.occurredOn,
             note = movement.note.orEmpty(),
             parts = parts.mapIndexed { i, part ->
-                PartDraft(i, minorToText(part.amount.amountMinor), part.categoryId, part.tagIds.toSet(), part.id)
+                PartDraft(i, minorToText(part.amount.amountMinor), part.categoryId, part.tagIds.toSet(), part.id, part.poolId)
             },
             nextKey = parts.size,
         )
@@ -157,6 +171,7 @@ class ExpenseEditorViewModel @AssistedInject constructor(
             is ExpenseEditorUiAction.TogglePartTag -> editPart(action.key) {
                 copy(tagIds = if (action.id in tagIds) tagIds - action.id else tagIds + action.id)
             }
+            is ExpenseEditorUiAction.SelectPartPool -> selectPool(action.key, action.id)
             ExpenseEditorUiAction.AddPart -> edit {
                 // Al pasar de una a dos partes, la primera conserva el total para no perder lo tecleado.
                 val seeded = if (parts.size == 1) listOf(parts.single().copy(amountText = totalText)) else parts
@@ -176,6 +191,22 @@ class ExpenseEditorViewModel @AssistedInject constructor(
                 submit(confirmNegative = true)
             }
             ExpenseEditorUiAction.DismissWarning -> form.update { it.copy(negativeWarning = null, pendingReason = null) }
+        }
+    }
+
+    /** Sin cúmulo conserva lo elegido; con cúmulo toma su categoría y suma sus conceptos por defecto (el usuario puede cambiarlos). */
+    private fun PartDraft.inPool(pool: Pool?): PartDraft =
+        if (pool == null) {
+            copy(poolId = null)
+        } else {
+            copy(poolId = pool.id, categoryId = pool.defaultCategoryId ?: categoryId, tagIds = tagIds + pool.defaultTagIds)
+        }
+
+    private fun selectPool(key: Int, id: PoolId?) {
+        if (id == null) return editPart(key) { inPool(null) }
+        viewModelScope.launch {
+            val pool = pools.find(id) ?: return@launch
+            editPart(key) { inPool(pool) }
         }
     }
 
@@ -232,7 +263,7 @@ class ExpenseEditorViewModel @AssistedInject constructor(
         return form.parts.map { part ->
             val category = part.categoryId ?: return null
             val minor = if (single) total?.amountMinor ?: 0L else MoneyInputFilter.toMinor(part.amountText) ?: 0L
-            ExpensePartInput(part.partId, Money(minor, CurrencyCode.PEN), category, part.tagIds.toList())
+            ExpensePartInput(part.partId, Money(minor, CurrencyCode.PEN), category, part.tagIds.toList(), part.poolId)
         }
     }
 

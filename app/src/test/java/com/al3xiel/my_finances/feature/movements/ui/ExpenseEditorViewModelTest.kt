@@ -5,12 +5,17 @@ import com.al3xiel.my_finances.domain.model.BusinessError
 import com.al3xiel.my_finances.domain.model.CategoryId
 import com.al3xiel.my_finances.domain.model.MovementId
 import com.al3xiel.my_finances.domain.model.PartId
+import com.al3xiel.my_finances.domain.model.PersonId
+import com.al3xiel.my_finances.domain.model.PoolId
 import com.al3xiel.my_finances.domain.model.event.ExpenseRegistered
 import com.al3xiel.my_finances.domain.model.event.MovementCorrected
 import com.al3xiel.my_finances.domain.model.event.MovementSnapshot
+import com.al3xiel.my_finances.domain.model.event.PoolKind
 import com.al3xiel.my_finances.feature.movements.domain.usecase.CorrectMovementUseCase
 import com.al3xiel.my_finances.feature.movements.domain.usecase.MovementFixture
 import com.al3xiel.my_finances.feature.movements.domain.usecase.RegisterExpenseUseCase
+import com.al3xiel.my_finances.feature.pools.domain.model.Pool
+import com.al3xiel.my_finances.feature.pools.domain.usecase.FakePoolRepository
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -23,8 +28,16 @@ class ExpenseEditorViewModelTest {
 
     private val f = MovementFixture()
 
-    private fun viewModel(id: String? = null) = ExpenseEditorViewModel(
-        id, f.movements, f.accounts, f.categories, f.tags,
+    private val pools = FakePoolRepository()
+    private val dogs = PoolId("dogs")
+    private val cats = PoolId("cats")
+
+    private fun pool(id: PoolId, archived: Boolean = false, category: CategoryId? = null, tags: List<com.al3xiel.my_finances.domain.model.TagId> = emptyList()) {
+        pools.pools[id] = Pool(id, id.value, PersonId("mom"), PoolKind.PERMANENT, category, tags, archived)
+    }
+
+    private fun viewModel(id: String? = null, presetPoolId: String? = null) = ExpenseEditorViewModel(
+        id, presetPoolId, f.movements, f.accounts, f.categories, f.tags, pools,
         RegisterExpenseUseCase(f.rules, f.accounts, f.recorder, f.ids),
         CorrectMovementUseCase(f.rules, f.accounts, f.movements, f.recorder, f.ids, f.writeLock),
         f.clock,
@@ -237,5 +250,98 @@ class ExpenseEditorViewModelTest {
         gate.complete(Unit)
 
         assertEquals(1, f.store.events.size)
+    }
+
+    @Test
+    fun offersTheActivePoolsAsOptions() {
+        pool(dogs); pool(cats, archived = true)
+
+        assertEquals(listOf("dogs"), viewModel().uiState.value.poolOptions.map { it.label })
+    }
+
+    @Test
+    fun choosingAPoolAppliesItsDefaultCategoryAndTagsToThePart() {
+        pool(dogs, category = f.fees, tags = listOf(f.tag))
+        val vm = viewModel()
+        val key = vm.uiState.value.parts.single().key
+
+        vm.onAction(ExpenseEditorUiAction.SelectPartPool(key, dogs))
+
+        val part = vm.uiState.value.parts.single()
+        assertEquals(dogs, part.poolId)
+        assertEquals(f.fees, part.categoryId)
+        assertEquals(setOf(f.tag), part.tagIds)
+    }
+
+    @Test
+    fun aPoolWithoutDefaultsLeavesTheCategoryAndTagsAlone() {
+        pool(dogs)
+        val vm = viewModel()
+        val before = vm.uiState.value.parts.single()
+
+        vm.onAction(ExpenseEditorUiAction.SelectPartPool(before.key, dogs))
+
+        val after = vm.uiState.value.parts.single()
+        assertEquals(dogs, after.poolId)
+        assertEquals(before.categoryId, after.categoryId)
+        assertEquals(before.tagIds, after.tagIds)
+    }
+
+    @Test
+    fun removingThePoolKeepsWhatWasAlreadyChosen() {
+        pool(dogs, category = f.fees)
+        val vm = viewModel()
+        val key = vm.uiState.value.parts.single().key
+        vm.onAction(ExpenseEditorUiAction.SelectPartPool(key, dogs))
+
+        vm.onAction(ExpenseEditorUiAction.SelectPartPool(key, null))
+
+        val part = vm.uiState.value.parts.single()
+        assertNull(part.poolId)
+        assertEquals(f.fees, part.categoryId)
+    }
+
+    @Test
+    fun openingFromAPoolPreselectsItOnTheFirstPart() {
+        pool(dogs, category = f.fees)
+
+        val state = viewModel(presetPoolId = dogs.value).uiState.value
+
+        assertEquals(dogs, state.parts.single().poolId)
+        assertEquals(f.fees, state.parts.single().categoryId)
+    }
+
+    @Test
+    fun anUnknownOrArchivedPresetPoolIsIgnored() {
+        pool(cats, archived = true)
+
+        assertNull(viewModel(presetPoolId = "ghost").uiState.value.parts.single().poolId)
+        assertNull(viewModel(presetPoolId = cats.value).uiState.value.parts.single().poolId)
+    }
+
+    @Test
+    fun theRegisteredPartCarriesThePool() {
+        pool(dogs)
+        val vm = viewModel(presetPoolId = dogs.value)
+        vm.onAction(ExpenseEditorUiAction.EditTotal("5"))
+
+        vm.onAction(ExpenseEditorUiAction.Save)
+
+        assertNull(vm.uiState.value.error)
+        val event = f.store.events.single().event as ExpenseRegistered
+        assertEquals(listOf(dogs), event.parts.map { it.poolId })
+        assertTrue(vm.uiState.value.saved)
+    }
+
+    @Test
+    fun correctingKeepsThePoolOfTheExistingPartsAndKeepsAnArchivedOneSelectable() {
+        pool(cats, archived = true)
+        val movement = f.expenseMovement("m1", f.bbva, "p1" to 400)
+        f.movements.movements[movement.id] = movement.copy(parts = movement.parts.map { it.copy(poolId = cats) })
+
+        val state = viewModel("m1").uiState.value
+
+        assertEquals(cats, state.parts.single().poolId)
+        assertEquals(listOf("cats"), state.poolOptions.map { it.label })
     }
 }

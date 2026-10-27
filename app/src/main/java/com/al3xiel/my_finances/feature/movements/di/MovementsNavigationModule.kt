@@ -12,6 +12,7 @@ import com.al3xiel.my_finances.core.navigation.RegisterActionContributor
 import com.al3xiel.my_finances.core.navigation.Route
 import com.al3xiel.my_finances.core.navigation.RouteContributor
 import com.al3xiel.my_finances.domain.model.MovementId
+import com.al3xiel.my_finances.domain.model.PoolId
 import com.al3xiel.my_finances.domain.model.MovementType
 import com.al3xiel.my_finances.feature.movements.ui.ExpenseEditorScreen
 import com.al3xiel.my_finances.feature.movements.ui.IncomeEditorScreen
@@ -44,14 +45,20 @@ object MovementsNavigationModule {
                         when (type) {
                             MovementType.EXPENSE -> navigator.push(ExpenseEditor(id.value))
                             MovementType.INCOME -> navigator.push(IncomeEditor(id.value))
-                            MovementType.TRANSFER -> Unit
+                            // Transferencias (D12), reembolsos, préstamos y pagos (D20) no se corrigen.
+                            MovementType.TRANSFER, MovementType.REIMBURSEMENT,
+                            MovementType.LOAN_DISBURSEMENT, MovementType.LOAN_REPAYMENT -> Unit
                         }
                     },
                 )
             }
             entry<ExpenseEditor> { key ->
                 val navigator = LocalNavigator.current
-                ExpenseEditorScreen(movementId = key.id?.let(::MovementId), onFinished = navigator::back)
+                ExpenseEditorScreen(
+                    movementId = key.id?.let(::MovementId),
+                    onFinished = navigator::back,
+                    presetPoolId = key.presetPoolId?.let(::PoolId),
+                )
             }
             entry<IncomeEditor> { key ->
                 val navigator = LocalNavigator.current
