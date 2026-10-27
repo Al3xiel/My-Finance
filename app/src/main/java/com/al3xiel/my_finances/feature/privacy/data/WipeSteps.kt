@@ -25,8 +25,10 @@ class DatabasesWipeStep @Inject constructor(
     override val priority = WipeStep.DATABASES_PRIORITY
 
     override suspend fun wipe() {
-        val failed = context.databaseList().filterNot(context::deleteDatabase)
-        check(failed.isEmpty()) { "${failed.size} database(s) could not be deleted" }
+        // Borrar una base arrastra su -journal/-wal, así que el resultado de cada llamada no sirve: se mira lo que queda.
+        context.databaseList().forEach(context::deleteDatabase)
+        val remaining = context.databaseList()
+        check(remaining.isEmpty()) { "${remaining.size} database file(s) could not be deleted" }
     }
 }
 
