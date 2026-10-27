@@ -126,6 +126,8 @@
 | Modo de tema | `ThemeMode` | enum: `SYSTEM`, `LIGHT`, `DARK` | Apariencia de la app; persiste como preferencia. |
 | Paso de borrado | `WipeStep` | interfaz | Una pieza del borrado total (clave, bases, preferencias, caché); cada feature puede sumar la suya y corren por prioridad. |
 | Resultado del borrado | `WipeResult` | modelo | Qué pasos del borrado total fallaron; vacío = borrado completo. |
+| Pestaña principal | `MainTab` | enum: `HOME`, `MOVEMENTS`, `RECEIVABLES`, `REPORTS`, `MORE` | Una de las 5 pestañas de la barra inferior; cada una con su back stack y su ruta raíz. |
+| Acción de registro | `RegisterAction` | modelo | Entrada del bottom sheet del botón "+" (texto, ruta destino, orden); la aporta cada feature y sin ninguna el botón no se muestra. |
 | Recordatorio | `Reminder` | |
 
 ---
