@@ -44,6 +44,19 @@
     <string name="theme_dark">Oscuro</string>
     <string name="settings_currency">Moneda</string>
     <string name="settings_currency_value">Soles (PEN)</string>
+
+    <string name="tab_home">Inicio</string>
+    <string name="tab_movements">Movimientos</string>
+    <string name="tab_receivables">Por cobrar</string>
+    <string name="tab_reports">Reportes</string>
+    <string name="tab_more">Más</string>
+    <string name="register_fab">Registrar</string>
+    <string name="register_sheet_title">¿Qué quieres registrar?</string>
+    <string name="empty_state_title">Aún no hay nada aquí</string>
+    <string name="empty_state_body">Esta sección se activará con las próximas funciones.</string>
+    <string name="more_title">Más</string>
+    <string name="more_entry_privacy">Privacidad</string>
+    <string name="more_entry_settings">Ajustes</string>
     <string name="settings_format">Formato</string>
     <string name="settings_format_value">es-PE</string>
 </resources>
