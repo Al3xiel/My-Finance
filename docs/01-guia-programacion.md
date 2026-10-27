@@ -109,6 +109,7 @@ pe.gcasas.finanzas
 │   ├── loans/          (deudas sueltas)
 │   ├── funds/          (fondos, arqueo)
 │   ├── expectedincome/
+│   ├── privacy/        (bloqueo S01, privacidad S71, ajustes S72, borrado total)
 │   ├── reports/
 │   └── backup/
 └── data/eventstore/

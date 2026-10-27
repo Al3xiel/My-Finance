@@ -14,7 +14,7 @@ export const PROFILE = {
 };
 
 /** Features de la guía (§4). `core/*` y `data/eventstore` son transversales. */
-export const FEATURES = ['accounts', 'movements', 'categories', 'tags', 'people', 'pools', 'loans', 'funds', 'expectedincome', 'reports', 'backup'];
+export const FEATURES = ['accounts', 'movements', 'categories', 'tags', 'people', 'pools', 'loans', 'funds', 'expectedincome', 'reports', 'privacy', 'backup'];
 
 /** Docs del proyecto y qué cubre cada uno: `am.mjs docs` dice cuál leer y si quedó atrás del código. */
 export const DOCS = {

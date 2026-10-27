@@ -61,7 +61,7 @@ Formato: **ID · Nombre (UI)** · `RouteKey` · propósito · acciones principal
 
 | ID | Pantalla | Ruta | Contenido | Acciones → evento |
 |---|---|---|---|---|
-| S01 | Bloqueo | `AppLock` | Logo, botón "Desbloquear" (biometría), PIN de respaldo | — |
+| S01 | Bloqueo | `AppLock` | Logo, botón "Desbloquear" (biometría o credencial del dispositivo); el contenido no se compone mientras está bloqueada | — |
 | S02 | Bienvenida | `Onboarding.Welcome` | Qué hace la app, "tus datos no salen del teléfono" | Continuar |
 | S03 | Crear cuentas | `Onboarding.Accounts` | Lista sugerida: BBVA, BCP, Efectivo, cada una con saldo inicial | Crear → `AccountCreated` ×n |
 | S04 | Seguridad | `Onboarding.Security` | Activar biometría, ocultar en recientes | Guardar ajustes |
@@ -122,8 +122,8 @@ Formato: **ID · Nombre (UI)** · `RouteKey` · propósito · acciones principal
 | S58 | Personas | `People` | Lista de alias | `Person*` |
 | S59 | Fuentes de ingreso | `IncomeSources` | Lista | `IncomeSourceCreated` |
 | S70 | Respaldo y restauración | `Backup` | Último respaldo, crear respaldo (contraseña + destino), restaurar, frecuencia de recordatorio | `BackupCreated` / `BackupRestored` |
-| S71 | Privacidad y seguridad | `Privacy` | Qué se guarda, biometría, ocultar en recientes, **Borrar todos mis datos** | — |
-| S72 | Ajustes | `Settings` | Tema, moneda por defecto, formato | — |
+| S71 | Privacidad y seguridad | `Privacy` | Qué se guarda, interruptores (bloqueo, minutos en segundo plano, pantalla segura, ocultar montos), **Borrar todos mis datos** (aviso → autenticar → escribir frase → borrar). Sin biometría ni credencial registradas el bloqueo no se activa y se avisa | — |
+| S72 | Ajustes | `Settings` | Tema (sistema/claro/oscuro); moneda PEN y formato `es-PE` solo informativos | — |
 | S73 | Herramientas de desarrollador | `DevTools` | Verificar cadena de hashes, re-proyectar, comparar proyecciones, ver eventos crudos, conciliaciones `needsReview` · **Abrir paquete de diagnóstico** → S64 | `ProjectionsRebuilt` |
 
 > S73 se habilita tocando 7 veces la versión de la app en "Acerca de" (patrón de Android).

@@ -116,7 +116,16 @@
 | Acción de UI | `UiAction` | |
 | Respaldo | `Backup` | Archivo cifrado con todos los eventos. |
 | Restaurar | `Restore` | |
-| Bloqueo de app | `AppLock` | |
+| Bloqueo de app | `AppLock` | pantalla (S01) | Pantalla que oculta la app hasta autenticar. |
+| Autenticación | `Authenticator` | interfaz de `core/security` | Verifica al usuario con biometría o credencial del dispositivo; sin PIN propio. |
+| Bloqueo tras segundo plano | `autoLockMinutes` | `Int` (0 / 1 / 5 / 15) | Minutos en segundo plano antes de volver a bloquear; 0 = siempre. Por defecto 5. |
+| Pantalla segura | `secureScreen` | `Boolean` | `FLAG_SECURE` global: sin capturas ni vista previa en recientes. |
+| Ocultar montos | `hideAmounts` | `Boolean` | Enmascara los montos en pantalla; persiste entre bloqueos. |
+| Borrado total | `WipeAllData` | caso de uso | Borra clave, bases, preferencias y caché; la clave primero. |
+| Ajustes de seguridad | `SecuritySettings` | modelo | Bloqueo, minutos en segundo plano, pantalla segura y ocultar montos; viven en DataStore. |
+| Modo de tema | `ThemeMode` | enum: `SYSTEM`, `LIGHT`, `DARK` | Apariencia de la app; persiste como preferencia. |
+| Paso de borrado | `WipeStep` | interfaz | Una pieza del borrado total (clave, bases, preferencias, caché); cada feature puede sumar la suya y corren por prioridad. |
+| Resultado del borrado | `WipeResult` | modelo | Qué pasos del borrado total fallaron; vacío = borrado completo. |
 | Recordatorio | `Reminder` | |
 
 ---
