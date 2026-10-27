@@ -8,8 +8,6 @@
     <string name="app_lock_message_failed">No se pudo verificar tu identidad.</string>
     <string name="app_lock_message_not_available">Este dispositivo no tiene biometría ni bloqueo de pantalla configurado.</string>
 
-    <string name="host_tab_privacy">Privacidad</string>
-    <string name="host_tab_settings">Ajustes</string>
 
     <string name="privacy_what_is_stored_title">Qué se guarda</string>
     <string name="privacy_what_is_stored">Tus cuentas, movimientos y notas viven solo en este teléfono, cifrados. La app no usa Internet ni hace copias en la nube.</string>
@@ -44,6 +42,8 @@
     <string name="theme_dark">Oscuro</string>
     <string name="settings_currency">Moneda</string>
     <string name="settings_currency_value">Soles (PEN)</string>
+    <string name="settings_format">Formato</string>
+    <string name="settings_format_value">es-PE</string>
 
     <string name="tab_home">Inicio</string>
     <string name="tab_movements">Movimientos</string>
@@ -57,6 +57,4 @@
     <string name="more_title">Más</string>
     <string name="more_entry_privacy">Privacidad</string>
     <string name="more_entry_settings">Ajustes</string>
-    <string name="settings_format">Formato</string>
-    <string name="settings_format_value">es-PE</string>
 </resources>
