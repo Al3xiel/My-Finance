@@ -51,6 +51,8 @@
 **FAB "Registrar" (+)**: visible en Inicio, Movimientos y Por cobrar. Abre un *bottom sheet*:
 `Gasto` · `Ingreso` · `Transferencia` · `Reembolso recibido` · `Registro rápido (texto)`
 
+El FAB solo aparece en la raíz de esas pestañas (no sobre un detalle apilado) y se oculta si ninguna feature aportó acciones. **Atrás** desde la raíz de una pestaña distinta de Inicio vuelve a Inicio; desde la raíz de Inicio sale de la app.
+
 ---
 
 ## 3. Inventario de pantallas
@@ -219,6 +221,7 @@ Coincidencia sin tildes ni mayúsculas, por prefijo y por alias. **Siempre muest
 ```
 
 - Cada pestaña tiene **su propio back stack** (se conserva al cambiar de pestaña).
+- Todas las rutas viven en un solo archivo (`core/navigation/Routes.kt`: la interfaz sellada exige mismo módulo y paquete); cada feature agrega las suyas ahí y aporta sus pantallas, acciones del "+" y entradas de "Más" por contribuciones Hilt (`@IntoSet`), así el shell no conoce a ninguna.
 - Los editores reciben "presets" para abrirse desde contexto (desde un cúmulo, un fondo o una conciliación) sin duplicar pantallas.
 - Los IDs viajan como `String` (UUID) y se convierten a `value class` en el ViewModel.
 
