@@ -10,6 +10,7 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
+import com.al3xiel.my_finances.feature.privacy.domain.model.ThemeMode
 
 private val DarkColorScheme = darkColorScheme(
     primary = Purple80,
@@ -55,4 +56,16 @@ fun MyfinancesTheme(
         typography = Typography,
         content = content
     )
+}
+@Composable
+fun MyfinancesTheme(
+    themeMode: ThemeMode,
+    content: @Composable () -> Unit
+) {
+    val darkTheme = when (themeMode) {
+        ThemeMode.SYSTEM -> isSystemInDarkTheme()
+        ThemeMode.LIGHT -> false
+        ThemeMode.DARK -> true
+    }
+    MyfinancesTheme(darkTheme = darkTheme, content = content)
 }
