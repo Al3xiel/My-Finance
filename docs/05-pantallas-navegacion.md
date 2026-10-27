@@ -51,7 +51,7 @@
 **FAB "Registrar" (+)**: visible en Inicio, Movimientos y Por cobrar. Abre un *bottom sheet*:
 `Gasto` · `Ingreso` · `Transferencia` · `Reembolso recibido` · `Registro rápido (texto)`
 
-El FAB se oculta si ninguna feature aportó acciones. **Atrás** desde la raíz de una pestaña distinta de Inicio vuelve a Inicio; desde la raíz de Inicio sale de la app.
+El FAB solo aparece en la raíz de esas pestañas (no sobre un detalle apilado) y se oculta si ninguna feature aportó acciones. **Atrás** desde la raíz de una pestaña distinta de Inicio vuelve a Inicio; desde la raíz de Inicio sale de la app.
 
 ---
 
