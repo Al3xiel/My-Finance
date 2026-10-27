@@ -9,6 +9,7 @@ import com.al3xiel.my_finances.domain.model.LedgerEntryKind
 import com.al3xiel.my_finances.domain.model.MovementStatus
 import com.al3xiel.my_finances.domain.model.MovementType
 import com.al3xiel.my_finances.domain.model.PartKind
+import com.al3xiel.my_finances.feature.pools.domain.rules.ReimbursementStatus
 
 @Entity(tableName = "movements", indices = [Index("account_id"), Index("occurred_on")])
 data class MovementEntity(
@@ -27,14 +28,24 @@ data class MovementEntity(
     @ColumnInfo(name = "last_sequence") val lastSequence: Long,
 )
 
-/** Cúmulo, fondo y reembolso no existen todavía: sus migraciones agregan las columnas. */
-@Entity(tableName = "movement_parts", indices = [Index("movement_id"), Index("category_id")])
+/**
+ * Dueños de cada columna (los proyectores corren uno tras otro en el replay): `pool_id` y `created_sequence`, el de
+ * movimientos; `pool_period_id`, el de cúmulos; `reimbursed_minor` y `reimbursement_status`, el de reembolsos.
+ * Fondo no existe todavía: su migración agrega la columna.
+ */
+@Entity(tableName = "movement_parts", indices = [Index("movement_id"), Index("category_id"), Index("pool_id")])
 data class MovementPartEntity(
     @PrimaryKey val id: String,
     @ColumnInfo(name = "movement_id") val movementId: String,
     @ColumnInfo(name = "amount_minor") val amountMinor: Long,
     @ColumnInfo(name = "category_id") val categoryId: String,
     val kind: PartKind,
+    @ColumnInfo(name = "pool_id") val poolId: String? = null,
+    @ColumnInfo(name = "pool_period_id") val poolPeriodId: String? = null,
+    @ColumnInfo(name = "reimbursed_minor", defaultValue = "0") val reimbursedMinor: Long = 0,
+    @ColumnInfo(name = "reimbursement_status", defaultValue = "PENDING")
+    val reimbursementStatus: ReimbursementStatus = ReimbursementStatus.PENDING,
+    @ColumnInfo(name = "created_sequence", defaultValue = "0") val createdSequence: Long = 0,
 )
 
 @Entity(tableName = "movement_part_tags", primaryKeys = ["part_id", "tag_id"], indices = [Index("tag_id")])

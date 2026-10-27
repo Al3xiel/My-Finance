@@ -17,6 +17,16 @@ class FakeMovementDao : MovementDao {
         partTags.removeAll { it.partId in ids }
     }
 
+    override suspend fun partIdsOf(movementId: String) = parts.values.filter { it.movementId == movementId }.map { it.id }
+
+    override suspend fun updatePartCore(id: String, amountMinor: Long, categoryId: String, poolId: String?) {
+        parts[id]?.let { parts[id] = it.copy(amountMinor = amountMinor, categoryId = categoryId, poolId = poolId) }
+    }
+
+    override suspend fun deletePartsById(ids: List<String>) {
+        parts.keys.removeAll(ids.toSet())
+    }
+
     override suspend fun deletePartsOf(movementId: String) {
         parts.values.removeAll { it.movementId == movementId }
     }
@@ -47,6 +57,7 @@ class FakeLedgerDao : LedgerDao {
     override suspend fun balanceOf(accountId: String) =
         entries.values.filter { it.accountId == accountId && !it.isVoided }.sumOf { it.deltaMinor }
 
+    override suspend fun lastSequenceOf(accountId: String) = balances[accountId]?.lastSequence
     override suspend fun upsertBalance(balance: AccountBalanceEntity) { balances[balance.accountId] = balance }
 
     override suspend fun clearEntries() = entries.clear()

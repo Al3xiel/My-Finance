@@ -31,7 +31,8 @@ class MovementProjector @Inject constructor(
     private val ledger: LedgerDao,
 ) : EventProjector {
     override val name = "movement"
-    override val version = 1
+    override val version = 2
+    private val voidable = setOf(MovementType.INCOME, MovementType.EXPENSE)
 
     override suspend fun apply(event: StoredEvent) {
         val occurredOn = event.occurredOn.toString()
@@ -79,15 +80,14 @@ class MovementProjector @Inject constructor(
 
         val previousAccounts = ledger.accountIdsOf(id)
         ledger.voidEntriesOf(id)
-        movements.deletePartTagsOf(id)
-        movements.deletePartsOf(id)
         post(event, saveSnapshot(event, id, e.snapshot, current.revision + 1), previousAccounts)
     }
 
     private suspend fun void(event: StoredEvent, e: MovementVoided) {
         val id = e.movementId.value
         val current = movements.movement(id) ?: return
-        if (current.status == MovementStatus.VOIDED || current.type == MovementType.TRANSFER) return
+        // Solo ingresos y gastos: transferencias (D12), reembolsos y deudas los anula su propio proyector.
+        if (current.status == MovementStatus.VOIDED || current.type !in voidable) return
 
         val accounts = ledger.accountIdsOf(id)
         ledger.voidEntriesOf(id)
@@ -114,7 +114,7 @@ class MovementProjector @Inject constructor(
                 movements.upsertMovement(
                     movement(event, movementId, MovementType.EXPENSE, snapshot.accountId, null, snapshot.total, null, snapshot.note, revision),
                 )
-                saveParts(movementId, snapshot.parts)
+                movements.saveParts(movementId, snapshot.parts, event.sequence)
                 listOf(entry(event, 0, movementId, snapshot.accountId, snapshot.total, LedgerEntryKind.EXPENSE, occurredOn, negate = true))
             }
         }
@@ -136,15 +136,6 @@ class MovementProjector @Inject constructor(
             entries += entry(event, 2, id, e.fromAccountId, fee.amount, LedgerEntryKind.FEE, occurredOn, negate = true)
         }
         return entries
-    }
-
-    private suspend fun saveParts(movementId: String, parts: List<ExpensePartData>) {
-        movements.insertParts(
-            parts.map { MovementPartEntity(it.partId.value, movementId, it.amount.amountMinor, it.categoryId.value, PartKind.NORMAL) },
-        )
-        movements.insertPartTags(
-            parts.flatMap { part -> part.tagIds.map { MovementPartTagEntity(part.partId.value, it.value) } },
-        )
     }
 
     private fun movement(

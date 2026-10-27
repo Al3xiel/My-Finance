@@ -22,8 +22,21 @@ import com.al3xiel.my_finances.data.projection.movement.MovementEntity
 import com.al3xiel.my_finances.data.projection.movement.MovementPartEntity
 import com.al3xiel.my_finances.data.projection.movement.MovementPartTagEntity
 import com.al3xiel.my_finances.data.projection.movement.MovementQueryDao
+import com.al3xiel.my_finances.data.projection.loan.LoanDao
+import com.al3xiel.my_finances.data.projection.loan.LoanEntity
+import com.al3xiel.my_finances.data.projection.loan.LoanQueryDao
+import com.al3xiel.my_finances.data.projection.loan.LoanRepaymentEntity
+import com.al3xiel.my_finances.data.projection.pool.PersonQueryDao
+import com.al3xiel.my_finances.data.projection.pool.PoolDao
+import com.al3xiel.my_finances.data.projection.pool.PoolEntity
+import com.al3xiel.my_finances.data.projection.pool.PoolPeriodEntity
+import com.al3xiel.my_finances.data.projection.pool.PoolQueryDao
+import com.al3xiel.my_finances.data.projection.pool.ReimbursementAllocationEntity
+import com.al3xiel.my_finances.data.projection.pool.ReimbursementDao
+import com.al3xiel.my_finances.data.projection.pool.ReimbursementEntity
+import com.al3xiel.my_finances.data.projection.pool.SettlementStatementEntity
 
-/** Base cifrada con SQLCipher. Versión 1 sin `Migration`: las siguientes features agregan las suyas. */
+/** Base cifrada con SQLCipher. Cada versión nueva trae su `Migration` en `migration/`. */
 @Database(
     entities = [
         EventEntity::class,
@@ -38,8 +51,15 @@ import com.al3xiel.my_finances.data.projection.movement.MovementQueryDao
         MovementPartTagEntity::class,
         LedgerEntryEntity::class,
         AccountBalanceEntity::class,
+        PoolEntity::class,
+        PoolPeriodEntity::class,
+        SettlementStatementEntity::class,
+        ReimbursementEntity::class,
+        ReimbursementAllocationEntity::class,
+        LoanEntity::class,
+        LoanRepaymentEntity::class,
     ],
-    version = 1,
+    version = 2,
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -51,4 +71,10 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun catalogQueryDao(): CatalogQueryDao
     abstract fun movementQueryDao(): MovementQueryDao
     abstract fun ledgerQueryDao(): LedgerQueryDao
+    abstract fun poolDao(): PoolDao
+    abstract fun reimbursementDao(): ReimbursementDao
+    abstract fun loanDao(): LoanDao
+    abstract fun poolQueryDao(): PoolQueryDao
+    abstract fun personQueryDao(): PersonQueryDao
+    abstract fun loanQueryDao(): LoanQueryDao
 }
