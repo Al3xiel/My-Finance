@@ -160,6 +160,7 @@
 | Cambios de un esperado | `ExpectedIncomeChanges` | modelo | Los campos que el usuario quiere cambiar al editar; `null` = dejar como está. |
 | Seguimiento de anulación | `ExpectedIncomeVoidHooks` | regla | Al anular el ingreso que confirmó un esperado, cancela con motivo el siguiente que generó o veta la anulación si ya se confirmó (D28); se engancha por `MovementVoidFollowUp`. |
 | Política de recordatorio | `ReminderPolicy` | regla | Cuándo avisar de un esperado vencido: el día siguiente a `expectedTo`, luego cada 3 días, máximo 3 avisos. |
+| Sugerencia de esperado | `ExpectedIncomeSuggestion` / `ExpectedIncomeSuggestions` | modelo / regla | Un esperado pendiente de la misma cuenta y fuente que S23 propone confirmar con un toque ("¿confirma Sueldo ~S/ 2,000?"). |
 | Registro de avisos | `ReminderLog` | modelo | Cuántos avisos lleva un esperado y la fecha del último ("ya avisado", en DataStore). |
 | Programador de recordatorios | `ReminderScheduler` | interfaz | Deja programada la corrida diaria del recordatorio o la cancela. |
 

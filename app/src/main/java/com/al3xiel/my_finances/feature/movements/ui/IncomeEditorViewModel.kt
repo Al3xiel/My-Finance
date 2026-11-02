@@ -19,9 +19,10 @@ import com.al3xiel.my_finances.domain.model.attempt
 import com.al3xiel.my_finances.domain.model.errorOrNull
 import com.al3xiel.my_finances.feature.accounts.domain.repository.AccountRepository
 import com.al3xiel.my_finances.feature.accounts.domain.repository.IncomeSourceRepository
-import com.al3xiel.my_finances.feature.expectedincome.domain.model.ExpectedIncome
 import com.al3xiel.my_finances.feature.expectedincome.domain.repository.ExpectedIncomeRepository
 import com.al3xiel.my_finances.feature.expectedincome.domain.rules.ExpectedIncomeRules
+import com.al3xiel.my_finances.feature.expectedincome.domain.rules.ExpectedIncomeSuggestion
+import com.al3xiel.my_finances.feature.expectedincome.domain.rules.ExpectedIncomeSuggestions
 import com.al3xiel.my_finances.feature.expectedincome.domain.usecase.ConfirmExpectedIncomeUseCase
 import com.al3xiel.my_finances.feature.funds.domain.model.FundStatus
 import com.al3xiel.my_finances.feature.funds.domain.repository.FundRepository
@@ -44,15 +45,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.Clock
 import java.time.LocalDate
-
-/** Un ingreso esperado pendiente que este ingreso podría confirmar ("¿confirma Sueldo ~S/ 2,000?"). */
-data class ExpectedIncomeSuggestion(
-    val id: ExpectedIncomeId,
-    val sourceName: String,
-    val estimated: Money,
-    val expectedFrom: LocalDate,
-    val expectedTo: LocalDate,
-)
 
 data class IncomeEditorUiState(
     val isCorrection: Boolean = false,
@@ -79,27 +71,6 @@ data class IncomeEditorUiState(
     val showReasonDialog: Boolean = false,
     val saved: Boolean = false,
 )
-
-sealed interface IncomeEditorUiAction {
-    data class EditAmount(val text: String) : IncomeEditorUiAction
-    data class SelectAccount(val id: AccountId) : IncomeEditorUiAction
-    data class SelectSource(val id: IncomeSourceId) : IncomeEditorUiAction
-    data class SelectOccurredOn(val occurredOn: LocalDate) : IncomeEditorUiAction
-    data class EditNote(val text: String) : IncomeEditorUiAction
-
-    /** `null` quita la recarga; elegir un fondo propone apartar todo el ingreso. */
-    data class SelectTopUpFund(val id: FundId?) : IncomeEditorUiAction
-    data class EditTopUp(val text: String) : IncomeEditorUiAction
-
-    /** Un toque en la sugerencia: este ingreso confirma ese esperado (y propone su monto si aún no hay uno). */
-    data class SelectExpected(val id: ExpectedIncomeId) : IncomeEditorUiAction
-    data object ClearExpected : IncomeEditorUiAction
-    data object Save : IncomeEditorUiAction
-    data class ConfirmReason(val reason: String) : IncomeEditorUiAction
-    data object DismissReason : IncomeEditorUiAction
-    data object ConfirmNegativeBalance : IncomeEditorUiAction
-    data object DismissWarning : IncomeEditorUiAction
-}
 
 /** S23: registra un ingreso nuevo, o corrige uno existente (con motivo) si recibe su id. */
 @HiltViewModel(assistedFactory = IncomeEditorViewModel.Factory::class)
@@ -155,8 +126,7 @@ class IncomeEditorViewModel @AssistedInject constructor(
         form, accounts.observeAccounts(), incomeSources.observeAll(), funds.observeFunds(), expectedIncomes.observeAll(),
     ) { form, accountList, sourceList, fundList, expectedList ->
         val sourceNames = sourceList.associate { it.id to it.name }
-        fun suggestion(e: ExpectedIncome) = ExpectedIncomeSuggestion(e.id, sourceNames[e.incomeSourceId].orEmpty(), e.estimated, e.range.from, e.range.to)
-        val selected = form.expectedIncomeId?.let { id -> expectedList.firstOrNull { it.id == id } }
+        val selected = ExpectedIncomeSuggestions.selected(expectedList, sourceNames, form.expectedIncomeId)
         IncomeEditorUiState(
             isCorrection = movementId != null,
             loaded = form.loaded,
@@ -174,13 +144,11 @@ class IncomeEditorViewModel @AssistedInject constructor(
             fundOptions = if (movementId != null) emptyList() else fundList.filter { it.fund.status == FundStatus.ACTIVE }.map { EntityOption(it.fund.id.value, it.fund.name) },
             topUpFundId = form.topUpFundId,
             topUpText = form.topUpText,
-            selectedExpected = selected?.let(::suggestion),
+            selectedExpected = selected,
             suggestions = if (movementId != null || selected != null) {
                 emptyList()
             } else {
-                expectedList
-                    .filter { ExpectedIncomeRules.isPending(it.status) && it.accountId == form.accountId && it.incomeSourceId == form.sourceId }
-                    .map(::suggestion)
+                ExpectedIncomeSuggestions.of(expectedList, sourceNames, form.accountId, form.sourceId)
             },
             error = form.error,
             negativeWarning = form.negativeWarning,
