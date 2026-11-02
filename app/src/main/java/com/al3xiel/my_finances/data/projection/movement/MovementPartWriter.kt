@@ -12,12 +12,12 @@ internal suspend fun MovementDao.saveParts(movementId: String, parts: List<Expen
     deletePartTagsOf(movementId)
     deletePartsById((existing - parts.map { it.partId.value }.toSet()).toList())
     val (kept, added) = parts.partition { it.partId.value in existing }
-    kept.forEach { updatePartCore(it.partId.value, it.amount.amountMinor, it.categoryId.value, it.poolId?.value) }
+    kept.forEach { updatePartCore(it.partId.value, it.amount.amountMinor, it.categoryId.value, it.poolId?.value, it.fundId?.value) }
     insertParts(
         added.map {
             MovementPartEntity(
                 it.partId.value, movementId, it.amount.amountMinor, it.categoryId.value, PartKind.NORMAL,
-                poolId = it.poolId?.value, createdSequence = sequence,
+                poolId = it.poolId?.value, fundId = it.fundId?.value, createdSequence = sequence,
             )
         },
     )

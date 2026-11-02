@@ -10,12 +10,14 @@ import com.al3xiel.my_finances.domain.model.PartKind
 import com.al3xiel.my_finances.domain.model.event.AccountCreated
 import com.al3xiel.my_finances.domain.model.event.ExpensePartData
 import com.al3xiel.my_finances.domain.model.event.ExpenseRegistered
+import com.al3xiel.my_finances.domain.model.event.FundCounted
 import com.al3xiel.my_finances.domain.model.event.IncomeRegistered
 import com.al3xiel.my_finances.domain.model.event.MovementCorrected
 import com.al3xiel.my_finances.domain.model.event.MovementSnapshot
 import com.al3xiel.my_finances.domain.model.event.MovementVoided
 import com.al3xiel.my_finances.domain.model.event.StoredEvent
 import com.al3xiel.my_finances.domain.model.event.TransferRegistered
+import com.al3xiel.my_finances.domain.model.event.UntrackedSpendData
 import javax.inject.Inject
 
 /**
@@ -31,7 +33,7 @@ class MovementProjector @Inject constructor(
     private val ledger: LedgerDao,
 ) : EventProjector {
     override val name = "movement"
-    override val version = 2
+    override val version = 3
     private val voidable = setOf(MovementType.INCOME, MovementType.EXPENSE)
 
     override suspend fun apply(event: StoredEvent) {
@@ -55,6 +57,8 @@ class MovementProjector @Inject constructor(
             is MovementCorrected -> correct(event, e)
 
             is MovementVoided -> void(event, e)
+
+            is FundCounted -> e.untrackedSpend?.let { post(event, saveUntracked(event, it, occurredOn)) }
 
             else -> Unit
         }
@@ -118,6 +122,26 @@ class MovementProjector @Inject constructor(
                 listOf(entry(event, 0, movementId, snapshot.accountId, snapshot.total, LedgerEntryKind.EXPENSE, occurredOn, negate = true))
             }
         }
+    }
+
+    /**
+     * El gasto no registrado de un arqueo: un movimiento que no se anula ni se corrige (D25) con una parte sintética que lo
+     * hace contar por su categoría (D11).
+     */
+    private suspend fun saveUntracked(event: StoredEvent, spend: UntrackedSpendData, occurredOn: String): LedgerEntryEntity {
+        val id = spend.movementId.value
+        movements.upsertMovement(
+            movement(event, id, MovementType.FUND_UNTRACKED_SPEND, spend.accountId, null, spend.amount, null, null, revision = 1),
+        )
+        movements.insertParts(
+            listOf(
+                MovementPartEntity(
+                    "$id-untracked", id, spend.amount.amountMinor, spend.categoryId.value, PartKind.UNTRACKED,
+                    createdSequence = event.sequence,
+                ),
+            ),
+        )
+        return entry(event, 0, id, spend.accountId, spend.amount, LedgerEntryKind.EXPENSE, occurredOn, negate = true)
     }
 
     private suspend fun saveTransfer(event: StoredEvent, e: TransferRegistered, occurredOn: String): List<LedgerEntryEntity> {
