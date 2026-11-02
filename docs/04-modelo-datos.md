@@ -327,10 +327,11 @@ Si es mayor que 0, el arqueo **genera un gasto implícito** (`untrackedSpend`) e
 | Evento | Payload |
 |---|---|
 | `ExpectedIncomeScheduled` | `expectedIncomeId, incomeSourceId, accountId, estimatedAmount, expectedFrom, expectedTo, repeatsMonthly: Boolean` |
-| `ExpectedIncomeConfirmed` | `expectedIncomeId, incomeMovementId` |
+| `ExpectedIncomeEdited` | `expectedIncomeId, incomeSourceId?, accountId?, estimatedAmount?, expectedFrom?, expectedTo?, repeatsMonthly?` (solo los campos presentes cambian; solo mientras esté pendiente) |
+| `ExpectedIncomeConfirmed` | `expectedIncomeId, incomeMovementId, nextExpectedIncomeId?` |
 | `ExpectedIncomeCancelled` | `expectedIncomeId, reason?` |
 
-`OVERDUE` es derivado (hoy > `expectedTo` sin confirmar). Si `repeatsMonthly`, al confirmar se programa el siguiente con el mismo rango de días.
+`OVERDUE` es derivado (hoy > `expectedTo` sin confirmar) y nunca se guarda. Si `repeatsMonthly`, al confirmar el caso de uso (no el proyector) emite, en la misma correlación que `IncomeRegistered` y `ExpectedIncomeConfirmed`, el siguiente `ExpectedIncomeScheduled` con un ID nuevo y +1 mes en `expectedFrom` y `expectedTo` (D28); ese ID va en `nextExpectedIncomeId`. Cancelar una ocurrencia termina la serie. Anular el ingreso vinculado devuelve el esperado a pendiente y cancela con motivo el siguiente que había generado (D28); se rechaza si ese siguiente ya está confirmado.
 
 ### 3.8 Auditoría técnica
 
@@ -419,7 +420,7 @@ erDiagram
 | `fund_topups` | `id PK (<sequence>-topup), fund_id FK, amount_minor, linked_income_movement_id?, occurred_on` |
 | `fund_usage_days` | `fund_id FK, day` · PK compuesta |
 | `fund_counts` | `id PK, fund_id FK, declared_remaining_minor, estimated_spent_minor?, real_spent_minor, deviation_minor?, occurred_on` · estimado y desviación solo en `DAILY_ESTIMATE` |
-| `expected_incomes` | `id PK, income_source_id FK, account_id FK, estimated_minor, expected_from, expected_to, repeats_monthly, status, confirmed_movement_id?` |
+| `expected_incomes` | `id PK, income_source_id FK, account_id FK, estimated_minor, expected_from, expected_to, repeats_monthly, status (SCHEDULED/CONFIRMED/CANCELLED), cancel_reason?, confirmed_movement_id?, next_expected_id?` · índice por `status` · sin `OVERDUE` (D27) |
 
 ### 4.6 Trazabilidad de origen y conciliación
 
@@ -550,3 +551,6 @@ Resultado: BBVA 780 · BCP 170 · Efectivo 95 · Apartado Pasajes 45 · Por cobr
 | D24 | Recargas | Tabla `fund_topups`; un ingreso con recargas vinculadas no se anula ni baja de lo recargado; una recarga no se anula (se compensa con el cierre o con el arqueo) (2026-10-27) |
 | D25 | Gasto no registrado | El movimiento `FUND_UNTRACKED_SPEND` no se anula ni se corrige (como las transferencias, D12); un arqueo equivocado se compensa con el siguiente (2026-10-27) |
 | D26 | Corregir a la baja un gasto cubierto por un arqueo | Se permite (D23) y no recalcula el arqueo: el apartado sube y lo declarado queda como historia; para reflejarlo se arquea de nuevo (2026-11-02) |
+| D27 | Estado efectivo de un esperado | `expected_incomes.status` guarda `SCHEDULED/CONFIRMED/CANCELLED`; `OVERDUE` y "vuelve a pendiente" (movimiento confirmado anulado) se calculan al consultar uniendo `movements`, porque el proyector no lee otras tablas en el replay (2026-11-01) |
+| D28 | Vínculo esperado ↔ ingreso | `ExpectedIncomeConfirmed` suma `nextExpectedIncomeId?`. Anular el ingreso vinculado cancela con motivo el siguiente (gancho `MovementVoidFollowUp`) y se rechaza si ese siguiente ya está confirmado; corregir el ingreso no cambia el esperado (2026-11-01) |
+| D29 | Siguiente ocurrencia a fin de mes | Si `expectedFrom` o `expectedTo` es el último día de su mes, el siguiente cae en el último día del mes siguiente; el resto, mismo día. 29 y 30 de enero pasan a 28 de febrero y ahí se quedan (límite conocido, sin ancla) (2026-11-01) |

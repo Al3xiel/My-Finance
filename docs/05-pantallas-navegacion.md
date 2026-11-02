@@ -82,7 +82,7 @@ Formato: **ID · Nombre (UI)** · `RouteKey` · propósito · acciones principal
 | S20 | Movimientos | `Movements` | Lista agrupada por día, con chips de filtro (cuenta, tipo, categoría, concepto, cúmulo, fondo, rango de fechas) y búsqueda en notas | Tocar → S21 |
 | S21 | Detalle de movimiento | `MovementDetail(id)` | Datos, partes, conceptos, estado de reembolso, **historial de versiones** (eventos del agregado) | Corregir → S22 · Anular → `MovementVoided` (pide motivo; no disponible en transferencias, que se revierten con otra, D12) |
 | S22 | Registrar / corregir gasto | `ExpenseEditor(id?, presetPoolId?, presetFundId?)` | Monto, cuenta, fecha, nota · **partes** (por defecto 1): monto, categoría, conceptos, cúmulo (al elegirlo toma su categoría y conceptos por defecto) **o** fondo · indicador "falta asignar S/ X" | Guardar → `ExpenseRegistered` / `MovementCorrected` (pide motivo) |
-| S23 | Registrar ingreso | `IncomeEditor(id?)` | Monto, cuenta, fuente, fecha, nota · opción "apartar en fondo" (fondo y monto ≤ el ingreso) · opción "confirma ingreso esperado" | Guardar → `IncomeRegistered` (+ `FundToppedUp` / `ExpectedIncomeConfirmed`) |
+| S23 | Registrar ingreso | `IncomeEditor(id?, expectedIncomeId?)` | Monto, cuenta, fuente, fecha, nota · opción "apartar en fondo" (fondo y monto ≤ el ingreso) · opción "confirma ingreso esperado" (con `expectedIncomeId` llega prellenado; sin él sugiere los pendientes de la misma cuenta y fuente: "¿confirma Sueldo ~S/ 2,000?") | Guardar → `IncomeRegistered` (+ `FundToppedUp` / `ExpectedIncomeConfirmed`) |
 | S24 | Transferencia | `TransferEditor` | Desde, hacia, monto, comisión opcional; etiqueta automática "Retiro"/"Depósito". Solo crea: no se edita ni se corrige; un error se revierte con otra transferencia (D12) | Guardar → `TransferRegistered` |
 | S25 | Registro rápido | `QuickEntry` | Campo de texto + vista previa interpretada (ver §5) | Confirmar → evento correspondiente |
 
@@ -118,14 +118,14 @@ Formato: **ID · Nombre (UI)** · `RouteKey` · propósito · acciones principal
 | S52 | Fondos | `Funds` / `FundDetail(id)` | Asignado, gastado (detallado + no registrado), restante estimado, días de uso, historial de arqueos y desviación | Recargar → `FundToppedUp` · Marcar día → `UsageDayMarked` · **Arquear** → S53 · Cerrar → `FundClosed` |
 | S53 | Arqueo de fondo | `FundCount(id)` | "¿Cuánto te queda?" · cálculo de gastado vs. estimado · si hay gasto no registrado: cuenta y categoría a cargar | Confirmar → `FundCounted` |
 | S54 | Crear / editar fondo | `FundEditor(id?)` | Nombre, modo de consumo, estimado diario, fechas; el modo y el inicio se muestran bloqueados cuando ya tienen historia | Guardar → `FundCreated` / `FundEdited` |
-| S55 | Ingresos esperados | `ExpectedIncomes` / `ExpectedIncomeEditor(id?)` | Lista con estado (programado/vencido/confirmado), rango de fechas | Programar → `ExpectedIncomeScheduled` · Confirmar (abre S23) · Cancelar |
+| S55 | Ingresos esperados | `ExpectedIncomes` / `ExpectedIncomeEditor(id?)` | Lista con estado (programado/vencido/confirmado/cancelado), rango de fechas, marca de cuenta archivada (las fuentes no se archivan) que bloquea Confirmar hasta editarlo; el editor corrige uno pendiente | Programar → `ExpectedIncomeScheduled` · Confirmar (abre S23) · Cancelar |
 | S56 | Categorías | `Categories` | Árbol de 1 nivel | `Category*` |
 | S57 | Conceptos | `Tags` | Lista por tipo (persona/tema) | `Tag*` |
 | S58 | Personas | `People` | Lista de alias | `Person*` |
 | S59 | Fuentes de ingreso | `IncomeSources` | Lista | `IncomeSourceCreated` |
 | S70 | Respaldo y restauración | `Backup` | Último respaldo, crear respaldo (contraseña + destino), restaurar, frecuencia de recordatorio | `BackupCreated` / `BackupRestored` |
 | S71 | Privacidad y seguridad | `Privacy` | Qué se guarda, interruptores (bloqueo, minutos en segundo plano, pantalla segura, ocultar montos), **Borrar todos mis datos** (aviso → autenticar → escribir frase → borrar). Sin biometría ni credencial registradas el bloqueo no se activa y se avisa | — |
-| S72 | Ajustes | `Settings` | Tema (sistema/claro/oscuro); moneda PEN y formato `es-PE` solo informativos | — |
+| S72 | Ajustes | `Settings` | Tema (sistema/claro/oscuro); moneda PEN y formato `es-PE` solo informativos · secciones aportadas por cada feature (`SettingsSectionContributor`), p. ej. **Recordatorios** de ingresos esperados: interruptor que pide `POST_NOTIFICATIONS` en contexto | — |
 | S73 | Herramientas de desarrollador | `DevTools` | Verificar cadena de hashes, re-proyectar, comparar proyecciones, ver eventos crudos, conciliaciones `needsReview` · **Abrir paquete de diagnóstico** → S64 | `ProjectionsRebuilt` |
 
 > S73 se habilita tocando 7 veces la versión de la app en "Acerca de" (patrón de Android).
@@ -218,6 +218,9 @@ Coincidencia sin tildes ni mayúsculas, por prefijo y por alias. **Siempre muest
 @Serializable data class FundDetail(val id: String) : Route
 @Serializable data class FundCount(val id: String) : Route
 @Serializable data class FundEditor(val id: String? = null) : Route
+@Serializable data class IncomeEditor(val id: String? = null, val expectedIncomeId: String? = null) : Route
+@Serializable data object ExpectedIncomes : Route
+@Serializable data class ExpectedIncomeEditor(val id: String? = null) : Route
 @Serializable data class PoolDetail(val id: String) : Route
 @Serializable data class PoolEditor(val id: String? = null) : Route
 @Serializable data class SettlementStatement(val poolId: String) : Route
