@@ -20,6 +20,7 @@ import com.al3xiel.my_finances.feature.privacy.domain.model.SecuritySettings
 import com.al3xiel.my_finances.feature.privacy.domain.repository.SecuritySettingsRepository
 import com.al3xiel.my_finances.feature.privacy.domain.model.ThemeMode
 import com.al3xiel.my_finances.feature.privacy.domain.repository.ThemeRepository
+import com.al3xiel.my_finances.feature.backup.data.ChainIntegrityMonitor
 import com.al3xiel.my_finances.feature.privacy.ui.AppLockGate
 import com.al3xiel.my_finances.ui.theme.MyfinancesTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -35,6 +36,9 @@ class MainActivity : FragmentActivity() {
 
     @Inject
     lateinit var themeRepository: ThemeRepository
+
+    @Inject
+    lateinit var chainMonitor: ChainIntegrityMonitor
 
     @Inject
     lateinit var activityHolder: ForegroundActivityHolder
@@ -55,6 +59,8 @@ class MainActivity : FragmentActivity() {
             MyfinancesTheme(themeMode = themeMode) {
                 CompositionLocalProvider(LocalHideAmounts provides settings.hideAmounts) {
                     AppLockGate {
+                        // Solo se compone desbloqueada: la cadena se verifica en segundo plano, una vez por proceso.
+                        LaunchedEffect(Unit) { chainMonitor.checkOnce() }
                         Box(Modifier.fillMaxSize().testTag(APP_CONTENT_TAG)) { MainScaffold() }
                     }
                 }
