@@ -28,7 +28,7 @@ class NavigationEntriesTest {
     @Test
     fun theRegisterSheetOffersExpenseIncomeAndTransferInThatOrder() {
         assertEquals(listOf("expense", "income", "transfer"), registerActions.actions.map { it.id })
-        assertEquals(listOf(ExpenseEditor(), IncomeEditor(), TransferEditor), registerActions.actions.map { it.route })
+        assertEquals(listOf(ExpenseEditor(), IncomeEditor(), TransferEditor()), registerActions.actions.map { it.route })
         assertEquals(true, registerActions.hasActions)
     }
 
@@ -55,7 +55,7 @@ class NavigationEntriesTest {
     @Test
     fun everyNewRouteSurvivesSavingAndRestoringTheTabState() {
         val routes = listOf<Route>(
-            MovementDetail("m1"), ExpenseEditor(), ExpenseEditor("m1"), IncomeEditor("m2"), TransferEditor,
+            MovementDetail("m1"), ExpenseEditor(), ExpenseEditor("m1"), IncomeEditor("m2"), TransferEditor(),
             Accounts, AccountDetail("a1"), Categories, Tags, People, IncomeSources,
         )
         routes.forEach { route ->

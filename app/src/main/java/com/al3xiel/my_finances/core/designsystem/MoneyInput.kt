@@ -14,7 +14,14 @@ import com.al3xiel.my_finances.core.money.MoneyFormatter
 internal object MoneyInputFilter {
     private const val MAX_INTEGER_DIGITS = 9
 
-    fun sanitize(raw: String): String {
+    /** Con `allowNegative`, un signo menos solo al inicio se conserva (el saldo real de una conciliación puede ser negativo). */
+    fun sanitize(raw: String, allowNegative: Boolean = false): String {
+        val negative = allowNegative && raw.trimStart().let { it.startsWith("-") || it.startsWith("−") }
+        val body = sanitizeUnsigned(raw)
+        return if (negative) "-$body" else body
+    }
+
+    private fun sanitizeUnsigned(raw: String): String {
         val normalized = raw.replace(',', '.')
         val dot = normalized.indexOf('.')
         val integerRaw = (if (dot < 0) normalized else normalized.substring(0, dot)).filter(Char::isDigit)
@@ -33,6 +40,10 @@ internal object MoneyInputFilter {
 
     /** Céntimos del texto tecleado, o `null` si todavía no es un monto (vacío o solo el separador). */
     fun toMinor(text: String): Long? = MoneyFormatter.parseMinor(text.trimEnd('.'))
+
+    /** Como `toMinor`, pero acepta un signo menos al inicio; `"-"` solo todavía no es un monto. */
+    fun toSignedMinor(text: String): Long? =
+        if (text.startsWith("-")) toMinor(text.removePrefix("-"))?.let { Math.negateExact(it) } else toMinor(text)
 }
 
 @Composable
@@ -44,17 +55,18 @@ fun MoneyInput(
     currency: CurrencyCode = CurrencyCode.PEN,
     isError: Boolean = false,
     supportingText: String? = null,
+    allowNegative: Boolean = false,
 ) {
     OutlinedTextField(
         value = value,
-        onValueChange = { onValueChange(MoneyInputFilter.sanitize(it)) },
+        onValueChange = { onValueChange(MoneyInputFilter.sanitize(it, allowNegative)) },
         modifier = modifier,
         label = { Text(label) },
         prefix = { Text(currency.symbol) },
         singleLine = true,
         isError = isError,
         supportingText = supportingText?.let { { Text(it) } },
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+        keyboardOptions = KeyboardOptions(keyboardType = if (allowNegative) KeyboardType.Text else KeyboardType.Decimal),
     )
 }
 

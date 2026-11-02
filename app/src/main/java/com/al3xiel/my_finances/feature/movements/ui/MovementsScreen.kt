@@ -107,12 +107,13 @@ internal fun MovementType.labelRes() = when (this) {
     MovementType.LOAN_DISBURSEMENT -> R.string.movement_type_loan_disbursement
     MovementType.LOAN_REPAYMENT -> R.string.movement_type_loan_repayment
     MovementType.FUND_UNTRACKED_SPEND -> R.string.movement_type_fund_untracked_spend
+    MovementType.ADJUSTMENT -> R.string.movement_type_adjustment
 }
 
 internal fun MovementType.rowKind() = when (this) {
     MovementType.INCOME -> MovementRowKind.INCOME
     MovementType.EXPENSE -> MovementRowKind.EXPENSE
-    MovementType.TRANSFER -> MovementRowKind.TRANSFER
+    MovementType.TRANSFER, MovementType.ADJUSTMENT -> MovementRowKind.TRANSFER
     MovementType.REIMBURSEMENT, MovementType.LOAN_REPAYMENT -> MovementRowKind.INCOME
     MovementType.LOAN_DISBURSEMENT, MovementType.FUND_UNTRACKED_SPEND -> MovementRowKind.EXPENSE
 }

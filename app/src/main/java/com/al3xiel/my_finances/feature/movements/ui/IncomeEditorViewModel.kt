@@ -15,6 +15,7 @@ import com.al3xiel.my_finances.domain.model.IncomeSourceKind
 import com.al3xiel.my_finances.domain.model.MovementId
 import com.al3xiel.my_finances.domain.model.MovementStatus
 import com.al3xiel.my_finances.domain.model.MovementType
+import com.al3xiel.my_finances.domain.model.ReconciliationId
 import com.al3xiel.my_finances.domain.model.attempt
 import com.al3xiel.my_finances.domain.model.errorOrNull
 import com.al3xiel.my_finances.feature.accounts.domain.repository.AccountRepository
@@ -31,6 +32,7 @@ import com.al3xiel.my_finances.feature.movements.domain.model.MovementDraft
 import com.al3xiel.my_finances.feature.movements.domain.repository.MovementRepository
 import com.al3xiel.my_finances.feature.movements.domain.usecase.CorrectMovementUseCase
 import com.al3xiel.my_finances.feature.movements.domain.usecase.RegisterIncomeUseCase
+import com.al3xiel.my_finances.feature.reconciliation.domain.repository.ReconciliationRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -48,6 +50,8 @@ import java.time.LocalDate
 
 data class IncomeEditorUiState(
     val isCorrection: Boolean = false,
+    /** Viene de S61: sin recarga a fondos ni ingreso esperado, y queda vinculado a la conciliación. */
+    val linkedToReconciliation: Boolean = false,
     val loaded: Boolean = false,
     val notFound: Boolean = false,
     val amountText: String = "",
@@ -87,18 +91,22 @@ class IncomeEditorViewModel @AssistedInject constructor(
     private val expectedIncomes: ExpectedIncomeRepository,
     private val confirmExpectedIncome: ConfirmExpectedIncomeUseCase,
     clock: Clock,
+    private val reconciliations: ReconciliationRepository,
+    @Assisted("reconciliation") reconciliationIdValue: String? = null,
 ) : ViewModel() {
     @AssistedFactory
     interface Factory {
         fun create(
             @Assisted("movement") movementIdValue: String?,
             @Assisted("expectedIncome") expectedIncomeIdValue: String?,
+            @Assisted("reconciliation") reconciliationIdValue: String?,
         ): IncomeEditorViewModel
     }
 
     // KSP no puede nombrar una fábrica asistida con un value class: llega el texto y se envuelve aquí.
     private val movementId = movementIdValue?.let(::MovementId)
     private val presetExpectedId = expectedIncomeIdValue?.let(::ExpectedIncomeId)
+    private val reconciliationId = reconciliationIdValue?.let(::ReconciliationId)
     private val today = LocalDate.now(clock)
 
     private data class Form(
@@ -126,9 +134,10 @@ class IncomeEditorViewModel @AssistedInject constructor(
         form, accounts.observeAccounts(), incomeSources.observeAll(), funds.observeFunds(), expectedIncomes.observeAll(),
     ) { form, accountList, sourceList, fundList, expectedList ->
         val sourceNames = sourceList.associate { it.id to it.name }
-        val selected = ExpectedIncomeSuggestions.selected(expectedList, sourceNames, form.expectedIncomeId)
+        val selected = if (reconciliationId != null) null else ExpectedIncomeSuggestions.selected(expectedList, sourceNames, form.expectedIncomeId)
         IncomeEditorUiState(
             isCorrection = movementId != null,
+            linkedToReconciliation = reconciliationId != null,
             loaded = form.loaded,
             notFound = form.notFound,
             amountText = form.amountText,
@@ -141,11 +150,11 @@ class IncomeEditorViewModel @AssistedInject constructor(
             // Las fuentes del sistema (saldo inicial, ajuste, reembolso…) las usan otras funciones, no el usuario.
             sourceOptions = sourceList.filter { it.kind == IncomeSourceKind.REGULAR || it.id == form.sourceId }
                 .map { EntityOption(it.id.value, it.name) },
-            fundOptions = if (movementId != null) emptyList() else fundList.filter { it.fund.status == FundStatus.ACTIVE }.map { EntityOption(it.fund.id.value, it.fund.name) },
+            fundOptions = if (movementId != null || reconciliationId != null) emptyList() else fundList.filter { it.fund.status == FundStatus.ACTIVE }.map { EntityOption(it.fund.id.value, it.fund.name) },
             topUpFundId = form.topUpFundId,
             topUpText = form.topUpText,
             selectedExpected = selected,
-            suggestions = if (movementId != null || selected != null) {
+            suggestions = if (movementId != null || reconciliationId != null || selected != null) {
                 emptyList()
             } else {
                 ExpectedIncomeSuggestions.of(expectedList, sourceNames, form.accountId, form.sourceId)
@@ -162,7 +171,7 @@ class IncomeEditorViewModel @AssistedInject constructor(
     }
 
     private suspend fun initialize() {
-        if (movementId == null && presetExpectedId != null) {
+        if (movementId == null && presetExpectedId != null && reconciliationId == null) {
             // Desde S55: cuenta, fuente y monto salen del esperado; el usuario puede ajustarlos antes de guardar.
             val expected = expectedIncomes.find(presetExpectedId)
             if (expected == null || !ExpectedIncomeRules.isPending(expected.status)) {
@@ -181,7 +190,8 @@ class IncomeEditorViewModel @AssistedInject constructor(
             return
         }
         if (movementId == null) {
-            val account = accounts.observeAccounts().first().firstOrNull { !it.account.isArchived }?.account?.id
+            val reconciled = reconciliationId?.let { reconciliations.find(it) }?.accountId
+            val account = reconciled ?: accounts.observeAccounts().first().firstOrNull { !it.account.isArchived }?.account?.id
             val source = incomeSources.observeAll().first().firstOrNull { it.kind == IncomeSourceKind.REGULAR }?.id
             form.update { it.copy(loaded = true, accountId = account, sourceId = source) }
             return
@@ -256,18 +266,19 @@ class IncomeEditorViewModel @AssistedInject constructor(
             val note = current.note.trim().ifEmpty { null }
             val outcome = attempt {
                 val expectedId = current.expectedIncomeId
-                if (movementId == null && expectedId != null) {
+                if (movementId == null && expectedId != null && reconciliationId == null) {
                     confirmExpectedIncome(expectedId, account, amount, source, note, current.occurredOn, topUpFund, topUp)
-                } else if (movementId == null && topUpFund != null && topUp != null) {
+                } else if (movementId == null && reconciliationId == null && topUpFund != null && topUp != null) {
                     registerIncomeWithTopUp(account, amount, source, note, current.occurredOn, topUpFund, topUp)
                 } else if (movementId == null) {
-                    registerIncome(account, amount, source, note, current.occurredOn)
+                    registerIncome(account, amount, source, note, current.occurredOn, reconciliationId)
                 } else {
                     correctMovement(
                         movementId,
                         MovementDraft.Income(account, amount, source, note, current.occurredOn),
                         current.pendingReason.orEmpty(),
                         confirmNegative,
+                        reconciliationId,
                     )
                 }
             }

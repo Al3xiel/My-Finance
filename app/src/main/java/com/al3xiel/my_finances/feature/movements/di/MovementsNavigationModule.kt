@@ -14,6 +14,7 @@ import com.al3xiel.my_finances.core.navigation.RouteContributor
 import com.al3xiel.my_finances.domain.model.FundId
 import com.al3xiel.my_finances.domain.model.MovementId
 import com.al3xiel.my_finances.domain.model.PoolId
+import com.al3xiel.my_finances.domain.model.ReconciliationId
 import com.al3xiel.my_finances.domain.model.MovementType
 import com.al3xiel.my_finances.feature.movements.ui.ExpenseEditorScreen
 import com.al3xiel.my_finances.feature.movements.ui.IncomeEditorScreen
@@ -46,9 +47,10 @@ object MovementsNavigationModule {
                         when (type) {
                             MovementType.EXPENSE -> navigator.push(ExpenseEditor(id.value))
                             MovementType.INCOME -> navigator.push(IncomeEditor(id.value))
-                            // Transferencias (D12), reembolsos, préstamos y pagos (D20) y el gasto no registrado de un fondo (D25) no se corrigen.
+                            // Transferencias (D12), reembolsos, préstamos y pagos (D20), el gasto no registrado de un fondo (D25) y el ajuste (D33) no se corrigen.
                             MovementType.TRANSFER, MovementType.REIMBURSEMENT,
-                            MovementType.LOAN_DISBURSEMENT, MovementType.LOAN_REPAYMENT, MovementType.FUND_UNTRACKED_SPEND -> Unit
+                            MovementType.LOAN_DISBURSEMENT, MovementType.LOAN_REPAYMENT, MovementType.FUND_UNTRACKED_SPEND,
+                            MovementType.ADJUSTMENT -> Unit
                         }
                     },
                 )
@@ -60,6 +62,7 @@ object MovementsNavigationModule {
                     onFinished = navigator::back,
                     presetPoolId = key.presetPoolId?.let(::PoolId),
                     presetFundId = key.presetFundId?.let(::FundId),
+                    reconciliationId = key.reconciliationId?.let(::ReconciliationId),
                 )
             }
             entry<IncomeEditor> { key ->
@@ -68,6 +71,7 @@ object MovementsNavigationModule {
                     movementId = key.id?.let(::MovementId),
                     onFinished = navigator::back,
                     expectedIncomeId = key.expectedIncomeId,
+                    reconciliationId = key.reconciliationId?.let(::ReconciliationId),
                 )
             }
         }

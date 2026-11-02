@@ -24,6 +24,8 @@ data class PartDraft(
 
 data class ExpenseEditorUiState(
     val isCorrection: Boolean = false,
+    /** Viene de S61: el gasto queda vinculado a esa conciliación. */
+    val linkedToReconciliation: Boolean = false,
     val loaded: Boolean = false,
     val notFound: Boolean = false,
     val totalText: String = "",

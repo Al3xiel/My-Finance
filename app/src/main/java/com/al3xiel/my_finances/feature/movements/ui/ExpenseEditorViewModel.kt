@@ -14,6 +14,7 @@ import com.al3xiel.my_finances.domain.model.MovementStatus
 import com.al3xiel.my_finances.domain.model.FundId
 import com.al3xiel.my_finances.domain.model.PartId
 import com.al3xiel.my_finances.domain.model.PoolId
+import com.al3xiel.my_finances.domain.model.ReconciliationId
 import com.al3xiel.my_finances.domain.model.MovementType
 import com.al3xiel.my_finances.domain.model.PartKind
 import com.al3xiel.my_finances.domain.model.TagId
@@ -32,6 +33,7 @@ import com.al3xiel.my_finances.feature.funds.domain.model.FundOverview
 import com.al3xiel.my_finances.feature.funds.domain.model.FundStatus
 import com.al3xiel.my_finances.feature.funds.domain.repository.FundRepository
 import com.al3xiel.my_finances.feature.pools.domain.repository.PoolRepository
+import com.al3xiel.my_finances.feature.reconciliation.domain.repository.ReconciliationRepository
 import com.al3xiel.my_finances.feature.tags.domain.repository.TagRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -63,6 +65,8 @@ class ExpenseEditorViewModel @AssistedInject constructor(
     private val registerExpense: RegisterExpenseUseCase,
     private val correctMovement: CorrectMovementUseCase,
     clock: Clock,
+    private val reconciliations: ReconciliationRepository,
+    @Assisted("reconciliation") reconciliationIdValue: String? = null,
 ) : ViewModel() {
     @AssistedFactory
     interface Factory {
@@ -70,6 +74,7 @@ class ExpenseEditorViewModel @AssistedInject constructor(
             @Assisted("movement") movementIdValue: String?,
             @Assisted("preset") presetPoolIdValue: String?,
             @Assisted("presetFund") presetFundIdValue: String?,
+            @Assisted("reconciliation") reconciliationIdValue: String?,
         ): ExpenseEditorViewModel
     }
 
@@ -77,6 +82,9 @@ class ExpenseEditorViewModel @AssistedInject constructor(
     private val movementId = movementIdValue?.let(::MovementId)
     private val presetPoolId = presetPoolIdValue?.let(::PoolId)
     private val presetFundId = presetFundIdValue?.let(::FundId)
+
+    /** Si viene de S61, el gasto queda vinculado a esa conciliación (o su corrección/anulación) y se propone su cuenta. */
+    private val reconciliationId = reconciliationIdValue?.let(::ReconciliationId)
     private val today = LocalDate.now(clock)
 
     private data class Form(
@@ -108,6 +116,7 @@ class ExpenseEditorViewModel @AssistedInject constructor(
     ) { form, accountList, categoryList, tagList, (poolList, fundList) ->
         ExpenseEditorUiState(
             isCorrection = movementId != null,
+            linkedToReconciliation = reconciliationId != null,
             loaded = form.loaded,
             notFound = form.notFound,
             totalText = form.totalText,
@@ -139,7 +148,8 @@ class ExpenseEditorViewModel @AssistedInject constructor(
     private suspend fun initialize() {
         if (movementId == null) {
             val last = movements.lastExpense()
-            val account = last?.accountId ?: accounts.observeAccounts().first().firstOrNull { !it.account.isArchived }?.account?.id
+            val reconciled = reconciliationId?.let { reconciliations.find(it) }?.accountId
+            val account = reconciled ?: last?.accountId ?: accounts.observeAccounts().first().firstOrNull { !it.account.isArchived }?.account?.id
             val category = last?.parts?.firstOrNull { it.kind == PartKind.NORMAL }?.categoryId
                 ?: categories.observeAll().first().firstOrNull { !it.isArchived }?.id
             val preset = presetPoolId?.let { pools.find(it) }?.takeIf { !it.isArchived }
@@ -253,13 +263,14 @@ class ExpenseEditorViewModel @AssistedInject constructor(
             val note = current.note.trim().ifEmpty { null }
             val outcome = attempt {
                 if (movementId == null) {
-                    registerExpense(account, total, inputs, note, current.occurredOn, confirmNegative)
+                    registerExpense(account, total, inputs, note, current.occurredOn, confirmNegative, reconciliationId)
                 } else {
                     correctMovement(
                         movementId,
                         MovementDraft.Expense(account, total, inputs, note, current.occurredOn),
                         current.pendingReason.orEmpty(),
                         confirmNegative,
+                        reconciliationId,
                     )
                 }
             }

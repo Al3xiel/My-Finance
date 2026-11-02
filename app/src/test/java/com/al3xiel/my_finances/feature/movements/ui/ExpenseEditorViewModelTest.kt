@@ -42,6 +42,7 @@ class ExpenseEditorViewModelTest {
         RegisterExpenseUseCase(f.rules, f.accounts, f.recorder, f.ids, f.writeLock),
         CorrectMovementUseCase(f.rules, f.accounts, f.movements, f.recorder, f.ids, f.writeLock),
         f.clock,
+        com.al3xiel.my_finances.feature.reconciliation.domain.FakeReconciliationRepository(),
     )
 
     @Test
