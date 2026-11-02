@@ -53,6 +53,14 @@ class MovementRules @Inject constructor(
         return if (category.isArchived && !allowArchived) BusinessError.AlreadyArchived else null
     }
 
+    /** Lo que todo ingreso exige antes de registrarse: monto, fecha, cuenta y fuente válidos. */
+    suspend fun checkIncome(accountId: AccountId, amount: Money, incomeSourceId: IncomeSourceId, occurredOn: LocalDate): BusinessError? {
+        checkMoney(amount)?.let { return it }
+        checkDate(occurredOn)?.let { return it }
+        checkAccount(accountId)?.let { return it }
+        return checkIncomeSource(incomeSourceId)
+    }
+
     suspend fun checkIncomeSource(id: IncomeSourceId): BusinessError? =
         if (incomeSources.find(id) == null) BusinessError.NotFound else null
 
@@ -66,6 +74,8 @@ class MovementRules @Inject constructor(
         if (parts.isEmpty()) return BusinessError.NoParts
         for (part in parts) {
             checkMoney(part.amount)?.let { return it }
+            // Una parte aparta dinero de un fondo o se le cobra a alguien por un cúmulo, no ambas cosas.
+            if (part.poolId != null && part.fundId != null) return BusinessError.InvalidPart
             checkCategory(part.categoryId, allowArchived = part.partId != null && unchanged.categories[part.partId] == part.categoryId)?.let { return it }
             for (tagId in part.tagIds) {
                 val tag = tags.find(tagId) ?: return BusinessError.NotFound

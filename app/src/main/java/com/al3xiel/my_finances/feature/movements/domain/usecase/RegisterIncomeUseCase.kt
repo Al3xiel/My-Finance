@@ -24,10 +24,7 @@ class RegisterIncomeUseCase @Inject constructor(
         note: String?,
         occurredOn: LocalDate,
     ): Outcome<MovementId> {
-        rules.checkMoney(amount)?.let { return Outcome.Failed(it) }
-        rules.checkDate(occurredOn)?.let { return Outcome.Failed(it) }
-        rules.checkAccount(accountId)?.let { return Outcome.Failed(it) }
-        rules.checkIncomeSource(incomeSourceId)?.let { return Outcome.Failed(it) }
+        rules.checkIncome(accountId, amount, incomeSourceId, occurredOn)?.let { return Outcome.Failed(it) }
 
         val id = MovementId(ids.newId())
         recorder.record(IncomeRegistered(id, accountId, amount, incomeSourceId, null, note), occurredOn)
