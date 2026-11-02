@@ -8,6 +8,7 @@ import com.al3xiel.my_finances.domain.model.MovementStatus
 import com.al3xiel.my_finances.domain.model.MovementType
 import com.al3xiel.my_finances.domain.model.Outcome
 import com.al3xiel.my_finances.domain.model.PartId
+import com.al3xiel.my_finances.domain.model.ReconciliationId
 import com.al3xiel.my_finances.domain.model.event.ExpensePartData
 import com.al3xiel.my_finances.domain.model.event.MovementCorrected
 import com.al3xiel.my_finances.domain.model.event.MovementSnapshot
@@ -15,6 +16,7 @@ import com.al3xiel.my_finances.domain.usecase.EventRecorder
 import com.al3xiel.my_finances.domain.usecase.MovementCorrectionGuard
 import com.al3xiel.my_finances.domain.usecase.FundReferenceGuard
 import com.al3xiel.my_finances.domain.usecase.PoolReferenceGuard
+import com.al3xiel.my_finances.domain.usecase.ReconciliationLinkGuard
 import com.al3xiel.my_finances.feature.accounts.domain.repository.AccountRepository
 import com.al3xiel.my_finances.feature.movements.domain.model.Movement
 import com.al3xiel.my_finances.feature.movements.domain.model.MovementDraft
@@ -35,25 +37,29 @@ class CorrectMovementUseCase @Inject constructor(
     private val guards: Set<@JvmSuppressWildcards MovementCorrectionGuard> = emptySet(),
     private val poolGuards: Set<@JvmSuppressWildcards PoolReferenceGuard> = emptySet(),
     private val fundGuards: Set<@JvmSuppressWildcards FundReferenceGuard> = emptySet(),
+    private val linkGuards: Set<@JvmSuppressWildcards ReconciliationLinkGuard> = emptySet(),
 ) {
     suspend operator fun invoke(
         id: MovementId,
         draft: MovementDraft,
         reason: String,
         confirmNegativeBalance: Boolean = false,
-    ): Outcome<Unit> = lock.withLock { execute(id, draft, reason, confirmNegativeBalance) }
+        reconciliationId: ReconciliationId? = null,
+    ): Outcome<Unit> = lock.withLock { execute(id, draft, reason, confirmNegativeBalance, reconciliationId) }
 
     private suspend fun execute(
         id: MovementId,
         draft: MovementDraft,
         reason: String,
         confirmNegativeBalance: Boolean,
+        reconciliationId: ReconciliationId?,
     ): Outcome<Unit> {
         val cleanReason = reason.trim()
         if (cleanReason.isEmpty()) return Outcome.Failed(BusinessError.ReasonRequired)
         val current = movements.find(id) ?: return Outcome.Failed(BusinessError.NotFound)
         if (current.type == MovementType.TRANSFER) return Outcome.Failed(BusinessError.TransferNotEditable)
         if (current.type == MovementType.FUND_UNTRACKED_SPEND) return Outcome.Failed(BusinessError.UntrackedSpendLocked)
+        if (current.type == MovementType.ADJUSTMENT) return Outcome.Failed(BusinessError.AdjustmentLocked)
         if (current.status == MovementStatus.VOIDED) return Outcome.Failed(BusinessError.AlreadyVoided)
 
         rules.checkDate(draft.occurredOn)?.let { return Outcome.Failed(it) }
@@ -69,13 +75,16 @@ class CorrectMovementUseCase @Inject constructor(
         }
 
         guards.firstNotNullOfOrNull { it.check(id, snapshot) }?.let { return Outcome.Failed(it) }
+        reconciliationId?.let { rid ->
+            linkGuards.firstNotNullOfOrNull { it.check(rid, setOf(current.accountId, draft.accountId)) }?.let { return Outcome.Failed(it) }
+        }
         if (!confirmNegativeBalance) {
             val balance = accounts.balanceMinor(draft.accountId)
             val resulting = balance - effectOnAccount(current, draft.accountId) + effectOf(snapshot)
             rules.negativeBalanceWarning(balance, resulting)?.let { return Outcome.Failed(it) }
         }
 
-        recorder.record(MovementCorrected(id, snapshot, cleanReason, null), draft.occurredOn)
+        recorder.record(MovementCorrected(id, snapshot, cleanReason, reconciliationId), draft.occurredOn)
         return Outcome.Ok(Unit)
     }
 

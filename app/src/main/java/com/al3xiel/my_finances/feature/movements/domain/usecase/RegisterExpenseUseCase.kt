@@ -6,11 +6,13 @@ import com.al3xiel.my_finances.domain.model.AccountId
 import com.al3xiel.my_finances.domain.model.MovementId
 import com.al3xiel.my_finances.domain.model.Outcome
 import com.al3xiel.my_finances.domain.model.PartId
+import com.al3xiel.my_finances.domain.model.ReconciliationId
 import com.al3xiel.my_finances.domain.model.event.ExpensePartData
 import com.al3xiel.my_finances.domain.model.event.ExpenseRegistered
 import com.al3xiel.my_finances.domain.usecase.EventRecorder
 import com.al3xiel.my_finances.domain.usecase.FundReferenceGuard
 import com.al3xiel.my_finances.domain.usecase.PoolReferenceGuard
+import com.al3xiel.my_finances.domain.usecase.ReconciliationLinkGuard
 import com.al3xiel.my_finances.feature.accounts.domain.repository.AccountRepository
 import com.al3xiel.my_finances.feature.movements.domain.model.ExpensePartInput
 import com.al3xiel.my_finances.feature.movements.domain.rules.MovementRules
@@ -26,6 +28,7 @@ class RegisterExpenseUseCase @Inject constructor(
     private val lock: MovementWriteLock,
     private val poolGuards: Set<@JvmSuppressWildcards PoolReferenceGuard> = emptySet(),
     private val fundGuards: Set<@JvmSuppressWildcards FundReferenceGuard> = emptySet(),
+    private val linkGuards: Set<@JvmSuppressWildcards ReconciliationLinkGuard> = emptySet(),
 ) {
     /** Si el saldo queda negativo avisa con `WouldGoNegative`; repetir con `confirmNegativeBalance` lo guarda (D14). */
     suspend operator fun invoke(
@@ -35,8 +38,9 @@ class RegisterExpenseUseCase @Inject constructor(
         note: String?,
         occurredOn: LocalDate,
         confirmNegativeBalance: Boolean = false,
+        reconciliationId: ReconciliationId? = null,
     ): Outcome<MovementId> =
-        lock.withLock { execute(accountId, total, parts, note, occurredOn, confirmNegativeBalance) }
+        lock.withLock { execute(accountId, total, parts, note, occurredOn, confirmNegativeBalance, reconciliationId) }
 
     private suspend fun execute(
         accountId: AccountId,
@@ -45,10 +49,12 @@ class RegisterExpenseUseCase @Inject constructor(
         note: String?,
         occurredOn: LocalDate,
         confirmNegativeBalance: Boolean,
+        reconciliationId: ReconciliationId?,
     ): Outcome<MovementId> {
         rules.checkDate(occurredOn)?.let { return Outcome.Failed(it) }
         rules.checkAccount(accountId)?.let { return Outcome.Failed(it) }
         rules.checkExpense(total, parts)?.let { return Outcome.Failed(it) }
+        reconciliationId?.let { rid -> linkGuards.firstNotNullOfOrNull { it.check(rid, setOf(accountId)) }?.let { return Outcome.Failed(it) } }
         parts.mapNotNull { it.poolId }.forEach { pool ->
             poolGuards.firstNotNullOfOrNull { it.check(pool, unchanged = false) }?.let { return Outcome.Failed(it) }
         }
@@ -62,7 +68,7 @@ class RegisterExpenseUseCase @Inject constructor(
 
         val id = MovementId(ids.newId())
         val data = parts.map { ExpensePartData(PartId(ids.newId()), it.amount, it.categoryId, it.tagIds, it.poolId, it.fundId) }
-        recorder.record(ExpenseRegistered(id, accountId, total, data, null, note), occurredOn)
+        recorder.record(ExpenseRegistered(id, accountId, total, data, reconciliationId, note), occurredOn)
         return Outcome.Ok(id)
     }
 }

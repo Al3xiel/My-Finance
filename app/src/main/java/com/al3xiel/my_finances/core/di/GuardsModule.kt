@@ -1,10 +1,12 @@
 package com.al3xiel.my_finances.core.di
 
+import com.al3xiel.my_finances.domain.usecase.AccountArchiveGuard
 import com.al3xiel.my_finances.domain.usecase.ArchiveGuard
 import com.al3xiel.my_finances.domain.usecase.MovementCorrectionGuard
 import com.al3xiel.my_finances.domain.usecase.MovementVoidFollowUp
 import com.al3xiel.my_finances.domain.usecase.MovementVoidGuard
 import com.al3xiel.my_finances.domain.usecase.PoolReferenceGuard
+import com.al3xiel.my_finances.domain.usecase.ReconciliationLinkGuard
 import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
@@ -21,6 +23,10 @@ abstract class GuardsModule {
     @Multibinds abstract fun movementCorrectionGuards(): Set<@JvmSuppressWildcards MovementCorrectionGuard>
 
     @Multibinds abstract fun archiveGuards(): Set<@JvmSuppressWildcards ArchiveGuard>
+
+    @Multibinds abstract fun accountArchiveGuards(): Set<@JvmSuppressWildcards AccountArchiveGuard>
+
+    @Multibinds abstract fun reconciliationLinkGuards(): Set<@JvmSuppressWildcards ReconciliationLinkGuard>
 
     @Multibinds abstract fun poolReferenceGuards(): Set<@JvmSuppressWildcards PoolReferenceGuard>
 }
