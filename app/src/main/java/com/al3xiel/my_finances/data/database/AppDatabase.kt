@@ -22,6 +22,7 @@ import com.al3xiel.my_finances.data.projection.movement.MovementEntity
 import com.al3xiel.my_finances.data.projection.movement.MovementPartEntity
 import com.al3xiel.my_finances.data.projection.movement.MovementPartTagEntity
 import com.al3xiel.my_finances.data.projection.movement.MovementQueryDao
+import com.al3xiel.my_finances.data.projection.report.ReportQueryDao
 import com.al3xiel.my_finances.data.projection.expectedincome.ExpectedIncomeDao
 import com.al3xiel.my_finances.data.projection.expectedincome.ExpectedIncomeEntity
 import com.al3xiel.my_finances.data.projection.expectedincome.ExpectedIncomeQueryDao
@@ -103,4 +104,5 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun poolQueryDao(): PoolQueryDao
     abstract fun personQueryDao(): PersonQueryDao
     abstract fun loanQueryDao(): LoanQueryDao
+    abstract fun reportQueryDao(): ReportQueryDao
 }
