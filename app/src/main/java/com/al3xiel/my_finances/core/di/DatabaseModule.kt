@@ -6,6 +6,7 @@ import com.al3xiel.my_finances.core.security.DatabaseKeyProvider
 import com.al3xiel.my_finances.data.database.AppDatabase
 import com.al3xiel.my_finances.data.database.migration.MIGRATION_1_2
 import com.al3xiel.my_finances.data.database.migration.MIGRATION_2_3
+import com.al3xiel.my_finances.data.database.migration.MIGRATION_3_4
 import com.al3xiel.my_finances.data.eventstore.EventStoreImpl
 import com.al3xiel.my_finances.data.eventstore.EventTriggersCallback
 import com.al3xiel.my_finances.data.projection.EventProjector
@@ -18,6 +19,9 @@ import com.al3xiel.my_finances.data.projection.movement.LedgerQueryDao
 import com.al3xiel.my_finances.data.projection.movement.MovementDao
 import com.al3xiel.my_finances.data.projection.movement.MovementProjector
 import com.al3xiel.my_finances.data.projection.movement.MovementQueryDao
+import com.al3xiel.my_finances.data.projection.expectedincome.ExpectedIncomeDao
+import com.al3xiel.my_finances.data.projection.expectedincome.ExpectedIncomeProjector
+import com.al3xiel.my_finances.data.projection.expectedincome.ExpectedIncomeQueryDao
 import com.al3xiel.my_finances.data.projection.fund.FundDao
 import com.al3xiel.my_finances.data.projection.fund.FundProjector
 import com.al3xiel.my_finances.data.projection.fund.FundQueryDao
@@ -78,6 +82,10 @@ abstract class DatabaseModule {
     @IntoSet
     abstract fun fundProjector(impl: FundProjector): EventProjector
 
+    @Binds
+    @IntoSet
+    abstract fun expectedIncomeProjector(impl: ExpectedIncomeProjector): EventProjector
+
     companion object {
         @Provides
         @Singleton
@@ -85,7 +93,7 @@ abstract class DatabaseModule {
             System.loadLibrary("sqlcipher")
             return Room.databaseBuilder(context, AppDatabase::class.java, DATABASE_NAME)
                 .openHelperFactory(SupportOpenHelperFactory(keyProvider.getOrCreate()))
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                 .addCallback(EventTriggersCallback)
                 .build()
         }
@@ -122,6 +130,12 @@ abstract class DatabaseModule {
 
         @Provides
         fun provideFundQueryDao(database: AppDatabase): FundQueryDao = database.fundQueryDao()
+
+        @Provides
+        fun provideExpectedIncomeDao(database: AppDatabase): ExpectedIncomeDao = database.expectedIncomeDao()
+
+        @Provides
+        fun provideExpectedIncomeQueryDao(database: AppDatabase): ExpectedIncomeQueryDao = database.expectedIncomeQueryDao()
 
         @Provides
         fun providePoolQueryDao(database: AppDatabase): PoolQueryDao = database.poolQueryDao()

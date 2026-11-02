@@ -86,6 +86,15 @@ sealed interface BusinessError {
     /** Un préstamo con pagos no se anula hasta anular los pagos (D20). */
     data object HasRepayments : BusinessError
 
+    /** El ingreso esperado ya se confirmó o se canceló: solo uno pendiente se edita, se cancela o se confirma. */
+    data object NotPending : BusinessError
+
+    /** Anular el ingreso no es posible: el siguiente ingreso esperado que generó ya se confirmó. */
+    data object NextExpectedConfirmed : BusinessError
+
+    /** El rango de un ingreso esperado empieza después de terminar. */
+    data object InvalidRange : BusinessError
+
     /** Aviso de saldo negativo (D14): el usuario puede confirmar y repetir la operación. */
     data class WouldGoNegative(val resultingBalanceMinor: Long) : BusinessError
 }
