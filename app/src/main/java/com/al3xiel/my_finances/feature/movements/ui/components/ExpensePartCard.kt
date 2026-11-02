@@ -28,6 +28,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.al3xiel.my_finances.R
 import com.al3xiel.my_finances.core.designsystem.DateField
 import com.al3xiel.my_finances.core.designsystem.EmptyState
+import com.al3xiel.my_finances.core.designsystem.FundPicker
 import com.al3xiel.my_finances.core.designsystem.EditorFooter
 import com.al3xiel.my_finances.core.designsystem.EntityOption
 import com.al3xiel.my_finances.core.designsystem.EntityPicker
@@ -84,6 +85,14 @@ fun ExpensePartCard(number: Int, part: PartDraft, state: ExpenseEditorUiState, o
                     options = state.poolOptions,
                     selectedId = part.poolId,
                     onSelect = { onAction(ExpenseEditorUiAction.SelectPartPool(part.key, it)) },
+                )
+            }
+            if (state.fundOptions.isNotEmpty()) {
+                FundPicker(
+                    label = stringResource(R.string.expense_part_fund),
+                    options = state.fundOptions,
+                    selectedId = part.fundId,
+                    onSelect = { onAction(ExpenseEditorUiAction.SelectPartFund(part.key, it)) },
                 )
             }
             if (state.tagOptions.isNotEmpty()) {

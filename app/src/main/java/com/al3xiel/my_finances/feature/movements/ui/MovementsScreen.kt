@@ -106,6 +106,7 @@ internal fun MovementType.labelRes() = when (this) {
     MovementType.REIMBURSEMENT -> R.string.movement_type_reimbursement
     MovementType.LOAN_DISBURSEMENT -> R.string.movement_type_loan_disbursement
     MovementType.LOAN_REPAYMENT -> R.string.movement_type_loan_repayment
+    MovementType.FUND_UNTRACKED_SPEND -> R.string.movement_type_fund_untracked_spend
 }
 
 internal fun MovementType.rowKind() = when (this) {
@@ -113,7 +114,7 @@ internal fun MovementType.rowKind() = when (this) {
     MovementType.EXPENSE -> MovementRowKind.EXPENSE
     MovementType.TRANSFER -> MovementRowKind.TRANSFER
     MovementType.REIMBURSEMENT, MovementType.LOAN_REPAYMENT -> MovementRowKind.INCOME
-    MovementType.LOAN_DISBURSEMENT -> MovementRowKind.EXPENSE
+    MovementType.LOAN_DISBURSEMENT, MovementType.FUND_UNTRACKED_SPEND -> MovementRowKind.EXPENSE
 }
 
 private fun row(id: String, type: MovementType, minor: Long, note: String?, counter: String? = null, voided: Boolean = false) =

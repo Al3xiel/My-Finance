@@ -121,6 +121,8 @@ fun MovementDetailContent(
             }
             movement.type == MovementType.TRANSFER ->
                 Text(stringResource(R.string.error_transfer_not_editable), style = MaterialTheme.typography.bodySmall)
+            state.isUntracked ->
+                Text(stringResource(R.string.error_untracked_spend_locked), style = MaterialTheme.typography.bodySmall)
         }
     }
     if (state.showVoidDialog) {

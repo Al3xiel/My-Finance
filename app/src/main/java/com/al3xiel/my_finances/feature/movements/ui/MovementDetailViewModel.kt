@@ -43,9 +43,12 @@ data class MovementDetailUiState(
     val negativeWarning: BusinessError.WouldGoNegative? = null,
     val error: BusinessError? = null,
 ) {
+    /** El gasto que un arqueo cargó por lo no anotado no se anula ni se corrige (D25). */
+    val isUntracked: Boolean get() = detail?.movement?.type == MovementType.FUND_UNTRACKED_SPEND
+
     /** Corregir y anular solo existen para ingresos y gastos que siguen activos (D12). */
     val canEdit: Boolean
-        get() = detail?.movement?.let { it.type != MovementType.TRANSFER && it.status == MovementStatus.ACTIVE } == true
+        get() = detail?.movement?.let { it.type != MovementType.TRANSFER && !isUntracked && it.status == MovementStatus.ACTIVE } == true
 }
 
 sealed interface MovementDetailUiAction {

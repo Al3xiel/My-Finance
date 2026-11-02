@@ -22,6 +22,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.al3xiel.my_finances.R
 import com.al3xiel.my_finances.core.designsystem.DateField
 import com.al3xiel.my_finances.core.designsystem.EmptyState
+import com.al3xiel.my_finances.core.designsystem.FundPicker
 import com.al3xiel.my_finances.core.designsystem.EditorFooter
 import com.al3xiel.my_finances.core.designsystem.EntityOption
 import com.al3xiel.my_finances.core.designsystem.EntityPicker
@@ -100,6 +101,22 @@ fun IncomeEditorContent(
             label = { Text(stringResource(R.string.editor_note)) },
             modifier = Modifier.fillMaxWidth(),
         )
+        if (state.fundOptions.isNotEmpty()) {
+            FundPicker(
+                label = stringResource(R.string.income_set_aside),
+                options = state.fundOptions,
+                selectedId = state.topUpFundId,
+                onSelect = { onAction(IncomeEditorUiAction.SelectTopUpFund(it)) },
+            )
+            if (state.topUpFundId != null) {
+                MoneyInput(
+                    value = state.topUpText,
+                    onValueChange = { onAction(IncomeEditorUiAction.EditTopUp(it)) },
+                    label = stringResource(R.string.income_set_aside_amount),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
         EditorFooter(error = state.error, onSave = { onAction(IncomeEditorUiAction.Save) })
     }
     if (state.showReasonDialog) {

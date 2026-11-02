@@ -11,6 +11,7 @@ import com.al3xiel.my_finances.core.navigation.RegisterAction
 import com.al3xiel.my_finances.core.navigation.RegisterActionContributor
 import com.al3xiel.my_finances.core.navigation.Route
 import com.al3xiel.my_finances.core.navigation.RouteContributor
+import com.al3xiel.my_finances.domain.model.FundId
 import com.al3xiel.my_finances.domain.model.MovementId
 import com.al3xiel.my_finances.domain.model.PoolId
 import com.al3xiel.my_finances.domain.model.MovementType
@@ -45,9 +46,9 @@ object MovementsNavigationModule {
                         when (type) {
                             MovementType.EXPENSE -> navigator.push(ExpenseEditor(id.value))
                             MovementType.INCOME -> navigator.push(IncomeEditor(id.value))
-                            // Transferencias (D12), reembolsos, préstamos y pagos (D20) no se corrigen.
+                            // Transferencias (D12), reembolsos, préstamos y pagos (D20) y el gasto no registrado de un fondo (D25) no se corrigen.
                             MovementType.TRANSFER, MovementType.REIMBURSEMENT,
-                            MovementType.LOAN_DISBURSEMENT, MovementType.LOAN_REPAYMENT -> Unit
+                            MovementType.LOAN_DISBURSEMENT, MovementType.LOAN_REPAYMENT, MovementType.FUND_UNTRACKED_SPEND -> Unit
                         }
                     },
                 )
@@ -58,6 +59,7 @@ object MovementsNavigationModule {
                     movementId = key.id?.let(::MovementId),
                     onFinished = navigator::back,
                     presetPoolId = key.presetPoolId?.let(::PoolId),
+                    presetFundId = key.presetFundId?.let(::FundId),
                 )
             }
             entry<IncomeEditor> { key ->
