@@ -9,12 +9,14 @@ import java.io.OutputStream
  */
 object CsvReportWriter {
     private const val EOL = "\r\n"
+    /** Encabezados fijos en español (D38): los lee una hoja de cálculo, no la interfaz. */
+    private val HEADER = listOf("Fecha", "Cuenta", "Categoría", "Conceptos", "Monto propio", "Tipo")
     private val formulaStarts = charArrayOf('=', '+', '-', '@', '\t', '\r')
 
     fun write(out: OutputStream, rows: List<CsvReportRow>, includeNotes: Boolean) {
         val text = StringBuilder()
         text.append('﻿')
-        val header = mutableListOf("Fecha", "Cuenta", "Categoría", "Conceptos", "Monto propio", "Tipo")
+        val header = HEADER.toMutableList()
         if (includeNotes) header += "Nota"
         text.append(header.joinToString(",") { cell(it) }).append(EOL)
         for (r in rows) {

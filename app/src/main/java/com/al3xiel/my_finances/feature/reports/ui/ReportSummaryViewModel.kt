@@ -39,19 +39,18 @@ sealed interface ReportSummaryUiAction {
 @HiltViewModel
 class ReportSummaryViewModel @Inject constructor(
     private val reports: ReportRepository,
-    clock: Clock,
+    private val clock: Clock,
 ) : ViewModel() {
-    private val today = LocalDate.now(clock)
-    private val period = MutableStateFlow<ReportPeriod>(ReportPeriod.Month(YearMonth.from(today)))
+    private val period = MutableStateFlow<ReportPeriod>(ReportPeriod.Month(YearMonth.from(LocalDate.now(clock))))
     private val refresh = MutableStateFlow(0)
 
     val uiState: StateFlow<ReportSummaryUiState> = combine(period, refresh) { p, _ -> p }
-        .flatMapLatest { p -> flow { emit(ReportSummaryUiState(p, today, reports.summary(p))) } }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, ReportSummaryUiState(period.value, today))
+        .flatMapLatest { p -> flow { emit(ReportSummaryUiState(p, LocalDate.now(clock), reports.summary(p))) } }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, ReportSummaryUiState(period.value, LocalDate.now(clock)))
 
     fun onAction(action: ReportSummaryUiAction) {
         when (action) {
-            is ReportSummaryUiAction.SetPeriod -> if (!action.period.isFuture(today)) period.value = action.period
+            is ReportSummaryUiAction.SetPeriod -> if (!action.period.isFuture(LocalDate.now(clock))) period.value = action.period
             ReportSummaryUiAction.Refresh -> refresh.value += 1
         }
     }

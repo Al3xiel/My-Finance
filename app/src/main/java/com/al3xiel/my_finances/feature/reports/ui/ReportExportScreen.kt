@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.al3xiel.my_finances.R
+import com.al3xiel.my_finances.feature.reports.domain.model.ReportExportTexts
 import com.al3xiel.my_finances.feature.reports.domain.model.ReportPeriod
 import com.al3xiel.my_finances.feature.reports.ui.components.periodLabel
 import java.time.YearMonth
@@ -53,7 +54,10 @@ fun ReportExportScreen(
         viewModel.onAction(ReportExportUiAction.PickerResult(uri?.toString(), texts))
     }
     LaunchedEffect(state.phase) {
-        if (state.phase == ExportPhase.PICKING) launcher.launch(state.fileName)
+        if (state.phase == ExportPhase.PICKING) {
+            viewModel.onAction(ReportExportUiAction.PickerOpened)
+            launcher.launch(state.fileName)
+        }
     }
     ReportExportContent(state, viewModel::onAction, modifier)
 }

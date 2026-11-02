@@ -29,12 +29,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.al3xiel.my_finances.R
 import com.al3xiel.my_finances.core.designsystem.EmptyState
 import com.al3xiel.my_finances.core.designsystem.MoneyText
-import com.al3xiel.my_finances.core.money.CurrencyCode
-import com.al3xiel.my_finances.core.money.Money
+import com.al3xiel.my_finances.feature.reports.ui.components.reportMoney
 import com.al3xiel.my_finances.feature.reports.domain.model.ReportPeriod
 import java.time.YearMonth
-
-private fun pen(minor: Long) = Money(minor, CurrencyCode.PEN)
 
 /** S42: total por concepto por separado, sin torta (los conceptos no suman); el cruce con categoría se abre por concepto. */
 @Composable
@@ -89,7 +86,7 @@ fun ReportByTagContent(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(row.name, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-                        MoneyText(pen(row.amount), style = MaterialTheme.typography.bodyLarge)
+                        MoneyText(reportMoney(row.amount), style = MaterialTheme.typography.bodyLarge)
                     }
                     TextButton(onClick = { onAction(ReportByTagUiAction.ToggleCrossing(row.id)) }, modifier = Modifier.heightIn(min = 48.dp)) {
                         Text(stringResource(if (expanded) R.string.report_by_tag_hide_crossing else R.string.report_by_tag_show_crossing))
@@ -98,7 +95,7 @@ fun ReportByTagContent(
                         row.byCategory.forEach { (category, amount) ->
                             Row(Modifier.fillMaxWidth().heightIn(min = 32.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                                 Text(category, style = MaterialTheme.typography.bodyMedium)
-                                MoneyText(pen(amount), style = MaterialTheme.typography.bodyMedium)
+                                MoneyText(reportMoney(amount), style = MaterialTheme.typography.bodyMedium)
                             }
                         }
                     }

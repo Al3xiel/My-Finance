@@ -29,8 +29,7 @@ import com.al3xiel.my_finances.R
 import com.al3xiel.my_finances.core.designsystem.MoneySign
 import com.al3xiel.my_finances.core.designsystem.MoneyText
 import com.al3xiel.my_finances.feature.reports.ui.components.PeriodSelector
-import com.al3xiel.my_finances.core.money.CurrencyCode
-import com.al3xiel.my_finances.core.money.Money
+import com.al3xiel.my_finances.feature.reports.ui.components.reportMoney
 import com.al3xiel.my_finances.feature.reports.domain.model.OthersSpend
 import com.al3xiel.my_finances.feature.reports.domain.model.ReportPeriod
 import com.al3xiel.my_finances.feature.reports.domain.model.ReportSummary
@@ -95,14 +94,12 @@ fun ReportSummaryContent(
     }
 }
 
-private fun pen(minor: Long) = Money(minor, CurrencyCode.PEN)
-
 @Composable
 private fun FigureCard(label: String, minor: Long, hint: String?, sign: MoneySign = MoneySign.NONE) {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            MoneyText(pen(minor), style = MaterialTheme.typography.headlineSmall, sign = sign)
+            MoneyText(reportMoney(minor), style = MaterialTheme.typography.headlineSmall, sign = sign)
             if (hint != null) Text(hint, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
@@ -128,7 +125,7 @@ private fun OthersCard(others: OthersSpend) {
 private fun OthersLine(label: Int, minor: Long) {
     Row(Modifier.fillMaxWidth().heightIn(min = 32.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
         Text(stringResource(label), style = MaterialTheme.typography.bodyLarge)
-        MoneyText(pen(minor), style = MaterialTheme.typography.bodyLarge)
+        MoneyText(reportMoney(minor), style = MaterialTheme.typography.bodyLarge)
     }
 }
 

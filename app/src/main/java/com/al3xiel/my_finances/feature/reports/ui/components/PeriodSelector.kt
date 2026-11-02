@@ -65,14 +65,14 @@ fun PeriodSelector(
                 onClick = { previous?.let(onPeriodChange) },
                 enabled = previous != null,
                 modifier = Modifier.heightIn(min = 48.dp).widthIn(min = 48.dp).semantics { contentDescription = previousDescription },
-            ) { Text("‹", style = MaterialTheme.typography.titleLarge) }
+            ) { Text(stringResource(R.string.report_period_previous_glyph), style = MaterialTheme.typography.titleLarge) }
             Text(periodLabel(period, Locale.getDefault()), style = MaterialTheme.typography.titleMedium)
             val nextDescription = stringResource(R.string.report_period_next)
             TextButton(
                 onClick = { next?.let(onPeriodChange) },
                 enabled = next != null,
                 modifier = Modifier.heightIn(min = 48.dp).widthIn(min = 48.dp).semantics { contentDescription = nextDescription },
-            ) { Text("›", style = MaterialTheme.typography.titleLarge) }
+            ) { Text(stringResource(R.string.report_period_next_glyph), style = MaterialTheme.typography.titleLarge) }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             FilterChip(

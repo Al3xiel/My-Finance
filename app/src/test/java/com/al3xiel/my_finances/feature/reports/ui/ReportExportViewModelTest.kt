@@ -8,7 +8,9 @@ import com.al3xiel.my_finances.feature.reports.domain.model.PartRow
 import com.al3xiel.my_finances.feature.reports.data.CsvReportWriter
 import com.al3xiel.my_finances.feature.reports.domain.model.CsvReportRow
 import com.al3xiel.my_finances.feature.reports.domain.model.PdfReportData
+import com.al3xiel.my_finances.feature.reports.domain.model.ReportExportTexts
 import com.al3xiel.my_finances.feature.reports.domain.repository.ReportFileRepository
+import com.al3xiel.my_finances.feature.reports.domain.usecase.BuildReportDocumentsUseCase
 import java.io.ByteArrayOutputStream
 import java.time.LocalDate
 import org.junit.Assert.assertEquals
@@ -40,7 +42,7 @@ class ReportExportViewModelTest {
     private val texts = ReportExportTexts("T", "P", "N", "S", "C", "Tg", "A", "i", "o", "t", "r", "p", "u", "n", "m", "%", "in", "out", "tr")
 
     private fun viewModel(sink: FakeFiles) =
-        ReportExportViewModel("2026-10-01", "2026-10-31", reports, f.accounts, f.categories, f.tags, sink)
+        ReportExportViewModel("2026-10-01", "2026-10-31", BuildReportDocumentsUseCase(reports, f.accounts, f.categories, f.tags), sink)
 
     private fun withData() {
         reports.parts = listOf(PartRow("p1", "bbva", "food", null, 1_250, false, 0, listOf("t1")))
@@ -102,6 +104,20 @@ class ReportExportViewModelTest {
         assertEquals("reporte-2026-10-01_2026-10-31.pdf", vm.uiState.value.fileName)
         vm.onAction(ReportExportUiAction.PickerResult("content://doc/2", texts))
         assertEquals(listOf("content://doc/2"), sink.writes)
+        assertEquals(ExportPhase.DONE, vm.uiState.value.phase)
+    }
+
+    @Test fun `the picker is opened once and a result while it is open writes`() {
+        withData()
+        val sink = FakeFiles()
+        val vm = viewModel(sink)
+        vm.onAction(ReportExportUiAction.Export)
+        vm.onAction(ReportExportUiAction.AcceptNotice)
+        vm.onAction(ReportExportUiAction.PickerOpened)
+        assertEquals(ExportPhase.PICKER_OPEN, vm.uiState.value.phase)
+        vm.onAction(ReportExportUiAction.PickerOpened)
+        assertEquals(ExportPhase.PICKER_OPEN, vm.uiState.value.phase)
+        vm.onAction(ReportExportUiAction.PickerResult("content://doc/3", texts))
         assertEquals(ExportPhase.DONE, vm.uiState.value.phase)
     }
 }

@@ -20,8 +20,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -33,12 +31,9 @@ import com.al3xiel.my_finances.core.designsystem.MoneyText
 import com.al3xiel.my_finances.core.designsystem.PieChart
 import com.al3xiel.my_finances.core.designsystem.ShareBar
 import com.al3xiel.my_finances.core.designsystem.chartPalette
-import com.al3xiel.my_finances.core.money.CurrencyCode
-import com.al3xiel.my_finances.core.money.Money
+import com.al3xiel.my_finances.feature.reports.ui.components.reportMoney
 import com.al3xiel.my_finances.feature.reports.domain.model.ReportPeriod
 import java.time.YearMonth
-
-private fun pen(minor: Long) = Money(minor, CurrencyCode.PEN)
 
 /** S41: torta y tabla que suman 100% sobre el gasto propio; tocar una categoría abre sus movimientos. */
 @Composable
@@ -81,7 +76,7 @@ fun ReportByCategoryContent(
             Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 PieChart(state.rows.mapIndexed { i, r -> ChartSlice(r.name, r.basisPoints, palette[i % palette.size]) })
                 Text(stringResource(R.string.report_by_category_total), style = MaterialTheme.typography.labelLarge)
-                MoneyText(pen(state.total), style = MaterialTheme.typography.headlineSmall)
+                MoneyText(reportMoney(state.total), style = MaterialTheme.typography.headlineSmall)
             }
         }
         items(state.rows, key = { it.id }) { row ->
@@ -90,12 +85,10 @@ fun ReportByCategoryContent(
             Column {
                 ShareBar(
                     label = row.name,
-                    amount = pen(row.amount),
+                    amount = reportMoney(row.amount),
                     basisPoints = row.basisPoints,
                     color = palette[index % palette.size],
-                    modifier = Modifier
-                        .clickable(role = Role.Button) { onOpenMovements(row.id) }
-                        .semantics { contentDescription = openDescription },
+                    modifier = Modifier.clickable(onClickLabel = openDescription, role = Role.Button) { onOpenMovements(row.id) },
                 )
                 if (row.children.isNotEmpty()) {
                     val expanded = state.expandedId == row.id
@@ -109,7 +102,7 @@ fun ReportByCategoryContent(
                         row.children.forEach { child ->
                             ShareBar(
                                 label = child.name,
-                                amount = pen(child.amount),
+                                amount = reportMoney(child.amount),
                                 basisPoints = child.basisPoints,
                                 color = palette[index % palette.size],
                                 modifier = Modifier.padding(start = 16.dp).clickable(role = Role.Button) { onOpenMovements(child.id) },

@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import com.al3xiel.my_finances.R
 import com.al3xiel.my_finances.core.money.CurrencyCode
 import com.al3xiel.my_finances.core.money.Money
+import com.al3xiel.my_finances.core.text.formatBasisPoints
 
 /**
  * Una fila de la tabla equivalente a la torta: nombre, monto, porcentaje y una barra proporcional. La barra es decoración;

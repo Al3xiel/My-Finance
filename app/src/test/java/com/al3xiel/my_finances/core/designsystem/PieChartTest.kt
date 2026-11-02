@@ -13,11 +13,4 @@ class PieChartTest {
     @Test fun `no slices draw nothing`() {
         assertEquals(emptyList<Float>(), pieSweeps(emptyList()))
     }
-
-    @Test fun `basis points are formatted with integer arithmetic`() {
-        assertEquals("33.34 %", formatBasisPoints(3_334, '.'))
-        assertEquals("5,05 %", formatBasisPoints(505, ','))
-        assertEquals("100.00 %", formatBasisPoints(10_000, '.'))
-        assertEquals("0.00 %", formatBasisPoints(0, '.'))
-    }
 }

@@ -16,20 +16,13 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.al3xiel.my_finances.R
-import java.text.DecimalFormatSymbols
+import com.al3xiel.my_finances.core.text.formatBasisPoints
 
 /** Un tramo de torta o barra: `basisPoints` (10 000 = 100%) ya viene calculado por el mayor residuo. */
 data class ChartSlice(val label: String, val basisPoints: Int, val color: Color)
 
 /** Giro de cada tramo en grados; los puntos base que suman 10 000 cierran la circunferencia. */
 internal fun pieSweeps(basisPoints: List<Int>): List<Float> = basisPoints.map { it * 360f / 10_000f }
-
-/** "33,34 %" con el separador decimal del idioma; solo aritmética entera. */
-fun formatBasisPoints(basisPoints: Int, separator: Char = DecimalFormatSymbols.getInstance().decimalSeparator): String {
-    val whole = basisPoints / 100
-    val fraction = (basisPoints % 100).toString().padStart(2, '0')
-    return "$whole$separator$fraction %"
-}
 
 /** Paleta de tramos: el color nunca es la única señal; cada tramo va con su fila de texto (nombre y porcentaje). */
 @Composable
@@ -43,10 +36,9 @@ fun chartPalette(): List<Color> = with(MaterialTheme.colorScheme) {
  */
 @Composable
 fun PieChart(slices: List<ChartSlice>, modifier: Modifier = Modifier) {
-    val separator = DecimalFormatSymbols.getInstance().decimalSeparator
     val description = stringResource(
         R.string.report_chart_description,
-        slices.joinToString("; ") { "${it.label}, ${formatBasisPoints(it.basisPoints, separator)}" },
+        slices.joinToString("; ") { "${it.label}, ${formatBasisPoints(it.basisPoints)}" },
     )
     val track = MaterialTheme.colorScheme.surfaceVariant
     val sweeps = pieSweeps(slices.map { it.basisPoints })

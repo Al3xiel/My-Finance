@@ -250,6 +250,7 @@
 | Calculador de reportes | `ReportCalculator` / `Percentages` | objetos | Cálculo puro de los reportes y porcentajes por el mayor residuo (desempate por id ascendente). |
 | Archivos de reporte | `ReportFileRepository` | puerto | Escribe el CSV o el PDF en el destino que eligió el usuario (SAF), sin archivo temporal. |
 | Fila / documento de exportación | `CsvReportRow` / `PdfReportData` / `PdfSection` | modelos | Una fila del CSV por parte de gasto / el PDF del periodo con sus tablas ya formateadas. |
+| Textos del PDF / armado de documentos | `ReportExportTexts` / `BuildReportDocumentsUseCase` | modelo / caso de uso | Textos del PDF resueltos por la pantalla / arma las filas del CSV y el PDF del periodo. |
 
 ---
 

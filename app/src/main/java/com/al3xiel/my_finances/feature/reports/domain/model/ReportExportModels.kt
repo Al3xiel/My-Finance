@@ -17,3 +17,26 @@ data class CsvReportRow(
 data class PdfSection(val heading: String, val columns: List<String>, val rows: List<List<String>>)
 
 data class PdfReportData(val title: String, val subtitle: String, val notice: String, val sections: List<PdfSection>)
+
+/** Textos del PDF, resueltos por la pantalla (el ViewModel no conoce `Context`). */
+data class ReportExportTexts(
+    val title: String,
+    val periodLabel: String,
+    val notice: String,
+    val summaryHeading: String,
+    val categoryHeading: String,
+    val tagHeading: String,
+    val accountHeading: String,
+    val income: String,
+    val ownSpend: String,
+    val othersTotal: String,
+    val othersReimbursed: String,
+    val othersPending: String,
+    val unidentified: String,
+    val columnName: String,
+    val columnAmount: String,
+    val columnShare: String,
+    val columnInflow: String,
+    val columnOutflow: String,
+    val columnTransfers: String,
+)

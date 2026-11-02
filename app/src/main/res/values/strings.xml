@@ -492,6 +492,8 @@
     <!-- Reportes: componentes (S40–S45) -->
     <string name="report_period_previous">Periodo anterior</string>
     <string name="report_period_next">Periodo siguiente</string>
+    <string name="report_period_previous_glyph" translatable="false">‹</string>
+    <string name="report_period_next_glyph" translatable="false">›</string>
     <string name="report_period_month">Mes</string>
     <string name="report_period_year">Año</string>
     <string name="report_period_custom">Rango</string>

@@ -28,12 +28,9 @@ import com.al3xiel.my_finances.R
 import com.al3xiel.my_finances.core.designsystem.EmptyState
 import com.al3xiel.my_finances.core.designsystem.MoneySign
 import com.al3xiel.my_finances.core.designsystem.MoneyText
-import com.al3xiel.my_finances.core.money.CurrencyCode
-import com.al3xiel.my_finances.core.money.Money
+import com.al3xiel.my_finances.feature.reports.ui.components.reportMoney
 import com.al3xiel.my_finances.feature.reports.domain.model.ReportPeriod
 import java.time.YearMonth
-
-private fun pen(minor: Long) = Money(minor, CurrencyCode.PEN)
 
 /** S43: entradas, salidas y transferencias netas (aparte) de cada cuenta; tocar una abre sus movimientos. */
 @Composable
@@ -90,7 +87,7 @@ fun ReportByAccountContent(
 private fun FlowLine(label: Int, minor: Long, sign: MoneySign) {
     Row(Modifier.fillMaxWidth().heightIn(min = 32.dp), horizontalArrangement = Arrangement.SpaceBetween) {
         Text(stringResource(label), style = MaterialTheme.typography.bodyLarge)
-        MoneyText(pen(minor), sign = if (minor == 0L) MoneySign.NONE else sign, style = MaterialTheme.typography.bodyLarge)
+        MoneyText(reportMoney(minor), sign = if (minor == 0L) MoneySign.NONE else sign, style = MaterialTheme.typography.bodyLarge)
     }
 }
 
