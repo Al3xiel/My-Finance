@@ -235,6 +235,21 @@
 | Resumen / detalle de movimiento | `MovementSummary` / `MovementDetail` | modelos | Fila de la lista / movimiento con sus partes y su historial. |
 | Historial de movimiento | `MovementHistoryEntry` / `HistoryKind` | enum: `REGISTERED`, `CORRECTED`, `VOIDED` | Una entrada por evento del movimiento, con su motivo si lo tiene. |
 | Cuenta con saldo / línea de libro | `AccountWithBalance` / `LedgerLine` | modelos | Cuenta con su saldo actual / asiento de una cuenta (los anulados se muestran tachados). |
+| Gasto propio | `ownSpend` | monto (`Long`) | Gasto que cuenta como del usuario en un periodo: partes sin cúmulo más la porción pendiente de las de cúmulo, medida al cierre del periodo (D35). |
+| Gasto por otros | `spendOnBehalfOfOthers` | modelo | Partes con cúmulo del periodo: total, reembolsado y pendiente; no se suma al gasto propio (D35). |
+| No identificado | `unidentified` | monto con signo | Neto de los asientos `ADJUSTMENT` del periodo; línea propia, fuera de las categorías. |
+| Periodo de reporte | `ReportPeriod` | sealed: `Month` / `Year` / `Custom` | Rango de fechas de un reporte; nunca futuro; "al cierre" del periodo en curso es hoy (D36). |
+| Periodo inválido | `Invalid` (de `ReportPeriod`) | enum: `FROM_AFTER_TO`, `FUTURE` | Por qué un rango propio no se acepta (D36). |
+| Parte para reporte | `PartRow` | modelo | Una parte de un movimiento activo del periodo con lo reembolsado hasta el cierre; de ella salen gasto propio, categorías y conceptos. |
+| Detalle de parte | `PartDetail` | modelo | Fecha, clase (`PartKind`) y nota de la parte; solo lo usa la exportación. |
+| Asiento para reporte | `LedgerRow` | modelo | Asiento vigente del periodo con su signo; de él salen ingresos, "No identificado" y las entradas y salidas por cuenta. |
+| Resumen del periodo | `ReportSummary` / `OthersSpend` | modelos | Ingresos, gasto propio, gasto por otros (total, reembolsado, pendiente) y no identificado. |
+| Porción de categoría | `CategoryShare` | modelo | Monto y porcentaje (puntos base) de una categoría; las subcategorías suman a su padre. |
+| Total por concepto | `TagTotal` | modelo | Monto propio de un concepto con su cruce por categoría; los conceptos no suman entre sí. |
+| Flujo de cuenta | `AccountFlow` | modelo | Entradas, salidas y transferencias netas de una cuenta en el periodo. |
+| Calculador de reportes | `ReportCalculator` / `Percentages` | objetos | Cálculo puro de los reportes y porcentajes por el mayor residuo (desempate por id ascendente). |
+| Archivos de reporte | `ReportFileRepository` | puerto | Escribe el CSV o el PDF en el destino que eligió el usuario (SAF), sin archivo temporal. |
+| Fila / documento de exportación | `CsvReportRow` / `PdfReportData` / `PdfSection` | modelos | Una fila del CSV por parte de gasto / el PDF del periodo con sus tablas ya formateadas. |
 
 ---
 

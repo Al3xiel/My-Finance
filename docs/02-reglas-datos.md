@@ -132,6 +132,12 @@
 - DG9. Contraseña **obligatoria** para el diccionario.
 - DG10. El diccionario solo se aplica si su `exportId` y `packageHash` coinciden con el paquete abierto, y vive solo dentro del espacio de diagnóstico.
 
+**Reglas de la exportación de reportes (S45)**:
+- RX1. Solo por acción explícita; el aviso "este archivo no está cifrado" se muestra antes del selector del sistema.
+- RX2. El destino lo elige el usuario con `CreateDocument` (SAF); sin archivo temporal ni `FileProvider`; cancelar no deja nada.
+- RX3. CSV: una fila por parte de gasto, coma, importes con punto decimal, UTF-8 con BOM; las celdas que empiezan con `=`, `+`, `-`, `@`, tabulador o retorno se prefijan con `'`; comillas y saltos de línea escapados; las notas solo si el usuario lo marca.
+- RX4. El archivo ignora "ocultar montos" (afecta solo a las pantallas); nada del contenido va a logs.
+
 **Recordatorio de respaldo**: WorkManager periódico; notificación si pasaron más de N días (configurable, por defecto 15) desde el último respaldo exitoso.
 
 ---
