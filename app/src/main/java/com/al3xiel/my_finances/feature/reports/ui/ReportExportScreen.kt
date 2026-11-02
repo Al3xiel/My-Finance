@@ -83,6 +83,13 @@ private fun rememberExportTexts(period: ReportPeriod) = ReportExportTexts(
     columnInflow = stringResource(R.string.report_by_account_inflow),
     columnOutflow = stringResource(R.string.report_by_account_outflow),
     columnTransfers = stringResource(R.string.report_by_account_transfers),
+    originHeading = stringResource(R.string.report_origin_title),
+    originSpendHeading = stringResource(R.string.report_export_pdf_origin_spend),
+    estimated = stringResource(R.string.origin_estimated_label).lowercase(),
+    columnSource = stringResource(R.string.report_origin_spend_pick),
+    columnTarget = stringResource(R.string.report_export_pdf_target),
+    loans = stringResource(R.string.report_origin_target_loans),
+    unidentifiedTarget = stringResource(R.string.report_origin_target_unidentified),
 )
 
 @Composable

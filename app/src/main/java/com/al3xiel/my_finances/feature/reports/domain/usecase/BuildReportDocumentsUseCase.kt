@@ -5,14 +5,18 @@ import com.al3xiel.my_finances.core.money.Money
 import com.al3xiel.my_finances.core.money.MoneyFormatter
 import com.al3xiel.my_finances.core.text.formatBasisPoints
 import com.al3xiel.my_finances.domain.model.PartKind
+import com.al3xiel.my_finances.domain.model.LedgerEntryKind
 import com.al3xiel.my_finances.feature.accounts.domain.repository.AccountRepository
+import com.al3xiel.my_finances.feature.accounts.domain.repository.IncomeSourceRepository
 import com.al3xiel.my_finances.feature.categories.domain.repository.CategoryRepository
 import com.al3xiel.my_finances.feature.reports.domain.model.CsvReportRow
 import com.al3xiel.my_finances.feature.reports.domain.model.PdfReportData
 import com.al3xiel.my_finances.feature.reports.domain.model.PdfSection
 import com.al3xiel.my_finances.feature.reports.domain.model.ReportExportTexts
 import com.al3xiel.my_finances.feature.reports.domain.model.ReportPeriod
+import com.al3xiel.my_finances.feature.reports.domain.repository.OriginRepository
 import com.al3xiel.my_finances.feature.reports.domain.repository.ReportRepository
+import com.al3xiel.my_finances.feature.reports.domain.rules.OriginCalculator
 import com.al3xiel.my_finances.feature.reports.domain.rules.ReportCalculator
 import com.al3xiel.my_finances.feature.tags.domain.repository.TagRepository
 import javax.inject.Inject
@@ -24,6 +28,8 @@ class BuildReportDocumentsUseCase @Inject constructor(
     private val accounts: AccountRepository,
     private val categories: CategoryRepository,
     private val tags: TagRepository,
+    private val origin: OriginRepository,
+    private val sources: IncomeSourceRepository,
 ) {
     suspend fun csvRows(period: ReportPeriod): List<CsvReportRow> {
         val parts = reports.parts(period)
@@ -81,7 +87,41 @@ class BuildReportDocumentsUseCase @Inject constructor(
                         listOf(accountNames[it.accountId] ?: it.accountId, money(it.inflow), money(it.outflow), money(it.transfersNet))
                     },
                 ),
-            ),
+            ) + originSections(period, t, accountNames, categoryNames, ::money),
+        )
+    }
+
+    /** Composición por cuenta y gasto de cada fuente; ambas llevan "estimado" y faltan si no hay datos de origen. */
+    private suspend fun originSections(
+        period: ReportPeriod,
+        t: ReportExportTexts,
+        accountNames: Map<String, String>,
+        categoryNames: Map<String, String>,
+        money: (Long) -> String,
+    ): List<PdfSection> {
+        val sourceNames = sources.observeAll().first().associate { it.id.value to it.name }
+        val records = origin.attributions(period)
+        val composition = origin.composition()
+        val compositionRows = composition.flatMap { account ->
+            account.slices.map {
+                listOf(
+                    "${accountNames[account.accountId] ?: account.accountId} · ${sourceNames[it.sourceId] ?: it.sourceId}",
+                    money(it.amountMinor), formatBasisPoints(it.basisPoints),
+                )
+            }
+        }
+        val spendRows = records.map { it.sourceId }.distinct().sortedBy { sourceNames[it] ?: it }.flatMap { source ->
+            OriginCalculator.spendOf(source, records).map {
+                val target = it.categoryId?.let { c -> categoryNames[c] ?: c }
+                    ?: if (it.kind == LedgerEntryKind.LOAN_OUT) t.loans else t.unidentifiedTarget
+                listOf("${sourceNames[source] ?: source} · ${accountNames[it.accountId] ?: it.accountId} · $target", money(it.amountMinor))
+            }
+        }
+        return listOfNotNull(
+            PdfSection("${t.originHeading} (${t.estimated})", listOf(t.columnName, t.columnAmount, t.columnShare), compositionRows)
+                .takeIf { compositionRows.isNotEmpty() },
+            PdfSection("${t.originSpendHeading} (${t.estimated})", listOf("${t.columnSource} · ${t.columnName} · ${t.columnTarget}", t.columnAmount), spendRows)
+                .takeIf { spendRows.isNotEmpty() },
         )
     }
 }

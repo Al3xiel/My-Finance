@@ -39,10 +39,10 @@ class ReportExportViewModelTest {
 
     private val f = MovementFixture()
     private val reports = FakeReportRepository()
-    private val texts = ReportExportTexts("T", "P", "N", "S", "C", "Tg", "A", "i", "o", "t", "r", "p", "u", "n", "m", "%", "in", "out", "tr")
+    private val texts = ReportExportTexts("T", "P", "N", "S", "C", "Tg", "A", "i", "o", "t", "r", "p", "u", "n", "m", "%", "in", "out", "tr", "or", "os", "es", "src", "tgt", "loans", "unid")
 
     private fun viewModel(sink: FakeFiles) =
-        ReportExportViewModel("2026-10-01", "2026-10-31", BuildReportDocumentsUseCase(reports, f.accounts, f.categories, f.tags), sink)
+        ReportExportViewModel("2026-10-01", "2026-10-31", BuildReportDocumentsUseCase(reports, f.accounts, f.categories, f.tags, FakeOriginRepository(), f.sources), sink)
 
     private fun withData() {
         reports.parts = listOf(PartRow("p1", "bbva", "food", null, 1_250, false, 0, listOf("t1")))
