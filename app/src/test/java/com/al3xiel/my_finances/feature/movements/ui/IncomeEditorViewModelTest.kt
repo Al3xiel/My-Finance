@@ -11,6 +11,8 @@ import com.al3xiel.my_finances.domain.model.event.MovementSnapshot
 import com.al3xiel.my_finances.feature.accounts.domain.model.IncomeSource
 import com.al3xiel.my_finances.feature.funds.domain.usecase.FakeFundRepository
 import com.al3xiel.my_finances.feature.funds.domain.usecase.RegisterIncomeWithTopUpUseCase
+import com.al3xiel.my_finances.feature.expectedincome.domain.usecase.ConfirmExpectedIncomeUseCase
+import com.al3xiel.my_finances.feature.expectedincome.domain.usecase.FakeExpectedIncomeRepository
 import com.al3xiel.my_finances.feature.movements.domain.usecase.CorrectMovementUseCase
 import com.al3xiel.my_finances.feature.movements.domain.usecase.MovementFixture
 import com.al3xiel.my_finances.feature.movements.domain.usecase.RegisterIncomeUseCase
@@ -27,10 +29,12 @@ class IncomeEditorViewModelTest {
     private val f = MovementFixture()
 
     private fun viewModel(id: String? = null) = IncomeEditorViewModel(
-        id, f.movements, f.accounts, f.sources, FakeFundRepository(),
+        id, null, f.movements, f.accounts, f.sources, FakeFundRepository(),
         RegisterIncomeUseCase(f.rules, f.recorder, f.ids),
         RegisterIncomeWithTopUpUseCase(f.rules, FakeFundRepository(), f.recorder, f.ids, f.writeLock),
         CorrectMovementUseCase(f.rules, f.accounts, f.movements, f.recorder, f.ids, f.writeLock),
+        FakeExpectedIncomeRepository(),
+        ConfirmExpectedIncomeUseCase(f.rules, FakeExpectedIncomeRepository(), FakeFundRepository(), f.recorder, f.ids, f.writeLock),
         f.clock,
     )
 

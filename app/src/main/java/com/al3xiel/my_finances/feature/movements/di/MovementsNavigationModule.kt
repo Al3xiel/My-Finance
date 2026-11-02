@@ -64,7 +64,11 @@ object MovementsNavigationModule {
             }
             entry<IncomeEditor> { key ->
                 val navigator = LocalNavigator.current
-                IncomeEditorScreen(movementId = key.id?.let(::MovementId), onFinished = navigator::back)
+                IncomeEditorScreen(
+                    movementId = key.id?.let(::MovementId),
+                    onFinished = navigator::back,
+                    expectedIncomeId = key.expectedIncomeId,
+                )
             }
         }
     }

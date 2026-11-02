@@ -8,6 +8,7 @@ import com.al3xiel.my_finances.core.money.CurrencyCode
 import com.al3xiel.my_finances.core.money.Money
 import com.al3xiel.my_finances.domain.model.AccountId
 import com.al3xiel.my_finances.domain.model.BusinessError
+import com.al3xiel.my_finances.domain.model.ExpectedIncomeId
 import com.al3xiel.my_finances.domain.model.FundId
 import com.al3xiel.my_finances.domain.model.IncomeSourceId
 import com.al3xiel.my_finances.domain.model.IncomeSourceKind
@@ -18,6 +19,10 @@ import com.al3xiel.my_finances.domain.model.attempt
 import com.al3xiel.my_finances.domain.model.errorOrNull
 import com.al3xiel.my_finances.feature.accounts.domain.repository.AccountRepository
 import com.al3xiel.my_finances.feature.accounts.domain.repository.IncomeSourceRepository
+import com.al3xiel.my_finances.feature.expectedincome.domain.model.ExpectedIncome
+import com.al3xiel.my_finances.feature.expectedincome.domain.repository.ExpectedIncomeRepository
+import com.al3xiel.my_finances.feature.expectedincome.domain.rules.ExpectedIncomeRules
+import com.al3xiel.my_finances.feature.expectedincome.domain.usecase.ConfirmExpectedIncomeUseCase
 import com.al3xiel.my_finances.feature.funds.domain.model.FundStatus
 import com.al3xiel.my_finances.feature.funds.domain.repository.FundRepository
 import com.al3xiel.my_finances.feature.funds.domain.usecase.RegisterIncomeWithTopUpUseCase
@@ -40,6 +45,15 @@ import kotlinx.coroutines.launch
 import java.time.Clock
 import java.time.LocalDate
 
+/** Un ingreso esperado pendiente que este ingreso podría confirmar ("¿confirma Sueldo ~S/ 2,000?"). */
+data class ExpectedIncomeSuggestion(
+    val id: ExpectedIncomeId,
+    val sourceName: String,
+    val estimated: Money,
+    val expectedFrom: LocalDate,
+    val expectedTo: LocalDate,
+)
+
 data class IncomeEditorUiState(
     val isCorrection: Boolean = false,
     val loaded: Boolean = false,
@@ -56,6 +70,10 @@ data class IncomeEditorUiState(
     val fundOptions: List<EntityOption> = emptyList(),
     val topUpFundId: FundId? = null,
     val topUpText: String = "",
+    /** Pendientes de la misma cuenta y fuente que se sugieren confirmar; vacío al corregir o con uno ya elegido. */
+    val suggestions: List<ExpectedIncomeSuggestion> = emptyList(),
+    /** El esperado que este ingreso confirmará al guardar. */
+    val selectedExpected: ExpectedIncomeSuggestion? = null,
     val error: BusinessError? = null,
     val negativeWarning: BusinessError.WouldGoNegative? = null,
     val showReasonDialog: Boolean = false,
@@ -72,6 +90,10 @@ sealed interface IncomeEditorUiAction {
     /** `null` quita la recarga; elegir un fondo propone apartar todo el ingreso. */
     data class SelectTopUpFund(val id: FundId?) : IncomeEditorUiAction
     data class EditTopUp(val text: String) : IncomeEditorUiAction
+
+    /** Un toque en la sugerencia: este ingreso confirma ese esperado (y propone su monto si aún no hay uno). */
+    data class SelectExpected(val id: ExpectedIncomeId) : IncomeEditorUiAction
+    data object ClearExpected : IncomeEditorUiAction
     data object Save : IncomeEditorUiAction
     data class ConfirmReason(val reason: String) : IncomeEditorUiAction
     data object DismissReason : IncomeEditorUiAction
@@ -82,7 +104,8 @@ sealed interface IncomeEditorUiAction {
 /** S23: registra un ingreso nuevo, o corrige uno existente (con motivo) si recibe su id. */
 @HiltViewModel(assistedFactory = IncomeEditorViewModel.Factory::class)
 class IncomeEditorViewModel @AssistedInject constructor(
-    @Assisted movementIdValue: String?,
+    @Assisted("movement") movementIdValue: String?,
+    @Assisted("expectedIncome") expectedIncomeIdValue: String?,
     private val movements: MovementRepository,
     private val accounts: AccountRepository,
     private val incomeSources: IncomeSourceRepository,
@@ -90,15 +113,21 @@ class IncomeEditorViewModel @AssistedInject constructor(
     private val registerIncome: RegisterIncomeUseCase,
     private val registerIncomeWithTopUp: RegisterIncomeWithTopUpUseCase,
     private val correctMovement: CorrectMovementUseCase,
+    private val expectedIncomes: ExpectedIncomeRepository,
+    private val confirmExpectedIncome: ConfirmExpectedIncomeUseCase,
     clock: Clock,
 ) : ViewModel() {
     @AssistedFactory
     interface Factory {
-        fun create(movementIdValue: String?): IncomeEditorViewModel
+        fun create(
+            @Assisted("movement") movementIdValue: String?,
+            @Assisted("expectedIncome") expectedIncomeIdValue: String?,
+        ): IncomeEditorViewModel
     }
 
     // KSP no puede nombrar una fábrica asistida con un value class: llega el texto y se envuelve aquí.
     private val movementId = movementIdValue?.let(::MovementId)
+    private val presetExpectedId = expectedIncomeIdValue?.let(::ExpectedIncomeId)
     private val today = LocalDate.now(clock)
 
     private data class Form(
@@ -111,6 +140,7 @@ class IncomeEditorViewModel @AssistedInject constructor(
         val note: String = "",
         val topUpFundId: FundId? = null,
         val topUpText: String = "",
+        val expectedIncomeId: ExpectedIncomeId? = null,
         val error: BusinessError? = null,
         val negativeWarning: BusinessError.WouldGoNegative? = null,
         val showReasonDialog: Boolean = false,
@@ -122,8 +152,11 @@ class IncomeEditorViewModel @AssistedInject constructor(
     private val form = MutableStateFlow(Form(occurredOn = today))
 
     val uiState: StateFlow<IncomeEditorUiState> = combine(
-        form, accounts.observeAccounts(), incomeSources.observeAll(), funds.observeFunds(),
-    ) { form, accountList, sourceList, fundList ->
+        form, accounts.observeAccounts(), incomeSources.observeAll(), funds.observeFunds(), expectedIncomes.observeAll(),
+    ) { form, accountList, sourceList, fundList, expectedList ->
+        val sourceNames = sourceList.associate { it.id to it.name }
+        fun suggestion(e: ExpectedIncome) = ExpectedIncomeSuggestion(e.id, sourceNames[e.incomeSourceId].orEmpty(), e.estimated, e.range.from, e.range.to)
+        val selected = form.expectedIncomeId?.let { id -> expectedList.firstOrNull { it.id == id } }
         IncomeEditorUiState(
             isCorrection = movementId != null,
             loaded = form.loaded,
@@ -141,6 +174,14 @@ class IncomeEditorViewModel @AssistedInject constructor(
             fundOptions = if (movementId != null) emptyList() else fundList.filter { it.fund.status == FundStatus.ACTIVE }.map { EntityOption(it.fund.id.value, it.fund.name) },
             topUpFundId = form.topUpFundId,
             topUpText = form.topUpText,
+            selectedExpected = selected?.let(::suggestion),
+            suggestions = if (movementId != null || selected != null) {
+                emptyList()
+            } else {
+                expectedList
+                    .filter { ExpectedIncomeRules.isPending(it.status) && it.accountId == form.accountId && it.incomeSourceId == form.sourceId }
+                    .map(::suggestion)
+            },
             error = form.error,
             negativeWarning = form.negativeWarning,
             showReasonDialog = form.showReasonDialog,
@@ -153,6 +194,24 @@ class IncomeEditorViewModel @AssistedInject constructor(
     }
 
     private suspend fun initialize() {
+        if (movementId == null && presetExpectedId != null) {
+            // Desde S55: cuenta, fuente y monto salen del esperado; el usuario puede ajustarlos antes de guardar.
+            val expected = expectedIncomes.find(presetExpectedId)
+            if (expected == null || !ExpectedIncomeRules.isPending(expected.status)) {
+                form.update { it.copy(loaded = true, notFound = true) }
+            } else {
+                form.update {
+                    it.copy(
+                        loaded = true,
+                        accountId = expected.accountId,
+                        sourceId = expected.incomeSourceId,
+                        amountText = MoneyInputFilter.fromMinor(expected.estimated.amountMinor),
+                        expectedIncomeId = expected.id,
+                    )
+                }
+            }
+            return
+        }
         if (movementId == null) {
             val account = accounts.observeAccounts().first().firstOrNull { !it.account.isArchived }?.account?.id
             val source = incomeSources.observeAll().first().firstOrNull { it.kind == IncomeSourceKind.REGULAR }?.id
@@ -185,6 +244,13 @@ class IncomeEditorViewModel @AssistedInject constructor(
             is IncomeEditorUiAction.EditNote -> edit { copy(note = action.text) }
             is IncomeEditorUiAction.SelectTopUpFund ->
                 edit { copy(topUpFundId = action.id, topUpText = if (action.id == null) "" else topUpText.ifEmpty { amountText }) }
+            is IncomeEditorUiAction.SelectExpected -> viewModelScope.launch {
+                val expected = expectedIncomes.find(action.id) ?: return@launch
+                edit {
+                    copy(expectedIncomeId = expected.id, amountText = amountText.ifEmpty { MoneyInputFilter.fromMinor(expected.estimated.amountMinor) })
+                }
+            }
+            IncomeEditorUiAction.ClearExpected -> edit { copy(expectedIncomeId = null) }
             is IncomeEditorUiAction.EditTopUp -> edit { copy(topUpText = MoneyInputFilter.sanitize(action.text)) }
             IncomeEditorUiAction.Save ->
                 if (movementId != null && form.value.pendingReason == null) {
@@ -221,7 +287,10 @@ class IncomeEditorViewModel @AssistedInject constructor(
         viewModelScope.launch {
             val note = current.note.trim().ifEmpty { null }
             val outcome = attempt {
-                if (movementId == null && topUpFund != null && topUp != null) {
+                val expectedId = current.expectedIncomeId
+                if (movementId == null && expectedId != null) {
+                    confirmExpectedIncome(expectedId, account, amount, source, note, current.occurredOn, topUpFund, topUp)
+                } else if (movementId == null && topUpFund != null && topUp != null) {
                     registerIncomeWithTopUp(account, amount, source, note, current.occurredOn, topUpFund, topUp)
                 } else if (movementId == null) {
                     registerIncome(account, amount, source, note, current.occurredOn)

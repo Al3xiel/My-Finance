@@ -9,7 +9,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Card
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -20,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.al3xiel.my_finances.R
+import com.al3xiel.my_finances.core.money.MoneyFormatter
 import com.al3xiel.my_finances.core.designsystem.DateField
 import com.al3xiel.my_finances.core.designsystem.EmptyState
 import com.al3xiel.my_finances.core.designsystem.FundPicker
@@ -41,9 +44,10 @@ fun IncomeEditorScreen(
     movementId: MovementId?,
     onFinished: () -> Unit,
     modifier: Modifier = Modifier,
+    expectedIncomeId: String? = null,
     viewModel: IncomeEditorViewModel = hiltViewModel<IncomeEditorViewModel, IncomeEditorViewModel.Factory>(
-        key = "income-${movementId?.value}",
-        creationCallback = { it.create(movementId?.value) },
+        key = "income-${movementId?.value}-${expectedIncomeId.orEmpty()}",
+        creationCallback = { it.create(movementId?.value, expectedIncomeId) },
     ),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -89,6 +93,32 @@ fun IncomeEditorContent(
             onSelect = { onAction(IncomeEditorUiAction.SelectSource(IncomeSourceId(it))) },
             modifier = Modifier.fillMaxWidth(),
         )
+        state.selectedExpected?.let { selected ->
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        stringResource(R.string.income_expected_confirming, selected.sourceName, MoneyFormatter.format(selected.estimated)),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    TextButton(onClick = { onAction(IncomeEditorUiAction.ClearExpected) }) {
+                        Text(stringResource(R.string.income_expected_clear))
+                    }
+                }
+            }
+        }
+        state.suggestions.forEach { suggestion ->
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        stringResource(R.string.income_expected_suggestion, suggestion.sourceName, MoneyFormatter.format(suggestion.estimated)),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    TextButton(onClick = { onAction(IncomeEditorUiAction.SelectExpected(suggestion.id)) }) {
+                        Text(stringResource(R.string.income_expected_confirm))
+                    }
+                }
+            }
+        }
         DateField(
             label = stringResource(R.string.editor_date),
             value = state.occurredOn,
