@@ -25,7 +25,8 @@ sealed interface Route : NavKey
     val presetPoolId: String? = null,
     val presetFundId: String? = null,
 ) : Route
-@Serializable data class IncomeEditor(val id: String? = null) : Route
+/** `expectedIncomeId` abre el ingreso prellenado desde un ingreso esperado (S55 → S23); con `id` se corrige un ingreso. */
+@Serializable data class IncomeEditor(val id: String? = null, val expectedIncomeId: String? = null) : Route
 
 // Accounts feature
 @Serializable data object Accounts : Route
@@ -52,3 +53,7 @@ sealed interface Route : NavKey
 @Serializable data class FundDetail(val id: String) : Route
 @Serializable data class FundCount(val id: String) : Route
 @Serializable data class FundEditor(val id: String? = null) : Route
+
+// Expected incomes (ids travel as text)
+@Serializable data object ExpectedIncomes : Route
+@Serializable data class ExpectedIncomeEditor(val id: String? = null) : Route
