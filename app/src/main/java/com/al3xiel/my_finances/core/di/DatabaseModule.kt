@@ -44,6 +44,7 @@ import com.al3xiel.my_finances.data.projection.origin.OriginProjector
 import com.al3xiel.my_finances.data.projection.reconciliation.ReconciliationProjector
 import com.al3xiel.my_finances.data.projection.reconciliation.ReconciliationQueryDao
 import com.al3xiel.my_finances.domain.model.event.EventStore
+import com.al3xiel.my_finances.feature.backup.data.DatabaseFiles
 import com.al3xiel.my_finances.domain.usecase.ProjectionRebuilder
 import com.al3xiel.my_finances.domain.usecase.ProjectionVersions
 import dagger.Binds
@@ -112,6 +113,8 @@ abstract class DatabaseModule {
         @Singleton
         fun provideDatabase(@ApplicationContext context: Context, keyProvider: DatabaseKeyProvider): AppDatabase {
             System.loadLibrary("sqlcipher")
+            // Una restauración interrumpida entre los dos pasos del intercambio se revierte antes de abrir (D49).
+            DatabaseFiles(requireNotNull(context.getDatabasePath(DATABASE_NAME).absoluteFile.parentFile)).recover()
             return Room.databaseBuilder(context, AppDatabase::class.java, DATABASE_NAME)
                 .openHelperFactory(SupportOpenHelperFactory(keyProvider.getOrCreate()))
                 .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
