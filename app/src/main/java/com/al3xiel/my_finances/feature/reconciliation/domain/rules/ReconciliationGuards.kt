@@ -5,7 +5,6 @@ import com.al3xiel.my_finances.domain.model.BusinessError
 import com.al3xiel.my_finances.domain.model.ReconciliationId
 import com.al3xiel.my_finances.domain.usecase.AccountArchiveGuard
 import com.al3xiel.my_finances.domain.usecase.ReconciliationLinkGuard
-import com.al3xiel.my_finances.feature.reconciliation.domain.model.ReconciliationStatus
 import com.al3xiel.my_finances.feature.reconciliation.domain.repository.ReconciliationRepository
 import javax.inject.Inject
 
@@ -13,12 +12,8 @@ import javax.inject.Inject
 class ReconciliationGuards @Inject constructor(
     private val reconciliations: ReconciliationRepository,
 ) : ReconciliationLinkGuard, AccountArchiveGuard {
-    override suspend fun check(reconciliationId: ReconciliationId, accountIds: Set<AccountId>): BusinessError? {
-        val reconciliation = reconciliations.find(reconciliationId) ?: return BusinessError.NotFound
-        if (reconciliation.status != ReconciliationStatus.OPEN) return BusinessError.ReconciliationNotOpen
-        if (reconciliation.accountId !in accountIds) return BusinessError.MovementNotInAccount
-        return null
-    }
+    override suspend fun check(reconciliationId: ReconciliationId, accountIds: Set<AccountId>): BusinessError? =
+        ReconciliationRules.linkError(reconciliations.find(reconciliationId), accountIds)
 
     override suspend fun check(accountId: AccountId): BusinessError? =
         if (reconciliations.openFor(accountId) != null) BusinessError.HasOpenReconciliation else null

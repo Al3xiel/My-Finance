@@ -27,6 +27,16 @@ class ReconciliationNavigationTest {
     }
 
     @Test
+    fun leavingS60ForS61DropsS60SoBackFromS61DoesNotBounceToIt() {
+        // Lo que hace ReconciliationNavigationModule: back() y luego push(detalle).
+        val onS60 = TabBackStacks().select(MainTab.MORE).push(AccountDetail("a1")).push(ReconciliationStart("a1"))
+        val onS61 = onS60.back()!!.push(ReconciliationDetail("r1"))
+
+        assertEquals(listOf(More, AccountDetail("a1"), ReconciliationDetail("r1")), onS61.activeStack)
+        assertEquals(listOf(More, AccountDetail("a1")), onS61.back()!!.activeStack)
+    }
+
+    @Test
     fun everyReconciliationRouteSurvivesSavingAndRestoringTheTabState() {
         val routes = listOf<Route>(
             ReconciliationStart("a1"),

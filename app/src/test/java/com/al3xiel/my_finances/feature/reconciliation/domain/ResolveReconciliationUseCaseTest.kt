@@ -14,6 +14,7 @@ import com.al3xiel.my_finances.domain.model.event.ReconciliationResolved
 import com.al3xiel.my_finances.domain.usecase.EventRecorder
 import com.al3xiel.my_finances.domain.usecase.FakeEventStore
 import com.al3xiel.my_finances.domain.usecase.SequentialIdGenerator
+import com.al3xiel.my_finances.feature.movements.domain.rules.MovementWriteLock
 import com.al3xiel.my_finances.feature.reconciliation.domain.model.Reconciliation
 import com.al3xiel.my_finances.feature.reconciliation.domain.model.ReconciliationStatus
 import com.al3xiel.my_finances.feature.reconciliation.domain.usecase.ResolveReconciliationUseCase
@@ -31,7 +32,7 @@ class ResolveReconciliationUseCaseTest {
     private val reconciliations = FakeReconciliationRepository()
     private val ids = SequentialIdGenerator()
     private val clock = Clock.fixed(Instant.parse("2026-11-02T15:00:00Z"), ZoneOffset.UTC)
-    private val resolve = ResolveReconciliationUseCase(reconciliations, EventRecorder(store, ids, clock), ids)
+    private val resolve = ResolveReconciliationUseCase(reconciliations, EventRecorder(store, ids, clock), ids, MovementWriteLock())
     private val r1 = ReconciliationId("r1")
 
     private fun pen(minor: Long) = Money(minor, CurrencyCode.PEN)

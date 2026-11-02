@@ -16,7 +16,6 @@ import com.al3xiel.my_finances.feature.reconciliation.domain.model.Reconciliatio
 import com.al3xiel.my_finances.feature.reconciliation.domain.model.ReconciliationDetail
 import com.al3xiel.my_finances.feature.reconciliation.domain.model.ReconciliationMovement
 import com.al3xiel.my_finances.feature.reconciliation.domain.model.ReconciliationStatus
-import com.al3xiel.my_finances.feature.reconciliation.domain.rules.ReconciliationGuards
 import com.al3xiel.my_finances.feature.reconciliation.domain.usecase.CancelReconciliationUseCase
 import com.al3xiel.my_finances.feature.reconciliation.domain.usecase.LinkMovementUseCase
 import org.junit.Assert.assertEquals
@@ -50,7 +49,7 @@ class ReconciliationDetailViewModelTest {
         "r1",
         reconciliations,
         f.accounts,
-        LinkMovementUseCase(reconciliations, f.movements, ReconciliationGuards(reconciliations), f.recorder),
+        LinkMovementUseCase(reconciliations, f.movements, f.recorder),
         CancelReconciliationUseCase(reconciliations, f.recorder),
     )
 

@@ -252,4 +252,30 @@ class ReconciliationProjectorTest {
 
         assertEquals(ReconciliationStatus.RESOLVED, dao.reconciliation("r1")!!.status)
     }
+
+    @Test
+    fun theBankCanSayZeroAndTheRowKeepsIt() = runTest {
+        apply(open())
+        apply(check(real = 0))
+
+        val row = dao.reconciliation("r1")!!
+        assertEquals(0L, row.realMinor)
+        assertEquals(-80_000L, diff())
+    }
+
+    @Test
+    fun aNegativeRealBalanceResolvesWithAnUnidentifiedExpenseAndIsReverifiedByItsSign() = runTest {
+        apply(open())
+        apply(check(real = -500))
+        apply(ReconciliationResolved(r1, ReconciliationCause.SUSPECTED_APP_ERROR, adjustment(AdjustmentDirection.UNIDENTIFIED_EXPENSE, 80_500), null))
+        assertEquals(-500L, ledgerDao.balanceOf("bbva"))
+        assertEquals(-80_500L, dao.reconciliation("r1")!!.adjustmentMinor)
+
+        apply(rebuilt(RebuildReason.VERSION_CHANGE))
+        assertFalse("el egreso sigue coincidiendo con la diferencia", dao.reconciliation("r1")!!.needsReview)
+
+        shiftOpening(100)
+        apply(rebuilt(RebuildReason.VERSION_CHANGE))
+        assertTrue("la diferencia cambió y el egreso ya no coincide", dao.reconciliation("r1")!!.needsReview)
+    }
 }

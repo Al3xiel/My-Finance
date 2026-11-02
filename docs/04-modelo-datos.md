@@ -477,7 +477,7 @@ Los proyectores se aplican en vivo evento a evento y, en el replay, uno tras otr
 - La `last_sequence` de un saldo nunca retrocede: es la del último evento que lo tocó, lo haya hecho el proyector que lo haya hecho.
 
 ### 5.4 Conciliación como detector de errores de código
-Solo tras una re-proyección por **cambio de versión** de un proyector (replay `VERSION_CHANGE` automático al arrancar) o la **manual** de S73, `ReconciliationProjector` recalcula la diferencia de las conciliaciones resueltas al aplicar `ProjectionsRebuilt`, comparando contra la evidencia de los eventos (`computedBalanceSnapshot`, `adjustment.amount`) y no contra columnas, que el replay borra (D31). Una corrección normal o una restauración (`RESTORE`) no marcan nada. Anular el ajuste deja la conciliación `RESOLVED` y limpia la marca:
+Solo tras una re-proyección por **cambio de versión** de un proyector (replay `VERSION_CHANGE` automático al arrancar) o la **manual** de S73, `ReconciliationProjector` recalcula la diferencia de las conciliaciones resueltas al aplicar `ProjectionsRebuilt`, comparando contra la evidencia de los eventos (`computedBalanceSnapshot`, `adjustment.amount`) y no contra columnas, que el replay borra (D31). Una corrección normal o una restauración (`RESTORE`) no marcan nada. La marca refleja el estado del libro al aplicar el **último** disparador: si después cambia algo (por ejemplo, se anula un movimiento vinculado) la marca en vivo queda como estaba hasta el siguiente disparador, y un replay la recalcula con el estado final. Anular el ajuste deja la conciliación `RESOLVED` y limpia la marca:
 
 | Caso | Interpretación | Acción en la app |
 |---|---|---|

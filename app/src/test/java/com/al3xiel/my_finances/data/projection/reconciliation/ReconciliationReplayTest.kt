@@ -55,7 +55,7 @@ class ReconciliationReplayTest {
         ProjectionsRebuilt(mapOf("movement" to 4), RebuildReason.VERSION_CHANGE) to LocalDate.of(2026, 10, 28),
     )
 
-    private val stored = events.mapIndexed { i, (event, on) ->
+    private fun stored(list: List<Pair<DomainEvent, LocalDate>>) = list.mapIndexed { i, (event, on) ->
         val sequence = i + 1L
         StoredEvent(sequence, "e$sequence", 1, "c", EventCodec.encode(event), on, Instant.ofEpochSecond(sequence), "t", "p", "h", event)
     }
@@ -64,16 +64,40 @@ class ReconciliationReplayTest {
         dao.reconciliations.toMap(), dao.links.toSet(), ledgerDao.entries.toMap(), movementDao.movements.toMap(), ledgerDao.balances.toMap(),
     )
 
-    @Test
-    fun replayYieldsTheSameRowsAsTheLiveProjection() = runTest {
-        stored.forEach { e -> projectors.forEach { it.apply(e) } }
+    private fun assertReplayEqualsLive(list: List<Pair<DomainEvent, LocalDate>>) = runTest {
+        val log = stored(list)
+        log.forEach { e -> projectors.forEach { it.apply(e) } }
         val live = snapshot()
 
         projectors.forEach { p ->
             p.reset()
-            stored.forEach { p.apply(it) }
+            log.forEach { p.apply(it) }
         }
 
         assertEquals(live, snapshot())
+    }
+
+    @Test
+    fun replayYieldsTheSameRowsAsTheLiveProjection() = assertReplayEqualsLive(events)
+
+    /**
+     * Una BALANCED cuyo vínculo se anula (sin vincular) antes de la re-verificación: la marca sale activa y es la misma
+     * en vivo y tras el replay. Es el camino que el escenario anterior no ejercita (termina con el ajuste ya anulado).
+     */
+    @Test
+    fun aMarkedReviewIsTheSameLiveAndAfterReplay() {
+        val r1 = ReconciliationId("r1")
+        val marked = listOf<Pair<DomainEvent, LocalDate>>(
+            AccountCreated(AccountId("bbva"), "BBVA", AccountType.BANK, CurrencyCode.PEN, null, pen(80_000)) to LocalDate.of(2026, 10, 1),
+            BalanceCheckRecorded(r1, AccountId("bbva"), pen(81_000), pen(80_000)) to LocalDate.of(2026, 10, 25),
+            IncomeRegistered(MovementId("m1"), AccountId("bbva"), pen(1_000), IncomeSourceId("s"), r1, null) to LocalDate.of(2026, 10, 25),
+            ReconciliationResolved(r1, ReconciliationCause.BALANCED, null, null) to LocalDate.of(2026, 10, 26),
+            MovementVoided(MovementId("m1"), "duplicado", null) to LocalDate.of(2026, 10, 27),
+            ProjectionsRebuilt(mapOf("movement" to 4), RebuildReason.VERSION_CHANGE) to LocalDate.of(2026, 10, 28),
+        )
+
+        assertReplayEqualsLive(marked)
+
+        assertEquals(true, dao.reconciliations.getValue("r1").needsReview)
     }
 }

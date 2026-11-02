@@ -9,6 +9,7 @@ import com.al3xiel.my_finances.domain.model.PartId
 import com.al3xiel.my_finances.domain.model.PoolId
 import com.al3xiel.my_finances.domain.model.TagId
 import com.al3xiel.my_finances.feature.categories.domain.model.Category
+import com.al3xiel.my_finances.feature.pools.domain.model.Pool
 import java.time.LocalDate
 
 /** Parte en edición. `key` identifica la fila en pantalla; `partId` solo existe si la parte ya estaba guardada (D15). */
@@ -21,6 +22,14 @@ data class PartDraft(
     val poolId: PoolId? = null,
     val fundId: FundId? = null,
 )
+
+/** Sin cúmulo conserva lo elegido; con cúmulo toma su categoría y suma sus conceptos por defecto (el usuario puede cambiarlos). */
+internal fun PartDraft.inPool(pool: Pool?): PartDraft =
+    if (pool == null) {
+        copy(poolId = null)
+    } else {
+        copy(poolId = pool.id, fundId = null, categoryId = pool.defaultCategoryId ?: categoryId, tagIds = tagIds + pool.defaultTagIds)
+    }
 
 data class ExpenseEditorUiState(
     val isCorrection: Boolean = false,

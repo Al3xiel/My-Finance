@@ -1,8 +1,12 @@
 package com.al3xiel.my_finances.feature.reconciliation.domain.rules
 
 import com.al3xiel.my_finances.core.money.Money
+import com.al3xiel.my_finances.domain.model.AccountId
+import com.al3xiel.my_finances.domain.model.BusinessError
 import com.al3xiel.my_finances.domain.model.event.AdjustmentDirection
 import com.al3xiel.my_finances.domain.model.event.ReconciliationCause
+import com.al3xiel.my_finances.feature.reconciliation.domain.model.Reconciliation
+import com.al3xiel.my_finances.feature.reconciliation.domain.model.ReconciliationStatus
 
 /** Lo que `ReconciliationResolved` lleva como ajuste, sin el id del movimiento (lo genera el caso de uso). */
 data class AdjustmentSpec(val direction: AdjustmentDirection, val amount: Money)
@@ -20,6 +24,14 @@ object ReconciliationRules {
     fun allowedCauses(difference: Money): Set<ReconciliationCause> = if (difference.isZero) needNoAdjustment else needAdjustment
 
     fun isCauseAllowed(cause: ReconciliationCause, difference: Money): Boolean = cause in allowedCauses(difference)
+
+    /** Vincular o registrar desde la conciliación: debe existir, estar abierta y ser de una cuenta que el movimiento toca. */
+    fun linkError(reconciliation: Reconciliation?, accountIds: Set<AccountId>): BusinessError? = when {
+        reconciliation == null -> BusinessError.NotFound
+        reconciliation.status != ReconciliationStatus.OPEN -> BusinessError.ReconciliationNotOpen
+        reconciliation.accountId !in accountIds -> BusinessError.MovementNotInAccount
+        else -> null
+    }
 
     /** `null` con diferencia 0; si no, ingreso con signo positivo (el banco tiene más) o egreso, por `|diferencia|`. */
     fun adjustmentFor(difference: Money): AdjustmentSpec? = when {

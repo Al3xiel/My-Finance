@@ -12,7 +12,6 @@ import com.al3xiel.my_finances.domain.model.event.MovementLinkedToReconciliation
 import com.al3xiel.my_finances.feature.movements.domain.usecase.MovementFixture
 import com.al3xiel.my_finances.feature.reconciliation.domain.model.Reconciliation
 import com.al3xiel.my_finances.feature.reconciliation.domain.model.ReconciliationStatus
-import com.al3xiel.my_finances.feature.reconciliation.domain.rules.ReconciliationGuards
 import com.al3xiel.my_finances.feature.reconciliation.domain.usecase.LinkMovementUseCase
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -23,7 +22,7 @@ import java.time.Instant
 class LinkMovementUseCaseTest {
     private val f = MovementFixture()
     private val reconciliations = FakeReconciliationRepository()
-    private val link = LinkMovementUseCase(reconciliations, f.movements, ReconciliationGuards(reconciliations), f.recorder)
+    private val link = LinkMovementUseCase(reconciliations, f.movements, f.recorder)
     private val r1 = ReconciliationId("r1")
 
     private fun open(account: AccountId = f.bbva, status: ReconciliationStatus = ReconciliationStatus.OPEN) =

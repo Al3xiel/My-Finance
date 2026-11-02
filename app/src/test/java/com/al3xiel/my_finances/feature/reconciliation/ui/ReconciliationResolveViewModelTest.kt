@@ -38,7 +38,7 @@ class ReconciliationResolveViewModelTest {
     }
 
     private fun viewModel(id: String = "r1") =
-        ReconciliationResolveViewModel(id, reconciliations, ResolveReconciliationUseCase(reconciliations, f.recorder, f.ids))
+        ReconciliationResolveViewModel(id, reconciliations, ResolveReconciliationUseCase(reconciliations, f.recorder, f.ids, f.writeLock))
 
     @Test
     fun aDifferenceOffersOnlyUnknownOrSuspectedAppErrorAndPreviewsTheUnidentifiedIncome() {

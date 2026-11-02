@@ -35,7 +35,8 @@ import javax.inject.Inject
  * `ADJUSTMENT` (lo crea al resolver con ajuste y lo anula si llega su `MovementVoided`), como lo hacen reembolsos y deudas.
  *
  * Re-verifica las resueltas solo al aplicar `ProjectionsRebuilt` por cambio de versión o manual (D31): para entonces sus
- * propias tablas ya vienen de los eventos, así que el chequeo y el ajuste guardados son la evidencia.
+ * propias tablas ya vienen de los eventos, así que el chequeo y el ajuste guardados son la evidencia. La marca refleja el
+ * libro al aplicar el último disparador (docs/04 §5.4); un replay la recalcula con el estado final.
  */
 class ReconciliationProjector @Inject constructor(
     private val reconciliations: ReconciliationDao,

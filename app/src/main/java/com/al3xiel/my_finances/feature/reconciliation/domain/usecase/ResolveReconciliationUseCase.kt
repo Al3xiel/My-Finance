@@ -9,6 +9,7 @@ import com.al3xiel.my_finances.domain.model.event.AdjustmentData
 import com.al3xiel.my_finances.domain.model.event.ReconciliationCause
 import com.al3xiel.my_finances.domain.model.event.ReconciliationResolved
 import com.al3xiel.my_finances.domain.usecase.EventRecorder
+import com.al3xiel.my_finances.feature.movements.domain.rules.MovementWriteLock
 import com.al3xiel.my_finances.feature.reconciliation.domain.model.ReconciliationStatus
 import com.al3xiel.my_finances.feature.reconciliation.domain.repository.ReconciliationRepository
 import com.al3xiel.my_finances.feature.reconciliation.domain.rules.ReconciliationRules
@@ -22,8 +23,13 @@ class ResolveReconciliationUseCase @Inject constructor(
     private val reconciliations: ReconciliationRepository,
     private val recorder: EventRecorder,
     private val ids: IdGenerator,
+    private val lock: MovementWriteLock,
 ) {
-    suspend operator fun invoke(id: ReconciliationId, cause: ReconciliationCause, note: String?): Outcome<Unit> {
+    /** La diferencia se lee y el ajuste se registra dentro del mismo lock que escribe movimientos: no se mueve entre una cosa y la otra. */
+    suspend operator fun invoke(id: ReconciliationId, cause: ReconciliationCause, note: String?): Outcome<Unit> =
+        lock.withLock { execute(id, cause, note) }
+
+    private suspend fun execute(id: ReconciliationId, cause: ReconciliationCause, note: String?): Outcome<Unit> {
         val current = reconciliations.find(id) ?: return Outcome.Failed(BusinessError.NotFound)
         if (current.status != ReconciliationStatus.OPEN) return Outcome.Failed(BusinessError.ReconciliationNotOpen)
         val difference = reconciliations.remainingDifference(id) ?: return Outcome.Failed(BusinessError.NotFound)

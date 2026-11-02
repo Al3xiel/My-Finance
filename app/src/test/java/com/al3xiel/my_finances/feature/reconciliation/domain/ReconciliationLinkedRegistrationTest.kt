@@ -9,7 +9,6 @@ import com.al3xiel.my_finances.domain.model.ReconciliationId
 import com.al3xiel.my_finances.domain.model.event.ExpenseRegistered
 import com.al3xiel.my_finances.domain.model.event.IncomeRegistered
 import com.al3xiel.my_finances.domain.model.event.MovementCorrected
-import com.al3xiel.my_finances.domain.model.event.MovementVoided
 import com.al3xiel.my_finances.domain.model.event.TransferRegistered
 import com.al3xiel.my_finances.feature.accounts.domain.usecase.RegisterTransferUseCase
 import com.al3xiel.my_finances.feature.movements.domain.model.MovementDraft
@@ -17,7 +16,6 @@ import com.al3xiel.my_finances.feature.movements.domain.usecase.CorrectMovementU
 import com.al3xiel.my_finances.feature.movements.domain.usecase.MovementFixture
 import com.al3xiel.my_finances.feature.movements.domain.usecase.RegisterExpenseUseCase
 import com.al3xiel.my_finances.feature.movements.domain.usecase.RegisterIncomeUseCase
-import com.al3xiel.my_finances.feature.movements.domain.usecase.VoidMovementUseCase
 import com.al3xiel.my_finances.feature.reconciliation.domain.model.Reconciliation
 import com.al3xiel.my_finances.feature.reconciliation.domain.model.ReconciliationStatus
 import com.al3xiel.my_finances.feature.reconciliation.domain.rules.ReconciliationGuards
@@ -39,7 +37,6 @@ class ReconciliationLinkedRegistrationTest {
     private val expense = RegisterExpenseUseCase(f.rules, f.accounts, f.recorder, f.ids, f.writeLock, emptySet(), emptySet(), linkGuards)
     private val transfer = RegisterTransferUseCase(f.rules, f.accounts, f.recorder, f.ids, linkGuards)
     private val correct = CorrectMovementUseCase(f.rules, f.accounts, f.movements, f.recorder, f.ids, f.writeLock, emptySet(), emptySet(), emptySet(), linkGuards)
-    private val void = VoidMovementUseCase(f.movements, f.accounts, f.rules, f.recorder, f.writeLock, emptySet(), emptySet(), linkGuards)
 
     init {
         reconciliations.reconciliations[r1] = Reconciliation(
@@ -90,14 +87,12 @@ class ReconciliationLinkedRegistrationTest {
     }
 
     @Test
-    fun correctingAndVoidingCanBeLinkedToo() = runTest {
+    fun correctingCanBeLinkedToo() = runTest {
         f.incomeMovement("m1", f.bbva, 500)
 
         val draft = MovementDraft.Income(f.bbva, f.pen(700), f.source, null, f.today)
         assertEquals(Outcome.Ok(Unit), correct(MovementId("m1"), draft, "monto", reconciliationId = r1))
-        assertEquals(Outcome.Ok(Unit), void(MovementId("m1"), "duplicado", confirmNegativeBalance = true, reconciliationId = r1))
 
-        assertEquals(r1, (f.store.events[0].event as MovementCorrected).reconciliationId)
-        assertEquals(r1, (f.store.events[1].event as MovementVoided).reconciliationId)
+        assertEquals(r1, (f.store.events.single().event as MovementCorrected).reconciliationId)
     }
 }
