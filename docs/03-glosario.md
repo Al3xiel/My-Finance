@@ -30,7 +30,7 @@
 | Tipo de concepto | `TagKind` | enum: `PERSON`, `TOPIC` | |
 | Persona | `Person` | entidad | Alguien con quien hay dinero de por medio (seguimiento o deudas). |
 | Fuente de ingreso | `IncomeSource` | entidad | Origen de un ingreso (Sueldo, Mamá…). |
-| Composición de origen | `OriginComposition` | proyección | Porcentaje del saldo de cada cuenta que proviene de cada fuente. |
+| Composición de origen | `OriginComposition` | proyección | Monto del saldo de cada cuenta que proviene de cada fuente (el porcentaje se calcula al mostrar, por mayor residuo). Siempre *estimado*. |
 | Atribución de origen | `OriginAttribution` | valor | Parte de un gasto atribuida a cada fuente. |
 | Ajuste / Desconocido | `UNKNOWN_ADJUSTMENT` | fuente especial | Origen de diferencias de conciliación. |
 | Conciliación | `Reconciliation` | entidad/proceso | Comparar saldo real del banco vs. saldo calculado, investigar y resolver. En dos pasos: registrar y luego resolver. |

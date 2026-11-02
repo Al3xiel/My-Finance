@@ -431,7 +431,8 @@ erDiagram
 | Tabla | Columnas | Notas |
 |---|---|---|
 | `origin_balances` | `account_id FK, income_source_id FK, amount_minor` · PK compuesta | Cuánto del saldo de cada cuenta viene de cada fuente (en **montos**, no %) |
-| `origin_attributions` | `part_id FK (o movement_id), income_source_id FK, amount_minor` | De dónde salió cada gasto |
+| `origin_attributions` | `ledger_entry_id FK, part_id, income_source_id FK, amount_minor` · PK (`ledger_entry_id`, `part_id`, `income_source_id`) | De dónde salió cada gasto; `part_id` vacío en asientos sin parte (préstamo, ajuste −) (D41) |
+| `origin_cursor` | `id PK (=1), last_order_key, last_sequence, last_entry_id` | Una fila: hasta qué asiento llega el estado de `origin_balances` (camino rápido, D40) |
 | `reconciliations` | `id PK, account_id FK, currency, real_minor, snapshot_computed_minor, checked_sequence, status (OPEN/RESOLVED/CANCELLED), cause?, adjustment_movement_id FK?, adjustment_minor? (con signo: ingreso +, egreso −), cancel_reason?, checked_at, resolved_at?, needs_review` (sin columnas calculadas; la nota de resolución solo vive en el evento, D34) | Historial "vida real vs. código" |
 | `reconciliation_links` | `reconciliation_id FK, movement_id FK` · PK compuesta | Movimientos que explicaron la diferencia |
 
@@ -446,19 +447,21 @@ erDiagram
 ## 5. Reglas derivadas (proyectores)
 
 ### 5.1 Trazabilidad de origen (por proporción)
-Por cada asiento del libro, en orden de `sequence`:
+Los asientos se procesan en orden de su **clave de orden**: el menor `sequence` de su movimiento (incluidos los asientos anulados) o su propio `sequence`; desempate por `sequence` y `id` (D40). Una corrección no cambia la posición del movimiento. Solo cuentan los asientos no anulados.
 
 | Asiento | Efecto en `origin_balances` |
 |---|---|
-| `OPENING` / `INCOME` | `+monto` a (cuenta, fuente del ingreso) |
-| `REIMBURSEMENT_IN` / `LOAN_IN` | `+monto` a (cuenta, fuente especial `REIMBURSEMENT`/`LOAN_REPAYMENT` de esa persona) |
+| `OPENING` | `+monto` a (cuenta, `OPENING_BALANCE`) |
+| `INCOME` | `+monto` a (cuenta, fuente del ingreso) |
+| `REIMBURSEMENT_IN` / `LOAN_IN` | `+monto` a (cuenta, fuente genérica `REIMBURSEMENT` / `LOAN_REPAYMENT`) |
 | `ADJUSTMENT` (+) | `+monto` a (cuenta, `UNKNOWN_ADJUSTMENT`) |
-| `EXPENSE` / `FEE` / `LOAN_OUT` / `ADJUSTMENT` (−) | Se descuenta de cada fuente de la cuenta **en proporción** a su monto actual → se guarda en `origin_attributions` |
-| `TRANSFER_OUT` → `TRANSFER_IN` | Se descuenta del origen en proporción y **la misma mezcla** se suma al destino |
+| `EXPENSE` / `FEE` / `LOAN_OUT` / `ADJUSTMENT` (−) | Se descuenta **en proporción** a las fuentes de la cuenta con saldo positivo → se guarda en `origin_attributions` |
+| `TRANSFER_OUT` → `TRANSFER_IN` | Se descuenta del origen en proporción y **la misma mezcla** se suma al destino; no genera atribuciones (D43) |
 
-Redondeo: método del **mayor residuo** (la suma de las porciones siempre es igual al monto exacto, al céntimo).
-
-Si una cuenta queda en negativo (por error de registro), el faltante se asigna a `UNKNOWN_ADJUSTMENT` y la UI avisa.
+- Las fuentes con saldo negativo (solo `UNKNOWN_ADJUSTMENT`) no participan del descuento.
+- Un gasto de varias partes se descuenta parte por parte en su orden de registro (D41); la comisión de una transferencia es un gasto de la cuenta origen.
+- Redondeo: **mayor residuo** con `BigInteger`, desempate por `income_source_id` ascendente; la suma de las porciones es el monto exacto, al céntimo.
+- Si no hay fuentes positivas o el gasto excede el saldo, el faltante va a `UNKNOWN_ADJUSTMENT`, que puede quedar negativa, y la UI avisa. Invariante: Σ `origin_balances` de una cuenta = su saldo en `account_balances`.
 
 ### 5.2 Asignación de reembolsos (`OLDEST_FIRST`)
 Partes pendientes del cúmulo/persona ordenadas por `occurred_on`, luego `created_sequence`; se salda cada una hasta agotar el monto. Si sobra dinero, el caso de uso lo rechaza (D1); no hay "saldo a favor". Cubre el cúmulo de origen o todos los de la persona (D18).
@@ -466,7 +469,7 @@ Partes pendientes del cúmulo/persona ordenadas por `occurred_on`, luego `create
 ### 5.3 Correcciones y anulaciones
 - `MovementVoided` → `movements.status = VOIDED`, sus `ledger_entries.is_voided = 1`.
 - `MovementCorrected` → anula los asientos viejos y crea los nuevos con el snapshot.
-- Como la composición de origen depende del **orden**, una corrección de un movimiento antiguo dispara la **re-proyección de `origin_*` desde ese `sequence`** (o completa, en el MVP, por simplicidad).
+- Como la composición de origen depende del **orden**: si los asientos nuevos son los últimos por la clave de orden, se aplican sobre el estado guardado en `origin_cursor` (camino rápido); anular o corregir recalcula **todo** `origin_*` (D4, D40). En el replay se recalcula una sola vez en `finishReplay`, porque el libro ya está en su estado final.
 
 ### 5.3.1 Orden entre proyectores
 Los proyectores se aplican en vivo evento a evento y, en el replay, uno tras otro sobre todo el registro. Para que ambos caminos dejen las mismas tablas:
@@ -571,3 +574,8 @@ Resultado: BBVA 780 · BCP 170 · Efectivo 95 · Apartado Pasajes 45 · Por cobr
 | D36 | Periodo de reporte | Mes (por defecto), año o rango propio; no puede ser futuro; en el periodo en curso "al cierre" es hoy (2026-11-02) |
 | D37 | Filtros por ruta | La ruta lleva textos (ids, fechas) y `MovementsViewModel` arma el filtro; una categoría padre filtra por ella y sus subcategorías (2026-11-02) |
 | D38 | Exportación de reportes | CSV con una fila por parte de gasto, coma, importes con punto decimal, UTF-8 con BOM; el archivo ignora "ocultar montos"; PDF con las tablas del reporte (2026-11-02) |
+| D39 | Fuentes de origen por asiento | `OPENING` → `OPENING_BALANCE`; `ADJUSTMENT` (+) → `UNKNOWN_ADJUSTMENT`; el resto, la fuente de su movimiento (reembolso y cobro de deuda ya guardan las genéricas). Un asiento negativo descuenta en proporción solo de las fuentes positivas (2026-11-02) |
+| D40 | Orden y replay del origen | Clave de orden = menor `sequence` del movimiento (con anulados) o el propio; camino rápido con `origin_cursor` si lo nuevo es lo último; anular/corregir recalcula todo; replay: un recálculo en `finishReplay` (2026-11-02) |
+| D41 | Clave de atribuciones | PK (`ledger_entry_id`, `part_id`, `income_source_id`), `part_id` vacío sin parte; un gasto de varias partes se descuenta parte por parte en su orden (2026-11-02) |
+| D42 | Flujo del Sankey | Salida bruta del periodo por fecha del asiento (incluye lo luego reembolsado; difiere de S41 y se rotula); préstamos y ajustes − a los nodos "Préstamos" y "No identificado" (2026-11-02) |
+| D43 | Transferencias en el origen | No generan atribuciones; mueven la mezcla del origen al destino; la comisión es gasto de la cuenta origen (2026-11-02) |

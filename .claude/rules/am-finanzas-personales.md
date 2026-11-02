@@ -14,7 +14,7 @@ Fuente: `docs/01-guia-programacion.md`, `02-reglas-datos.md`, `03-glosario.md`, 
   (→ `ReimbursementPool`), `Concept` (→ `Tag`), `Debt` (→ `Loan`), `date` suelto (→ `occurredOn` /
   `recordedAt`).
 - **Dinero**: `Money(amountMinor: Long, currency)`; nunca `Double`/`Float`. Redondeo con `BigDecimal`
-  y `HALF_EVEN`; el residuo va a la porción mayor para que cuadre al céntimo. Monto > 0; el signo lo da
+  y `HALF_EVEN`; los repartos usan el **mayor residuo** (desempate por id ascendente) para que cuadre al céntimo. Monto > 0; el signo lo da
   el tipo de movimiento.
 - **Tiempo**: `Clock` y `ZoneId` inyectados; nunca `Instant.now()` ni `ZoneId.systemDefault()` en el
   dominio. `occurredOn: LocalDate` (cuándo pasó) ≠ `recordedAt: Instant` (cuándo se registró).
