@@ -33,7 +33,7 @@ class MovementProjector @Inject constructor(
     private val ledger: LedgerDao,
 ) : EventProjector {
     override val name = "movement"
-    override val version = 3
+    override val version = 4
     private val voidable = setOf(MovementType.INCOME, MovementType.EXPENSE)
 
     override suspend fun apply(event: StoredEvent) {
@@ -83,7 +83,7 @@ class MovementProjector @Inject constructor(
         if (!sameType) return // transferencias no se corrigen (D12) y el tipo no cambia (D15)
 
         val previousAccounts = ledger.accountIdsOf(id)
-        ledger.voidEntriesOf(id)
+        ledger.voidEntriesOf(id, event.sequence)
         post(event, saveSnapshot(event, id, e.snapshot, current.revision + 1), previousAccounts)
     }
 
@@ -94,7 +94,7 @@ class MovementProjector @Inject constructor(
         if (current.status == MovementStatus.VOIDED || current.type !in voidable) return
 
         val accounts = ledger.accountIdsOf(id)
-        ledger.voidEntriesOf(id)
+        ledger.voidEntriesOf(id, event.sequence)
         movements.upsertMovement(current.copy(status = MovementStatus.VOIDED, lastSequence = event.sequence))
         refreshBalances(accounts, event.sequence)
     }

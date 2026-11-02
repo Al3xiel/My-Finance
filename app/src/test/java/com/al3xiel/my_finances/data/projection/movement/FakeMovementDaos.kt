@@ -50,8 +50,10 @@ class FakeLedgerDao : LedgerDao {
     override suspend fun accountIdsOf(movementId: String) =
         entries.values.filter { it.movementId == movementId }.map { it.accountId }.distinct()
 
-    override suspend fun voidEntriesOf(movementId: String) {
-        entries.replaceAll { _, e -> if (e.movementId == movementId) e.copy(isVoided = true) else e }
+    override suspend fun voidEntriesOf(movementId: String, sequence: Long) {
+        entries.replaceAll { _, e ->
+            if (e.movementId == movementId && !e.isVoided) e.copy(isVoided = true, voidedSequence = sequence) else e
+        }
     }
 
     override suspend fun balanceOf(accountId: String) =

@@ -79,8 +79,9 @@ class EventStoreImpl @Inject constructor(
     private suspend fun recordProgress(lastSequence: Long) {
         val states = database.projectionStateDao()
         projectors.forEach { projector ->
-            val rebuiltAt = states.state(projector.name)?.rebuiltAt
-            states.upsert(ProjectionStateEntity(projector.name, projector.version, lastSequence, rebuiltAt))
+            // La versión guardada solo la cambia un replay; así el arranque ve que el código subió de versión (D32).
+            val state = states.state(projector.name)
+            states.upsert(ProjectionStateEntity(projector.name, state?.projectorVersion ?: projector.version, lastSequence, state?.rebuiltAt))
         }
     }
 

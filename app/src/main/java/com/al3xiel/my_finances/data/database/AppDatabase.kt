@@ -44,6 +44,10 @@ import com.al3xiel.my_finances.data.projection.pool.ReimbursementAllocationEntit
 import com.al3xiel.my_finances.data.projection.pool.ReimbursementDao
 import com.al3xiel.my_finances.data.projection.pool.ReimbursementEntity
 import com.al3xiel.my_finances.data.projection.pool.SettlementStatementEntity
+import com.al3xiel.my_finances.data.projection.reconciliation.ReconciliationDao
+import com.al3xiel.my_finances.data.projection.reconciliation.ReconciliationEntity
+import com.al3xiel.my_finances.data.projection.reconciliation.ReconciliationLinkEntity
+import com.al3xiel.my_finances.data.projection.reconciliation.ReconciliationQueryDao
 
 /** Base cifrada con SQLCipher. Cada versión nueva trae su `Migration` en `migration/`. */
 @Database(
@@ -72,8 +76,10 @@ import com.al3xiel.my_finances.data.projection.pool.SettlementStatementEntity
         FundCountEntity::class,
         FundTopUpEntity::class,
         ExpectedIncomeEntity::class,
+        ReconciliationEntity::class,
+        ReconciliationLinkEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -91,6 +97,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun fundDao(): FundDao
     abstract fun fundQueryDao(): FundQueryDao
     abstract fun expectedIncomeDao(): ExpectedIncomeDao
+    abstract fun reconciliationDao(): ReconciliationDao
+    abstract fun reconciliationQueryDao(): ReconciliationQueryDao
     abstract fun expectedIncomeQueryDao(): ExpectedIncomeQueryDao
     abstract fun poolQueryDao(): PoolQueryDao
     abstract fun personQueryDao(): PersonQueryDao

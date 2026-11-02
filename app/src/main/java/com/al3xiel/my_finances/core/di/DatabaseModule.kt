@@ -7,9 +7,12 @@ import com.al3xiel.my_finances.data.database.AppDatabase
 import com.al3xiel.my_finances.data.database.migration.MIGRATION_1_2
 import com.al3xiel.my_finances.data.database.migration.MIGRATION_2_3
 import com.al3xiel.my_finances.data.database.migration.MIGRATION_3_4
+import com.al3xiel.my_finances.data.database.migration.MIGRATION_4_5
 import com.al3xiel.my_finances.data.eventstore.EventStoreImpl
 import com.al3xiel.my_finances.data.eventstore.EventTriggersCallback
 import com.al3xiel.my_finances.data.projection.EventProjector
+import com.al3xiel.my_finances.data.projection.ProjectionStateDao
+import com.al3xiel.my_finances.data.projection.ProjectionVersionsImpl
 import com.al3xiel.my_finances.data.projection.ProjectionRebuilderImpl
 import com.al3xiel.my_finances.data.projection.catalog.CatalogDao
 import com.al3xiel.my_finances.data.projection.catalog.CatalogProjector
@@ -34,8 +37,12 @@ import com.al3xiel.my_finances.data.projection.pool.PoolProjector
 import com.al3xiel.my_finances.data.projection.pool.PoolQueryDao
 import com.al3xiel.my_finances.data.projection.pool.ReimbursementDao
 import com.al3xiel.my_finances.data.projection.pool.ReimbursementProjector
+import com.al3xiel.my_finances.data.projection.reconciliation.ReconciliationDao
+import com.al3xiel.my_finances.data.projection.reconciliation.ReconciliationProjector
+import com.al3xiel.my_finances.data.projection.reconciliation.ReconciliationQueryDao
 import com.al3xiel.my_finances.domain.model.event.EventStore
 import com.al3xiel.my_finances.domain.usecase.ProjectionRebuilder
+import com.al3xiel.my_finances.domain.usecase.ProjectionVersions
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -57,6 +64,9 @@ abstract class DatabaseModule {
 
     @Binds
     abstract fun projectionRebuilder(impl: ProjectionRebuilderImpl): ProjectionRebuilder
+
+    @Binds
+    abstract fun projectionVersions(impl: ProjectionVersionsImpl): ProjectionVersions
 
     @Binds
     @IntoSet
@@ -86,6 +96,10 @@ abstract class DatabaseModule {
     @IntoSet
     abstract fun expectedIncomeProjector(impl: ExpectedIncomeProjector): EventProjector
 
+    @Binds
+    @IntoSet
+    abstract fun reconciliationProjector(impl: ReconciliationProjector): EventProjector
+
     companion object {
         @Provides
         @Singleton
@@ -93,7 +107,7 @@ abstract class DatabaseModule {
             System.loadLibrary("sqlcipher")
             return Room.databaseBuilder(context, AppDatabase::class.java, DATABASE_NAME)
                 .openHelperFactory(SupportOpenHelperFactory(keyProvider.getOrCreate()))
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
                 .addCallback(EventTriggersCallback)
                 .build()
         }
@@ -130,6 +144,15 @@ abstract class DatabaseModule {
 
         @Provides
         fun provideFundQueryDao(database: AppDatabase): FundQueryDao = database.fundQueryDao()
+
+        @Provides
+        fun provideProjectionStateDao(database: AppDatabase): ProjectionStateDao = database.projectionStateDao()
+
+        @Provides
+        fun provideReconciliationDao(database: AppDatabase): ReconciliationDao = database.reconciliationDao()
+
+        @Provides
+        fun provideReconciliationQueryDao(database: AppDatabase): ReconciliationQueryDao = database.reconciliationQueryDao()
 
         @Provides
         fun provideExpectedIncomeDao(database: AppDatabase): ExpectedIncomeDao = database.expectedIncomeDao()

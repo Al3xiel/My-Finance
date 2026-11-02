@@ -68,6 +68,10 @@ object EventCodec {
         "UsageDayUnmarked" to UsageDayUnmarked.serializer(),
         "FundCounted" to FundCounted.serializer(),
         "FundClosed" to FundClosed.serializer(),
+        "BalanceCheckRecorded" to BalanceCheckRecorded.serializer(),
+        "MovementLinkedToReconciliation" to MovementLinkedToReconciliation.serializer(),
+        "ReconciliationResolved" to ReconciliationResolved.serializer(),
+        "ReconciliationCancelled" to ReconciliationCancelled.serializer(),
         "ProjectionsRebuilt" to ProjectionsRebuilt.serializer(),
     )
 

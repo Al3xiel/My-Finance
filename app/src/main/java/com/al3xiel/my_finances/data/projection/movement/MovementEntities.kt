@@ -66,6 +66,8 @@ data class LedgerEntryEntity(
     @ColumnInfo(name = "entry_kind") val entryKind: LedgerEntryKind,
     @ColumnInfo(name = "occurred_on") val occurredOn: String,
     @ColumnInfo(name = "is_voided") val isVoided: Boolean,
+    /** `sequence` del evento que anuló o reemplazó el asiento; la conciliación corta por él (D30). */
+    @ColumnInfo(name = "voided_sequence") val voidedSequence: Long? = null,
 )
 
 @Entity(tableName = "account_balances")

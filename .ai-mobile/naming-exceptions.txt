@@ -32,3 +32,5 @@ app/src/main/java/com/al3xiel/my_finances/feature/expectedincome/data/ExpectedIn
 app/src/main/java/com/al3xiel/my_finances/feature/expectedincome/data/ReminderScheduler.kt  # programador de WorkManager (adaptador de plataforma): ubicación fijada en plan expected-income T12
 app/src/main/java/com/al3xiel/my_finances/feature/expectedincome/data/ReminderWipeStep.kt  # paso de borrado total que cancela el Worker: ubicación fijada en plan expected-income T12
 app/src/main/java/com/al3xiel/my_finances/domain/model/event/ExpectedIncomeEvents.kt  # dominio compartido por features: ubicacion fijada en plan expected-income (T3, junto a los demas eventos de domain/model/event)
+app/src/main/java/com/al3xiel/my_finances/domain/model/event/ReconciliationEvents.kt  # dominio compartido por features: ubicacion fijada en plan reconciliation (T2, junto a los demas eventos de domain/model/event)
+app/src/main/java/com/al3xiel/my_finances/domain/usecase/ProjectionVersionGuard.kt  # dominio compartido por features: ubicacion fijada en plan reconciliation (T8, junto a ReplayProjectionsUseCase y ProjectionRebuilder)

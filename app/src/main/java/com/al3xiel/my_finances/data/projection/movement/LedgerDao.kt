@@ -12,8 +12,8 @@ interface LedgerDao {
     @Query("SELECT DISTINCT account_id FROM ledger_entries WHERE movement_id = :movementId")
     suspend fun accountIdsOf(movementId: String): List<String>
 
-    @Query("UPDATE ledger_entries SET is_voided = 1 WHERE movement_id = :movementId")
-    suspend fun voidEntriesOf(movementId: String)
+    @Query("UPDATE ledger_entries SET is_voided = 1, voided_sequence = :sequence WHERE movement_id = :movementId AND is_voided = 0")
+    suspend fun voidEntriesOf(movementId: String, sequence: Long)
 
     /** Saldo = Σ de los asientos no anulados (docs/04 §4.3). */
     @Query("SELECT COALESCE(SUM(delta_minor), 0) FROM ledger_entries WHERE account_id = :accountId AND is_voided = 0")
