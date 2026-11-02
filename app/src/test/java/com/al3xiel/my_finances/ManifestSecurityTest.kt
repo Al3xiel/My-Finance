@@ -27,13 +27,24 @@ class ManifestSecurityTest {
         assertEquals(".MyFinancesApp", application.getAttributeNS(androidNs, "name"))
     }
 
+    private val declaredPermissions = manifest.getElementsByTagName("uses-permission").let { permissions ->
+        (0 until permissions.length).map { (permissions.item(it) as Element).getAttributeNS(androidNs, "name") }
+    }
+
     @Test
     fun manifestDoesNotDeclareInternet() {
-        val permissions = manifest.getElementsByTagName("uses-permission")
-        val names = (0 until permissions.length).map {
-            (permissions.item(it) as Element).getAttributeNS(androidNs, "name")
-        }
-        assertFalse(names.contains("android.permission.INTERNET"))
+        assertFalse(declaredPermissions.contains("android.permission.INTERNET"))
+    }
+
+    @Test
+    fun onlyBiometricAndNotificationsPermissionsAreAllowed() {
+        val allowed = setOf("android.permission.USE_BIOMETRIC", "android.permission.POST_NOTIFICATIONS")
+        assertTrue("permisos fuera de la lista: $declaredPermissions", allowed.containsAll(declaredPermissions))
+    }
+
+    @Test
+    fun notificationsPermissionIsDeclaredForTheReminders() {
+        assertTrue(declaredPermissions.contains("android.permission.POST_NOTIFICATIONS"))
     }
 
     @Test
@@ -51,11 +62,19 @@ class ManifestSecurityTest {
     }
 
     @Test
-    fun theOnlyProviderIsTheShareFileProviderAndItIsNotExported() {
+    fun theOnlyProvidersAreTheShareFileProviderAndTheStartupOneThatDropsWorkManagerInit() {
         val providers = application.getElementsByTagName("provider")
-        assertEquals(1, providers.length)
-        val provider = providers.item(0) as Element
-        assertEquals("androidx.core.content.FileProvider", provider.getAttributeNS(androidNs, "name"))
+        assertEquals(2, providers.length)
+        val startup = (0 until providers.length).map { providers.item(it) as Element }
+            .single { it.getAttributeNS(androidNs, "name") == "androidx.startup.InitializationProvider" }
+        assertEquals("false", startup.getAttributeNS(androidNs, "exported"))
+        val entries = startup.getElementsByTagName("meta-data")
+        assertEquals(1, entries.length)
+        assertEquals("androidx.work.WorkManagerInitializer", (entries.item(0) as Element).getAttributeNS(androidNs, "name"))
+        assertEquals("remove", (entries.item(0) as Element).getAttributeNS("http://schemas.android.com/tools", "node"))
+
+        val provider = (0 until providers.length).map { providers.item(it) as Element }
+            .single { it.getAttributeNS(androidNs, "name") == "androidx.core.content.FileProvider" }
         assertEquals("\${applicationId}.share", provider.getAttributeNS(androidNs, "authorities"))
         assertEquals("false", provider.getAttributeNS(androidNs, "exported"))
         assertEquals("true", provider.getAttributeNS(androidNs, "grantUriPermissions"))

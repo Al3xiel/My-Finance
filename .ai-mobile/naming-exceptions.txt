@@ -25,3 +25,9 @@ app/src/main/java/com/al3xiel/my_finances/feature/pools/ui/StatementSharer.kt  #
 app/src/main/java/com/al3xiel/my_finances/feature/pools/di/StatementSharerImpl.kt  # adaptador que une la interfaz ui StatementSharer con el render de data (di/ ve ambas capas): plan pools-loans T14/T18
 app/src/main/java/com/al3xiel/my_finances/domain/model/event/FundEvents.kt  # dominio compartido por features: ubicación fijada en plan funds (T2, junto a los demás eventos de domain/model/event)
 app/src/main/java/com/al3xiel/my_finances/domain/model/event/LocalDateSerializer.kt  # serializador de fechas ISO de los payloads de eventos: ubicación fijada en plan funds (T2)
+app/src/main/java/com/al3xiel/my_finances/feature/expectedincome/domain/repository/ReminderPorts.kt  # puertos del recordatorio (estado, aviso, programador) que el caso de uso y los ajustes inyectan sin importar data/: plan expected-income T12
+app/src/main/java/com/al3xiel/my_finances/feature/expectedincome/data/ReminderPreferences.kt  # estado "ya avisado" e interruptor en DataStore, sin DAO: ubicación fijada en plan expected-income T12
+app/src/main/java/com/al3xiel/my_finances/feature/expectedincome/data/ExpectedIncomeReminderNotifier.kt  # adaptador de plataforma (notificación) sin repositorio ni DAO: plan expected-income T12
+app/src/main/java/com/al3xiel/my_finances/feature/expectedincome/data/ExpectedIncomeReminderWorker.kt  # Worker de WorkManager (@HiltWorker): ubicación fijada en plan expected-income T12
+app/src/main/java/com/al3xiel/my_finances/feature/expectedincome/data/ReminderScheduler.kt  # programador de WorkManager (adaptador de plataforma): ubicación fijada en plan expected-income T12
+app/src/main/java/com/al3xiel/my_finances/feature/expectedincome/data/ReminderWipeStep.kt  # paso de borrado total que cancela el Worker: ubicación fijada en plan expected-income T12
