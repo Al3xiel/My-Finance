@@ -66,6 +66,7 @@ sealed interface Route : NavKey
 @Serializable data class ReportByCategory(val from: String, val to: String) : Route
 @Serializable data class ReportByTag(val from: String, val to: String) : Route
 @Serializable data class ReportByAccount(val from: String, val to: String) : Route
+@Serializable data class ReportOrigin(val from: String, val to: String) : Route
 @Serializable data class ReportExport(val from: String, val to: String) : Route
 
 // Funds (ids travel as text)

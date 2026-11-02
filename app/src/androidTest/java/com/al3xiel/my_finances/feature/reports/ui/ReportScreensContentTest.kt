@@ -33,21 +33,23 @@ class ReportScreensContentTest {
                 onOpenByCategory = { opened += "category" },
                 onOpenByTag = { opened += "tag" },
                 onOpenByAccount = { opened += "account" },
+                onOpenOrigin = { opened += "origin" },
                 onExport = { opened += "export" },
             )
         }
         rule.onNodeWithText(string(R.string.report_summary_own_spend)).assertIsDisplayed()
         rule.onNodeWithText(string(R.string.report_summary_unidentified)).assertIsDisplayed()
         rule.onNodeWithText(string(R.string.report_summary_by_category)).performClick()
+        rule.onNodeWithText(string(R.string.report_summary_origin)).performClick()
         rule.onNodeWithText(string(R.string.report_summary_export)).performClick()
-        assertEquals(listOf("category", "export"), opened)
+        assertEquals(listOf("category", "origin", "export"), opened)
     }
 
     @Test fun summaryHidesTheUnidentifiedLineWhenThereIsNone() {
         rule.setContent {
             ReportSummaryContent(
                 state = ReportSummaryUiState(period, today, ReportSummary(0, 0, OthersSpend(0, 0), 0)),
-                onAction = {}, onOpenByCategory = {}, onOpenByTag = {}, onOpenByAccount = {}, onExport = {},
+                onAction = {}, onOpenByCategory = {}, onOpenByTag = {}, onOpenByAccount = {}, onOpenOrigin = {}, onExport = {},
             )
         }
         rule.onNodeWithText(string(R.string.report_summary_unidentified)).assertDoesNotExist()
