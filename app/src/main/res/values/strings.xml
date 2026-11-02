@@ -562,7 +562,7 @@
     <string name="report_origin_funds_note">Los fondos no se rastrean por fuente: su dinero cuenta dentro de la cuenta que lo respalda.</string>
     <string name="report_origin_shortfall_warning">En alguna cuenta el gasto superó lo que tenía de fuentes conocidas. Esa diferencia figura como «No identificado» y también es una estimación.</string>
     <string name="report_origin_shortfall_account">Con faltante</string>
-    <string name="report_origin_composition_title">Composición por cuenta</string>
+    <string name="report_origin_composition_title">Composición por cuenta (saldo actual)</string>
     <string name="report_origin_balance">Saldo</string>
     <string name="report_origin_spend_title">¿En qué se gastó lo de %1$s?</string>
     <string name="report_origin_spend_pick">Fuente</string>
@@ -575,4 +575,5 @@
     <string name="report_origin_empty_body">Cuando registres ingresos y gastos, aquí verás de dónde viene tu dinero.</string>
     <string name="report_export_pdf_origin_spend">Gasto por fuente</string>
     <string name="report_export_pdf_target">Destino</string>
+    <string name="report_export_pdf_origin_composition">Composición actual por cuenta</string>
 </resources>

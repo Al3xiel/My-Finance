@@ -21,6 +21,7 @@ class OriginProjector @Inject constructor(private val dao: OriginDao) : EventPro
     override val version = 1
     override val order = 40
 
+    /** Solo el reconstructor la activa (`beginReplay`/`finishReplay`/`abortReplay`); no es segura entre hilos ni entre instancias. */
     private var replaying = false
 
     override suspend fun apply(event: StoredEvent) {

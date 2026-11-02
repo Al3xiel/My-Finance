@@ -33,6 +33,8 @@
 | Composición de origen | `OriginComposition` | proyección | Monto del saldo de cada cuenta que proviene de cada fuente (el porcentaje se calcula al mostrar, por mayor residuo). Siempre *estimado*. |
 | Atribución de origen | `OriginAttribution` | valor | Parte de un gasto atribuida a cada fuente. |
 | Ajuste / Desconocido | `UNKNOWN_ADJUSTMENT` | fuente especial | Origen de diferencias de conciliación. |
+| Gasto por fuente | `SourceSpend` | valor | Lo que una fuente pagó, agrupado por cuenta y categoría, "Préstamos" o "No identificado" (S44). Siempre *estimado*. |
+| Flujo de origen | `SankeyLink` (con `SankeyNode`) | valor | Monto que pasa de una fuente a una cuenta, o de una cuenta a una categoría, en el diagrama de S44. Salida bruta del periodo por fecha del asiento (D42). |
 | Conciliación | `Reconciliation` | entidad/proceso | Comparar saldo real del banco vs. saldo calculado, investigar y resolver. En dos pasos: registrar y luego resolver. |
 | Ajuste de conciliación | `ADJUSTMENT` | `MovementType` y `LedgerEntryKind` | Movimiento que crea `ReconciliationResolved` por la diferencia restante en valor absoluto; `AdjustmentDirection`: `UNIDENTIFIED_INCOME` (fuente `UNKNOWN_ADJUSTMENT`) o `UNIDENTIFIED_EXPENSE`. |
 | Razón de reconstrucción | `RebuildReason` | constantes: `VERSION_CHANGE`, `MANUAL`, `RESTORE` | Valores fijos de `ProjectionsRebuilt.reason`; solo las dos primeras re-verifican conciliaciones. |

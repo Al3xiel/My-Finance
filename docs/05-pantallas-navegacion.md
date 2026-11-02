@@ -102,12 +102,12 @@ Formato: **ID · Nombre (UI)** · `RouteKey` · propósito · acciones principal
 
 | ID | Pantalla | Ruta | Contenido |
 |---|---|---|---|
-| S40 | Resumen | `Reports` | Selector de periodo (mes, año o rango; nunca futuro, D36) · ingresos vs. gastos propios · gasto por otros (reembolsable) · línea "No identificado" |
+| S40 | Resumen | `Reports` | Selector de periodo (mes, año o rango; nunca futuro, D36) · ingresos vs. gastos propios · gasto por otros (reembolsable) · línea "No identificado" · acceso a S44 |
 | S41 | Por categoría | `Reports.ByCategory` | Torta/barras que **suman 100%** · tocar → movimientos filtrados |
 | S42 | Por concepto | `Reports.ByTag` | Total **por concepto por separado** (sin torta comparativa) · cruce con categoría |
 | S43 | Por cuenta | `Reports.ByAccount` | Entradas, salidas y transferencias por cuenta |
 | S44 | Origen del dinero | `Reports.Origin` | Composición por fuente en cada cuenta · "¿en qué se gastó lo de X?" · Sankey fuentes → cuentas → categorías · rotulado **estimado** · nota de que los fondos no se rastrean por fuente · aviso de cuenta con faltante (`UNKNOWN_ADJUSTMENT` negativa) |
-| S45 | Exportar reporte | `Reports.Export` | CSV/PDF del periodo y filtros actuales, con aviso "no cifrado" |
+| S45 | Exportar reporte | `Reports.Export` | CSV/PDF del periodo y filtros actuales, con aviso "no cifrado"; el PDF suma la composición actual por cuenta y el gasto de cada fuente, rotulados *estimado* |
 
 ### 3.6 Más
 
