@@ -22,6 +22,12 @@ import com.al3xiel.my_finances.data.projection.movement.MovementEntity
 import com.al3xiel.my_finances.data.projection.movement.MovementPartEntity
 import com.al3xiel.my_finances.data.projection.movement.MovementPartTagEntity
 import com.al3xiel.my_finances.data.projection.movement.MovementQueryDao
+import com.al3xiel.my_finances.data.projection.fund.FundCountEntity
+import com.al3xiel.my_finances.data.projection.fund.FundDao
+import com.al3xiel.my_finances.data.projection.fund.FundEntity
+import com.al3xiel.my_finances.data.projection.fund.FundQueryDao
+import com.al3xiel.my_finances.data.projection.fund.FundTopUpEntity
+import com.al3xiel.my_finances.data.projection.fund.FundUsageDayEntity
 import com.al3xiel.my_finances.data.projection.loan.LoanDao
 import com.al3xiel.my_finances.data.projection.loan.LoanEntity
 import com.al3xiel.my_finances.data.projection.loan.LoanQueryDao
@@ -58,8 +64,12 @@ import com.al3xiel.my_finances.data.projection.pool.SettlementStatementEntity
         ReimbursementAllocationEntity::class,
         LoanEntity::class,
         LoanRepaymentEntity::class,
+        FundEntity::class,
+        FundUsageDayEntity::class,
+        FundCountEntity::class,
+        FundTopUpEntity::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -74,6 +84,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun poolDao(): PoolDao
     abstract fun reimbursementDao(): ReimbursementDao
     abstract fun loanDao(): LoanDao
+    abstract fun fundDao(): FundDao
+    abstract fun fundQueryDao(): FundQueryDao
     abstract fun poolQueryDao(): PoolQueryDao
     abstract fun personQueryDao(): PersonQueryDao
     abstract fun loanQueryDao(): LoanQueryDao

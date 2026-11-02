@@ -31,9 +31,9 @@ data class MovementEntity(
 /**
  * Dueños de cada columna (los proyectores corren uno tras otro en el replay): `pool_id` y `created_sequence`, el de
  * movimientos; `pool_period_id`, el de cúmulos; `reimbursed_minor` y `reimbursement_status`, el de reembolsos.
- * Fondo no existe todavía: su migración agrega la columna.
+ * `fund_id` también lo escribe el de movimientos (lo trae la parte del gasto); el de fondos nunca lee esta tabla.
  */
-@Entity(tableName = "movement_parts", indices = [Index("movement_id"), Index("category_id"), Index("pool_id")])
+@Entity(tableName = "movement_parts", indices = [Index("movement_id"), Index("category_id"), Index("pool_id"), Index("fund_id")])
 data class MovementPartEntity(
     @PrimaryKey val id: String,
     @ColumnInfo(name = "movement_id") val movementId: String,
@@ -46,6 +46,7 @@ data class MovementPartEntity(
     @ColumnInfo(name = "reimbursement_status", defaultValue = "PENDING")
     val reimbursementStatus: ReimbursementStatus = ReimbursementStatus.PENDING,
     @ColumnInfo(name = "created_sequence", defaultValue = "0") val createdSequence: Long = 0,
+    @ColumnInfo(name = "fund_id") val fundId: String? = null,
 )
 
 @Entity(tableName = "movement_part_tags", primaryKeys = ["part_id", "tag_id"], indices = [Index("tag_id")])
