@@ -39,6 +39,18 @@ fun BusinessError.message(): String = when (this) {
     BusinessError.ReimbursedPartLocked -> stringResource(R.string.error_reimbursed_part_locked)
     BusinessError.HasRepayments -> stringResource(R.string.error_has_repayments)
     BusinessError.NothingPending -> stringResource(R.string.error_nothing_pending)
+    BusinessError.DeclaredAboveRemaining -> stringResource(R.string.error_declared_above_remaining)
+    BusinessError.ExceedsAvailable -> stringResource(R.string.error_exceeds_available)
+    BusinessError.ExceedsIncome -> stringResource(R.string.error_exceeds_income)
+    BusinessError.FundClosed -> stringResource(R.string.error_fund_closed)
+    BusinessError.DateOutOfFundRange -> stringResource(R.string.error_date_out_of_fund_range)
+    BusinessError.DateBeforeLastCount -> stringResource(R.string.error_date_before_last_count)
+    BusinessError.UsageDayNotAllowed -> stringResource(R.string.error_usage_day_not_allowed)
+    BusinessError.FieldLocked -> stringResource(R.string.error_field_locked)
+    BusinessError.HasTopUps -> stringResource(R.string.error_has_top_ups)
+    BusinessError.BelowToppedUpAmount -> stringResource(R.string.error_below_topped_up_amount)
+    BusinessError.ReservedByFunds -> stringResource(R.string.error_reserved_by_funds)
+    BusinessError.UntrackedSpendLocked -> stringResource(R.string.error_untracked_spend_locked)
     is BusinessError.WouldGoNegative -> stringResource(
         R.string.error_would_go_negative,
         moneyDisplayText(Money(resultingBalanceMinor, CurrencyCode.PEN), hidden = LocalHideAmounts.current),

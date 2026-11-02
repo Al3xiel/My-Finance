@@ -57,6 +57,13 @@ object EventCodec {
         "ReimbursementReceived" to ReimbursementReceived.serializer(),
         "LoanGranted" to LoanGranted.serializer(),
         "LoanRepaymentReceived" to LoanRepaymentReceived.serializer(),
+        "FundCreated" to FundCreated.serializer(),
+        "FundEdited" to FundEdited.serializer(),
+        "FundToppedUp" to FundToppedUp.serializer(),
+        "UsageDayMarked" to UsageDayMarked.serializer(),
+        "UsageDayUnmarked" to UsageDayUnmarked.serializer(),
+        "FundCounted" to FundCounted.serializer(),
+        "FundClosed" to FundClosed.serializer(),
         "ProjectionsRebuilt" to ProjectionsRebuilt.serializer(),
     )
 

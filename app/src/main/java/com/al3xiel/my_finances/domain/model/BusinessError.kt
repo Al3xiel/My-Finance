@@ -44,6 +44,42 @@ sealed interface BusinessError {
     /** Una parte reembolsada no se quita ni cambia de cúmulo. */
     data object ReimbursedPartLocked : BusinessError
 
+    /** El arqueo declara más de lo que le queda al fondo: hay recargas por revisar o gastos anulados. */
+    data object DeclaredAboveRemaining : BusinessError
+
+    /** Una recarga con dinero propio no puede pasar del Disponible libre. */
+    data object ExceedsAvailable : BusinessError
+
+    /** Las recargas vinculadas a un ingreso suman como máximo su monto (D24). */
+    data object ExceedsIncome : BusinessError
+
+    /** Un fondo cerrado no recibe gastos, recargas, días de uso ni ediciones. */
+    data object FundClosed : BusinessError
+
+    /** La fecha queda fuera de las fechas del fondo. */
+    data object DateOutOfFundRange : BusinessError
+
+    /** Un gasto no puede ser anterior al último arqueo del fondo (D21). */
+    data object DateBeforeLastCount : BusinessError
+
+    /** Los días de uso solo existen en el modo estimado. */
+    data object UsageDayNotAllowed : BusinessError
+
+    /** El dato ya no se puede cambiar (modo con días de uso o arqueos, inicio con gastos). */
+    data object FieldLocked : BusinessError
+
+    /** Un ingreso con recargas a fondos no se anula (D24). */
+    data object HasTopUps : BusinessError
+
+    /** Un ingreso con recargas no puede quedar por debajo de lo recargado. */
+    data object BelowToppedUpAmount : BusinessError
+
+    /** Anular o bajar un ingreso dejaría el Disponible libre en negativo: su dinero ya está apartado en fondos. */
+    data object ReservedByFunds : BusinessError
+
+    /** El gasto no registrado de un arqueo no se anula ni se corrige (D25). */
+    data object UntrackedSpendLocked : BusinessError
+
     /** No hay nada pendiente que rendir. */
     data object NothingPending : BusinessError
 

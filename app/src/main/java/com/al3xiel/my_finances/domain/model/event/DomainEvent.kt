@@ -1,6 +1,6 @@
 package com.al3xiel.my_finances.domain.model.event
 
-enum class AggregateType { ACCOUNT, CATEGORY, TAG, PERSON, INCOME_SOURCE, MOVEMENT, POOL, LOAN, SYSTEM }
+enum class AggregateType { ACCOUNT, CATEGORY, TAG, PERSON, INCOME_SOURCE, MOVEMENT, POOL, LOAN, FUND, SYSTEM }
 
 /** Hecho inmutable. `type` es la columna `events.type`; el payload es el resto de los campos. */
 sealed interface DomainEvent {
