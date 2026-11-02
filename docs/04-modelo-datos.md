@@ -151,7 +151,7 @@ Estado: OPEN                                           Estado: RESOLVED / CANCEL
 
 | Evento | Payload |
 |---|---|
-| `BalanceCheckRecorded` | `reconciliationId, accountId, realBalance, computedBalanceSnapshot, checkedAt` |
+| `BalanceCheckRecorded` | `reconciliationId, accountId, realBalance, computedBalanceSnapshot` (`checkedAt` es el `recorded_at` del evento, no se edita; `realBalance` puede ser 0 o negativo, D34) |
 | `MovementLinkedToReconciliation` | `reconciliationId, movementId` (vincula un movimiento o corrección ya existente) |
 | `ReconciliationResolved` | `reconciliationId, cause, adjustment?: AdjustmentData, note?` |
 | `ReconciliationCancelled` | `reconciliationId, reason` |
@@ -170,19 +170,23 @@ Además, `IncomeRegistered`, `ExpenseRegistered`, `TransferRegistered`, `Movemen
 **Cómo se calcula la diferencia restante** (determinista y reproducible):
 
 ```
-saldoAppAlMomento = Σ asientos de la cuenta cuyo evento tiene recorded_at ≤ checkedAt
-                  + Σ asientos de movimientos vinculados a esta conciliación
+saldoAppAlMomento = Σ asientos de la cuenta con sequence ≤ sequence del chequeo y no anulados con voided_sequence ≤ ese corte,
+                    SIN los de movimientos vinculados a esta conciliación
+                  + Σ asientos vigentes de los movimientos vinculados
 diferenciaRestante = realBalance − saldoAppAlMomento
 ```
 
-- Se usa `recorded_at` (no `occurred_on`) para "congelar" lo que la app sabía al momento del chequeo. Los gastos que registres después por tu vida normal **no** alteran la conciliación.
-- Los movimientos olvidados, aunque se registren después, **sí** cuentan porque están vinculados.
+- Se corta por `sequence` del `BalanceCheckRecorded` (no por `occurred_on` ni por reloj) para "congelar" lo que la app sabía al momento del chequeo. Los gastos que registres después por tu vida normal **no** alteran la conciliación, y una anulación o corrección posterior no vinculada tampoco (`ledger_entries.voided_sequence`, D30).
+- Los movimientos olvidados, aunque se registren después, **sí** cuentan porque están vinculados. Una corrección vinculada **reemplaza** el asiento viejo: cuenta el asiento vigente, no ambos (D30).
+- `current_computed_minor` y `remaining_difference_minor` no se guardan: se calculan al consultar.
 - `computedBalanceSnapshot` guarda lo que el código calculó en ese momento, solo como evidencia. La diferencia se recalcula siempre con las reglas vigentes.
 
 Reglas:
 - Una sola conciliación `OPEN` por cuenta a la vez.
 - Solo `ReconciliationResolved` con `adjustment` genera un asiento `ADJUSTMENT`. Registrar o investigar **nunca** mueve saldos.
-- `adjustment.amount` debe ser igual a `|diferenciaRestante|` al resolver.
+- `adjustment.amount` debe ser igual a `|diferenciaRestante|` al resolver; la dirección sale del signo (positivo = `UNIDENTIFIED_INCOME`). El movimiento `ADJUSTMENT` lleva la fecha de la resolución (D33).
+- Causa × diferencia: `BALANCED`, `MISSING_RECORD` y `RECORDING_ERROR` exigen diferencia 0; `UNKNOWN` y `SUSPECTED_APP_ERROR` exigen ≠ 0. Con diferencia 0 no se crea ajuste.
+- Cancelar exige motivo, deja los vínculos sin efecto y no deja ajustes. Archivar una cuenta con conciliación `OPEN` se rechaza. El movimiento `ADJUSTMENT` se puede anular pero no corregir.
 - Ingreso no identificado → origen `UNKNOWN_ADJUSTMENT`. Egreso no identificado → se descuenta en proporción de las fuentes de la cuenta.
 
 #### 3.3.1 Exportación de diagnóstico
@@ -339,7 +343,7 @@ Si es mayor que 0, el arqueo **genera un gasto implícito** (`untrackedSpend`) e
 |---|---|
 | `BackupCreated` | `backupId, eventCount, lastHash` |
 | `BackupRestored` | `backupId, eventCount` |
-| `ProjectionsRebuilt` | `projectorVersions: Map<String, Int>, reason` |
+| `ProjectionsRebuilt` | `projectorVersions: Map<String, Int>, reason` · `reason` toma valores fijos: `VERSION_CHANGE` (replay automático al cambiar la versión de un proyector), `MANUAL` (S73), `RESTORE` (restauración de respaldo); solo las dos primeras re-verifican conciliaciones (D31) |
 
 ---
 
@@ -392,10 +396,10 @@ erDiagram
 | `movements` | `id PK, type, account_id FK, counter_account_id FK?, amount_minor, currency, income_source_id FK?, person_id FK?, note, occurred_on, status (ACTIVE/VOIDED), revision INT, last_sequence` | `type`: `INCOME, EXPENSE, TRANSFER, REIMBURSEMENT, LOAN_DISBURSEMENT, LOAN_REPAYMENT, ADJUSTMENT, FUND_UNTRACKED_SPEND`. `revision` crece con cada corrección |
 | `movement_parts` | `id PK, movement_id FK, amount_minor, category_id FK, pool_id FK?, pool_period_id FK?, fund_id FK? (lo agrega la v3), reimbursed_minor, reimbursement_status, kind (NORMAL/FEE/UNTRACKED)` | Gastos. La comisión de una transferencia y el gasto no registrado de un fondo generan una parte sintética (`kind` = `FEE` / `UNTRACKED`, sin `fund_id`) para que cuenten por categoría (D11) |
 | `movement_part_tags` | `part_id FK, tag_id FK` · PK compuesta | M:N |
-| `ledger_entries` | `id PK, sequence, movement_id FK?, account_id FK, delta_minor (±), entry_kind, occurred_on, is_voided` | **Corazón contable**: cada cambio de saldo es una fila. Transferencia = 2 filas (−origen, +destino). `movement_id` es nulo en `OPENING` (D16). `id` = `<sequence del evento>-<n>`: determinista, para que el replay reproduzca las mismas filas |
+| `ledger_entries` | `id PK, sequence, movement_id FK?, account_id FK, delta_minor (±), entry_kind, occurred_on, is_voided, voided_sequence? (lo agrega la v5)` | **Corazón contable**: cada cambio de saldo es una fila. Transferencia = 2 filas (−origen, +destino). `movement_id` es nulo en `OPENING` (D16). `id` = `<sequence del evento>-<n>`: determinista, para que el replay reproduzca las mismas filas |
 | `account_balances` | `account_id PK, balance_minor, last_sequence` | Caché de `Σ delta` no anulados |
 
-`entry_kind`: `OPENING, INCOME, EXPENSE, FEE, TRANSFER_OUT, TRANSFER_IN, REIMBURSEMENT_IN, LOAN_OUT, LOAN_IN, ADJUSTMENT`.
+`entry_kind`: `OPENING, INCOME, EXPENSE, FEE, TRANSFER_OUT, TRANSFER_IN, REIMBURSEMENT_IN, LOAN_OUT, LOAN_IN, ADJUSTMENT` (`ADJUSTMENT` lo usa la conciliación; `voided_sequence` es la `sequence` del evento que anuló o corrigió el asiento, para cortar la conciliación, D30).
 
 > **Saldo a una fecha**: `SELECT SUM(delta_minor) FROM ledger_entries WHERE account_id = ? AND occurred_on <= ? AND is_voided = 0`.
 
@@ -428,7 +432,7 @@ erDiagram
 |---|---|---|
 | `origin_balances` | `account_id FK, income_source_id FK, amount_minor` · PK compuesta | Cuánto del saldo de cada cuenta viene de cada fuente (en **montos**, no %) |
 | `origin_attributions` | `part_id FK (o movement_id), income_source_id FK, amount_minor` | De dónde salió cada gasto |
-| `reconciliations` | `id PK, account_id FK, real_minor, snapshot_computed_minor, current_computed_minor, remaining_difference_minor, status (OPEN/RESOLVED/CANCELLED), cause?, adjustment_movement_id FK?, adjustment_minor?, checked_at, resolved_at?, needs_review` | Historial "vida real vs. código" |
+| `reconciliations` | `id PK, account_id FK, currency, real_minor, snapshot_computed_minor, checked_sequence, status (OPEN/RESOLVED/CANCELLED), cause?, adjustment_movement_id FK?, adjustment_minor? (con signo: ingreso +, egreso −), cancel_reason?, checked_at, resolved_at?, needs_review` (sin columnas calculadas; la nota de resolución solo vive en el evento, D34) | Historial "vida real vs. código" |
 | `reconciliation_links` | `reconciliation_id FK, movement_id FK` · PK compuesta | Movimientos que explicaron la diferencia |
 
 ### 4.7 Control
@@ -473,7 +477,7 @@ Los proyectores se aplican en vivo evento a evento y, en el replay, uno tras otr
 - La `last_sequence` de un saldo nunca retrocede: es la del último evento que lo tocó, lo haya hecho el proyector que lo haya hecho.
 
 ### 5.4 Conciliación como detector de errores de código
-Tras cada re-proyección (por ejemplo, después de corregir un bug y actualizar la app), el proyector recalcula `current_computed_minor` de **todas** las conciliaciones, incluidas las resueltas:
+Solo tras una re-proyección por **cambio de versión** de un proyector (replay `VERSION_CHANGE` automático al arrancar) o la **manual** de S73, `ReconciliationProjector` recalcula la diferencia de las conciliaciones resueltas al aplicar `ProjectionsRebuilt`, comparando contra la evidencia de los eventos (`computedBalanceSnapshot`, `adjustment.amount`) y no contra columnas, que el replay borra (D31). Una corrección normal o una restauración (`RESTORE`) no marcan nada. Anular el ajuste deja la conciliación `RESOLVED` y limpia la marca:
 
 | Caso | Interpretación | Acción en la app |
 |---|---|---|
@@ -554,3 +558,8 @@ Resultado: BBVA 780 · BCP 170 · Efectivo 95 · Apartado Pasajes 45 · Por cobr
 | D27 | Estado efectivo de un esperado | `expected_incomes.status` guarda `SCHEDULED/CONFIRMED/CANCELLED`; `OVERDUE` y "vuelve a pendiente" (movimiento confirmado anulado) se calculan al consultar uniendo `movements`, porque el proyector no lee otras tablas en el replay (2026-11-01) |
 | D28 | Vínculo esperado ↔ ingreso | `ExpectedIncomeConfirmed` suma `nextExpectedIncomeId?`. Anular el ingreso vinculado cancela con motivo el siguiente (gancho `MovementVoidFollowUp`) y se rechaza si ese siguiente ya está confirmado; corregir el ingreso no cambia el esperado (2026-11-01) |
 | D29 | Siguiente ocurrencia a fin de mes | Si `expectedFrom` o `expectedTo` es el último día de su mes, el siguiente cae en el último día del mes siguiente; el resto, mismo día. 29 y 30 de enero pasan a 28 de febrero y ahí se quedan (límite conocido, sin ancla) (2026-11-01) |
+| D30 | Fórmula de la diferencia restante | Se corta por `sequence` del chequeo, sin los asientos de movimientos vinculados, más los vigentes de los vinculados; hace falta `ledger_entries.voided_sequence` (2026-11-02) |
+| D31 | Evidencia de la re-verificación | Se compara contra lo que guardan los eventos, no contra columnas; la ejecuta `ReconciliationProjector` al aplicar `ProjectionsRebuilt` con razón `VERSION_CHANGE` o `MANUAL` (`RESTORE` no marca) (2026-11-02) |
+| D32 | Replay automático por versión | Al arrancar, `ProjectionVersionGuard` ejecuta el replay `VERSION_CHANGE` si alguna versión guardada difiere de la del proyector y hay eventos, antes de cualquier evento nuevo; `recordProgress` ya no sobrescribe la versión guardada (2026-11-02) |
+| D33 | Movimiento de ajuste | El `ADJUSTMENT` lleva la fecha de la resolución; se puede anular (el aviso `needs_review` lo sugiere) pero no corregir (2026-11-02) |
+| D34 | Convención de la conciliación | El saldo real puede ser 0 o negativo (D14); con `reconciliationId` los editores ocultan "apartar en fondo" y "confirma ingreso esperado"; la nota de resolución no se guarda en la tabla (2026-11-02) |

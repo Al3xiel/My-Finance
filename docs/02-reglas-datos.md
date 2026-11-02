@@ -79,7 +79,7 @@
 | C3. Ajustar solo al resolver | El ingreso o egreso **no identificado** se crea únicamente con `ReconciliationResolved`, por el monto exacto de la diferencia restante. |
 | C4. Causa obligatoria | Toda resolución declara causa: `BALANCED`, `MISSING_RECORD`, `RECORDING_ERROR`, `SUSPECTED_APP_ERROR` o `UNKNOWN`. |
 | C5. Origen aislado | Un ingreso no identificado usa la fuente `UNKNOWN_ADJUSTMENT`, que **no contamina** otras fuentes. |
-| C6. Re-verificación | Tras cada re-proyección se recalculan todas las conciliaciones; si una diferencia cambió, se marca `needs_review` (indicio de error de código, antes o ahora). |
+| C6. Re-verificación | Tras una re-proyección por cambio de versión de un proyector (o la manual), se re-verifican las conciliaciones resueltas contra la evidencia de sus eventos; si una diferencia cambió, se marca `needs_review` (indicio de error de código, antes o ahora). Una corrección normal no la dispara. |
 | C7. Cancelable | Si el saldo real se tipeó mal, la conciliación se cancela con motivo; no deja ajustes. |
 
 ---
