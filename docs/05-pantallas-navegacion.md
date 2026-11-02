@@ -67,7 +67,7 @@ Formato: **ID · Nombre (UI)** · `RouteKey` · propósito · acciones principal
 | S02 | Bienvenida | `Onboarding.Welcome` | Qué hace la app, "tus datos no salen del teléfono" | Continuar |
 | S03 | Crear cuentas | `Onboarding.Accounts` | Lista sugerida: BBVA, BCP, Efectivo, cada una con saldo inicial | Crear → `AccountCreated` ×n |
 | S04 | Seguridad | `Onboarding.Security` | Activar biometría, ocultar en recientes | Guardar ajustes |
-| S05 | Respaldo | `Onboarding.Backup` | Explica el respaldo cifrado, frecuencia de recordatorio | Guardar ajustes |
+| S05 | Respaldo | `Onboarding.Backup` | Explica el respaldo cifrado, recordatorio (interruptor y días) y ofrece restaurar uno existente | Guardar ajustes |
 
 ### 3.2 Inicio
 
@@ -123,7 +123,7 @@ Formato: **ID · Nombre (UI)** · `RouteKey` · propósito · acciones principal
 | S57 | Conceptos | `Tags` | Lista por tipo (persona/tema) | `Tag*` |
 | S58 | Personas | `People` | Lista de alias | `Person*` |
 | S59 | Fuentes de ingreso | `IncomeSources` | Lista | `IncomeSourceCreated` |
-| S70 | Respaldo y restauración | `Backup` | Último respaldo, crear respaldo (contraseña + destino), restaurar, frecuencia de recordatorio | `BackupCreated` / `BackupRestored` |
+| S70 | Respaldo y restauración | `Backup` | Último respaldo y estado de la cadena · crear (contraseña con doble ingreso, re-autenticación, selector) · restaurar (archivo → contraseña → resumen sin montos ni nombres → confirmar; deshabilitado con explicación si hay datos propios) · recordatorio (interruptor, días; pide `POST_NOTIFICATIONS`) | `BackupCreated` / `BackupRestored` |
 | S71 | Privacidad y seguridad | `Privacy` | Qué se guarda, interruptores (bloqueo, minutos en segundo plano, pantalla segura, ocultar montos), **Borrar todos mis datos** (aviso → autenticar → escribir frase → borrar). Sin biometría ni credencial registradas el bloqueo no se activa y se avisa | — |
 | S72 | Ajustes | `Settings` | Tema (sistema/claro/oscuro); moneda PEN y formato `es-PE` solo informativos · secciones aportadas por cada feature (`SettingsSectionContributor`), p. ej. **Recordatorios** de ingresos esperados: interruptor que pide `POST_NOTIFICATIONS` en contexto | — |
 | S73 | Herramientas de desarrollador | `DevTools` | Verificar cadena de hashes, re-proyectar, comparar proyecciones, ver eventos crudos, conciliaciones `needsReview` · **Abrir paquete de diagnóstico** → S64 | `ProjectionsRebuilt` |

@@ -341,8 +341,8 @@ Si es mayor que 0, el arqueo **genera un gasto implícito** (`untrackedSpend`) e
 
 | Evento | Payload |
 |---|---|
-| `BackupCreated` | `backupId, eventCount, lastHash` |
-| `BackupRestored` | `backupId, eventCount` |
+| `BackupCreated` | `backupId, eventCount, lastHash` · `aggregate_type = BACKUP`, `aggregate_id = backupId`; se emite al terminar y verificar; no entra en el archivo que describe (D46) |
+| `BackupRestored` | `backupId, eventCount` · mismo agregado; lo agrega el importador encadenado al último hash del archivo (D46) |
 | `ProjectionsRebuilt` | `projectorVersions: Map<String, Int>, reason` · `reason` toma valores fijos: `VERSION_CHANGE` (replay automático al cambiar la versión de un proyector), `MANUAL` (S73), `RESTORE` (restauración de respaldo); solo las dos primeras re-verifican conciliaciones (D31) |
 
 ---
@@ -579,3 +579,9 @@ Resultado: BBVA 780 · BCP 170 · Efectivo 95 · Apartado Pasajes 45 · Por cobr
 | D41 | Clave de atribuciones | PK (`ledger_entry_id`, `part_id`, `income_source_id`), `part_id` vacío sin parte; un gasto de varias partes se descuenta parte por parte en su orden (2026-11-02) |
 | D42 | Flujo del Sankey | Salida bruta del periodo por fecha del asiento (incluye lo luego reembolsado; difiere de S41 y se rotula); préstamos y ajustes − a los nodos "Préstamos" y "No identificado" (2026-11-02) |
 | D43 | Transferencias en el origen | No generan atribuciones; mueven la mezcla del origen al destino; la comisión es gasto de la cuenta origen (2026-11-02) |
+| D44 | Restaurar un respaldo | Solo sobre una base sin datos propios (solo eventos de sembrado y `ProjectionsRebuilt`); se importa a una base de staging con la misma clave, se verifica todo, se intercambia el archivo y se reinicia; el marcador `RestorePending` hace que `ProjectionVersionGuard` reconstruya con `RESTORE`; los ajustes no viajan (2026-11-02) |
+| D45 | Formato `.fbak` | Cabecera en claro autenticada + gzip de líneas JSON (manifiesto, luego filas crudas) en bloques GCM de 64 KiB; tag inválido en el primer bloque = «contraseña incorrecta o archivo alterado», en los siguientes = «alterado o truncado»; restaurar exige cadena válida, `chainIntact` solo informa (2026-11-02) |
+| D46 | Eventos de respaldo | `aggregate_type = BACKUP`, `aggregate_id = backupId`; `BackupCreated` tras verificar y fuera del archivo que describe; `BackupRestored` encadenado al último hash del archivo (2026-11-02) |
+| D47 | Recordatorio de respaldo | Worker `backup_reminder`, apagado por defecto, N = 15, repite cada 7 días; el último respaldo se deriva de los eventos; la alerta del Inicio usa `BackupStatus` aunque las notificaciones estén apagadas (2026-11-02) |
+| D48 | Bloqueo y respaldo | Crear un respaldo pide re-autenticación si el bloqueo está activo; `ExternalFlowGuard` evita que el selector SAF cuente como segundo plano (también en S45) (2026-11-02) |
+| D49 | Entrada no confiable | Límites duros antes de descifrar; toda verificación termina antes de tocar la base real; un fallo en el intercambio de archivos se revierte al reabrir (2026-11-02) |

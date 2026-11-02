@@ -208,6 +208,10 @@
 | Acción de UI | `UiAction` | |
 | Respaldo | `Backup` | Archivo cifrado con todos los eventos. |
 | Restaurar | `Restore` | |
+| Contraseña de respaldo | `BackupPassword` | modelo (`CharArray`) | Contraseña del `.fbak`: al menos 10 caracteres, doble ingreso; nunca se guarda y se borra al terminar. |
+| Contenedor cifrado | `EncryptedContainer` | formato de `core/security` | Cabecera autenticada + bloques AES-256-GCM de 64 KiB; lo reutilizan `.fbak`, `.fdiag` y `.fkey`. |
+| Cadena íntegra | `chainIntact` | `Boolean` del manifiesto | Si la cadena de hashes verificaba al crear el respaldo; solo informa (restaurar exige que verifique). |
+| Restauración pendiente | `RestorePending` | marcador en DataStore | Indica que la base se acaba de restaurar: `ProjectionVersionGuard` reconstruye con razón `RESTORE` y lo borra. |
 | Bloqueo de app | `AppLock` | pantalla (S01) | Pantalla que oculta la app hasta autenticar. |
 | Autenticación | `Authenticator` | interfaz de `core/security` | Verifica al usuario con biometría o credencial del dispositivo; sin PIN propio. |
 | Bloqueo tras segundo plano | `autoLockMinutes` | `Int` (0 / 1 / 5 / 15) | Minutos en segundo plano antes de volver a bloquear; 0 = siempre. Por defecto 5. |
@@ -230,7 +234,7 @@
 | Tipo de parte | `PartKind` | enum: `NORMAL`, `FEE` | `FEE` es la parte sintética que genera la comisión de una transferencia (D11). |
 | Asiento | `LedgerEntry` / `LedgerEntryKind` | tabla `ledger_entries`; enum: `OPENING`, `INCOME`, `EXPENSE`, `FEE`, `TRANSFER_OUT`, `TRANSFER_IN` | Cada cambio de saldo es una fila; el saldo de una cuenta es la suma de sus asientos no anulados. `OPENING` no tiene movimiento (D16). |
 | Saldo a una fecha | `asOf` / `balanceAt(id, asOf)` | `LocalDate` | Fecha tope (inclusive, del hecho) hasta la que se suman los asientos no anulados para calcular el saldo de una cuenta. |
-| Tipo de agregado | `AggregateType` | enum: `ACCOUNT`, `CATEGORY`, `TAG`, `PERSON`, `INCOME_SOURCE`, `MOVEMENT`, `SYSTEM` | Entidad a la que pertenece un evento; con su id forma el historial (`events.aggregate_type`). |
+| Tipo de agregado | `AggregateType` | enum: `ACCOUNT`, `CATEGORY`, `TAG`, `PERSON`, `INCOME_SOURCE`, `MOVEMENT`, `SYSTEM`, `BACKUP` | Entidad a la que pertenece un evento; con su id forma el historial (`events.aggregate_type`). |
 | Evento por guardar / guardado | `NewEvent` / `StoredEvent` | modelos | `NewEvent` = evento + fecha del hecho; `StoredEvent` = fila del registro con secuencia, hashes y el texto exacto del payload. |
 | Códec de eventos | `EventCodec` / `UpcasterRegistry` | objetos | Convierten evento ↔ texto del payload (determinista) y aplican los `Upcaster` registrados (vacío en la v1). |
 | Hash de evento | `EventHasher` / `HashedFields` | objeto / modelo | `SHA-256` de todas las columnas del evento salvo `sequence` y `hash`, encadenado con el hash anterior (`GENESIS` en el primero); detecta cualquier alteración. |
