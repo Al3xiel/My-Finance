@@ -39,4 +39,11 @@ data class ReportExportTexts(
     val columnInflow: String,
     val columnOutflow: String,
     val columnTransfers: String,
+    val originHeading: String,
+    val originSpendHeading: String,
+    val estimated: String,
+    val columnSource: String,
+    val columnTarget: String,
+    val loans: String,
+    val unidentifiedTarget: String,
 )

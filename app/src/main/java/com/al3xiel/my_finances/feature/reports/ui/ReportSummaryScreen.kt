@@ -36,12 +36,13 @@ import com.al3xiel.my_finances.feature.reports.domain.model.ReportSummary
 import java.time.LocalDate
 import java.time.YearMonth
 
-/** S40: resumen del periodo. Los accesos a S41–S43 y a la exportación reciben el periodo elegido. */
+/** S40: resumen del periodo. Los accesos a S41–S44 y a la exportación reciben el periodo elegido. */
 @Composable
 fun ReportSummaryScreen(
     onOpenByCategory: (ReportPeriod) -> Unit,
     onOpenByTag: (ReportPeriod) -> Unit,
     onOpenByAccount: (ReportPeriod) -> Unit,
+    onOpenOrigin: (ReportPeriod) -> Unit,
     onExport: (ReportPeriod) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ReportSummaryViewModel = hiltViewModel(),
@@ -51,7 +52,7 @@ fun ReportSummaryScreen(
         viewModel.onAction(ReportSummaryUiAction.Refresh)
         onPauseOrDispose { }
     }
-    ReportSummaryContent(state, viewModel::onAction, onOpenByCategory, onOpenByTag, onOpenByAccount, onExport, modifier)
+    ReportSummaryContent(state, viewModel::onAction, onOpenByCategory, onOpenByTag, onOpenByAccount, onOpenOrigin, onExport, modifier)
 }
 
 @Composable
@@ -61,6 +62,7 @@ fun ReportSummaryContent(
     onOpenByCategory: (ReportPeriod) -> Unit,
     onOpenByTag: (ReportPeriod) -> Unit,
     onOpenByAccount: (ReportPeriod) -> Unit,
+    onOpenOrigin: (ReportPeriod) -> Unit,
     onExport: (ReportPeriod) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -88,6 +90,7 @@ fun ReportSummaryContent(
         NavButton(R.string.report_summary_by_category) { onOpenByCategory(state.period) }
         NavButton(R.string.report_summary_by_tag) { onOpenByTag(state.period) }
         NavButton(R.string.report_summary_by_account) { onOpenByAccount(state.period) }
+        NavButton(R.string.report_summary_origin) { onOpenOrigin(state.period) }
         Button(onClick = { onExport(state.period) }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
             Text(stringResource(R.string.report_summary_export))
         }
@@ -144,6 +147,6 @@ private fun ReportSummaryContentPreview() {
             today = LocalDate.of(2026, 11, 2),
             summary = ReportSummary(500_000, 320_000, OthersSpend(120_000, 20_000), -3_000),
         ),
-        onAction = {}, onOpenByCategory = {}, onOpenByTag = {}, onOpenByAccount = {}, onExport = {},
+        onAction = {}, onOpenByCategory = {}, onOpenByTag = {}, onOpenByAccount = {}, onOpenOrigin = {}, onExport = {},
     )
 }

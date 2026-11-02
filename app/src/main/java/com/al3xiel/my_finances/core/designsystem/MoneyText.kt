@@ -19,10 +19,10 @@ import com.al3xiel.my_finances.core.money.MoneyFormatter
 
 enum class MoneySign { NONE, PLUS, MINUS }
 
-private const val MASK = "••••"
+internal const val AMOUNT_MASK = "••••"
 
 internal fun moneyDisplayText(money: Money, hidden: Boolean, sign: MoneySign = MoneySign.NONE): String {
-    val body = if (hidden) "${money.currency.symbol} $MASK" else MoneyFormatter.format(money)
+    val body = if (hidden) "${money.currency.symbol} $AMOUNT_MASK" else MoneyFormatter.format(money)
     return when (sign) {
         MoneySign.NONE -> body
         MoneySign.PLUS -> "+$body"

@@ -22,6 +22,11 @@ import com.al3xiel.my_finances.data.projection.movement.MovementEntity
 import com.al3xiel.my_finances.data.projection.movement.MovementPartEntity
 import com.al3xiel.my_finances.data.projection.movement.MovementPartTagEntity
 import com.al3xiel.my_finances.data.projection.movement.MovementQueryDao
+import com.al3xiel.my_finances.data.projection.origin.OriginAttributionEntity
+import com.al3xiel.my_finances.data.projection.origin.OriginBalanceEntity
+import com.al3xiel.my_finances.data.projection.origin.OriginCursorEntity
+import com.al3xiel.my_finances.data.projection.origin.OriginDao
+import com.al3xiel.my_finances.data.projection.origin.OriginQueryDao
 import com.al3xiel.my_finances.data.projection.report.ReportQueryDao
 import com.al3xiel.my_finances.data.projection.expectedincome.ExpectedIncomeDao
 import com.al3xiel.my_finances.data.projection.expectedincome.ExpectedIncomeEntity
@@ -79,8 +84,11 @@ import com.al3xiel.my_finances.data.projection.reconciliation.ReconciliationQuer
         ExpectedIncomeEntity::class,
         ReconciliationEntity::class,
         ReconciliationLinkEntity::class,
+        OriginBalanceEntity::class,
+        OriginAttributionEntity::class,
+        OriginCursorEntity::class,
     ],
-    version = 5,
+    version = 6,
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -105,4 +113,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun personQueryDao(): PersonQueryDao
     abstract fun loanQueryDao(): LoanQueryDao
     abstract fun reportQueryDao(): ReportQueryDao
+
+    abstract fun originQueryDao(): OriginQueryDao
+    abstract fun originDao(): OriginDao
 }
