@@ -20,6 +20,14 @@ sealed interface Route : NavKey
 
 // Movements feature (ids travel as text: a value class cannot be a route argument)
 @Serializable data class MovementDetail(val id: String) : Route
+/** La lista de Movimientos abierta desde un reporte (D37): fechas ISO e ids como texto; el ViewModel arma el filtro. */
+@Serializable data class MovementsFiltered(
+    val from: String? = null,
+    val to: String? = null,
+    val categoryId: String? = null,
+    val tagId: String? = null,
+    val accountId: String? = null,
+) : Route
 @Serializable data class ExpenseEditor(
     val id: String? = null,
     val presetPoolId: String? = null,
@@ -53,6 +61,12 @@ sealed interface Route : NavKey
 @Serializable data class PersonDetail(val id: String) : Route
 @Serializable data class LoanEditor(val personId: String? = null) : Route
 @Serializable data class LoanDetail(val id: String) : Route
+
+// Reports feature (the period travels as ISO dates: a route cannot carry a sealed period)
+@Serializable data class ReportByCategory(val from: String, val to: String) : Route
+@Serializable data class ReportByTag(val from: String, val to: String) : Route
+@Serializable data class ReportByAccount(val from: String, val to: String) : Route
+@Serializable data class ReportExport(val from: String, val to: String) : Route
 
 // Funds (ids travel as text)
 @Serializable data object Funds : Route

@@ -38,7 +38,7 @@ class MovementsViewModelTest {
         status: MovementStatus = MovementStatus.ACTIVE,
     ) = MovementSummary(MovementId(id), type, account, counter, f.pen(minor), note, on, status, 1)
 
-    private fun viewModel() = MovementsViewModel(f.movements, f.accounts, f.categories, f.tags)
+    private fun viewModel() = MovementsViewModel(MovementsPreset(), f.movements, f.accounts, f.categories, f.tags)
 
     @Test
     fun groupsRowsByDayKeepingTheRepositoryOrderAndResolvesAccountNames() {

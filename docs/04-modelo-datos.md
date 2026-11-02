@@ -502,6 +502,10 @@ Así queda evidencia comparable de "vida real (saldo del banco) vs. código (sal
 - `REIMBURSEMENT`, `LOAN_*` y `TRANSFER` **nunca** cuentan como ingreso ni gasto.
 - Los ingresos/egresos **no identificados** (`ADJUSTMENT`) se muestran en una línea propia ("No identificado"), separada de las categorías, para que no distorsionen la distribución pero sí sean visibles.
 - La distribución por categoría suma el 100% (1 categoría por parte). Los conceptos son solo filtros.
+- **Medición (D35)**: todo parte de las partes de movimientos `ACTIVE` del periodo, de cualquier tipo (`EXPENSE`, y también las partes `FEE` de una transferencia y `UNTRACKED` de `FUND_UNTRACKED_SPEND`, D11), no del tipo de movimiento. Lo reembolsado cuenta si la fecha del reembolso es ≤ el fin del periodo (por `reimbursement_allocations` unida al movimiento del reembolso `ACTIVE`); un mes pasado no cambia por un reembolso posterior.
+- **Subcategorías** suman a su categoría padre; el detalle se ve al tocar. **Conceptos**: cada uno muestra el monto propio de sus partes y no suman entre sí (un gasto con varios conceptos aparece en todos).
+- **Por cuenta (S43)**: entradas = ingreso, reembolso, cobro de deuda, ajuste +; salidas = gasto, comisión, préstamo, ajuste −; las transferencias van netas aparte.
+- **No identificado** sale del libro: asientos `ADJUSTMENT` con su signo.
 
 ---
 
@@ -563,3 +567,7 @@ Resultado: BBVA 780 · BCP 170 · Efectivo 95 · Apartado Pasajes 45 · Por cobr
 | D32 | Replay automático por versión | Al arrancar, `ProjectionVersionGuard` ejecuta el replay `VERSION_CHANGE` si alguna versión guardada difiere de la del proyector y hay eventos, antes de cualquier evento nuevo; `recordProgress` ya no sobrescribe la versión guardada (2026-11-02) |
 | D33 | Movimiento de ajuste | El `ADJUSTMENT` lleva la fecha de la resolución; se puede anular (el aviso `needs_review` lo sugiere) pero no corregir (2026-11-02) |
 | D34 | Convención de la conciliación | El saldo real puede ser 0 o negativo (D14); con `reconciliationId` los editores ocultan "apartar en fondo" y "confirma ingreso esperado"; la nota de resolución no se guarda en la tabla (2026-11-02) |
+| D35 | Cálculo de reportes | Parte de las partes de movimientos `ACTIVE` (cualquier tipo, incluidas `FEE` y `UNTRACKED`); lo reembolsado se une con el movimiento del reembolso `ACTIVE` y su fecha ≤ fin del periodo; el gasto por otros no se suma al propio (2026-11-02) |
+| D36 | Periodo de reporte | Mes (por defecto), año o rango propio; no puede ser futuro; en el periodo en curso "al cierre" es hoy (2026-11-02) |
+| D37 | Filtros por ruta | La ruta lleva textos (ids, fechas) y `MovementsViewModel` arma el filtro; una categoría padre filtra por ella y sus subcategorías (2026-11-02) |
+| D38 | Exportación de reportes | CSV con una fila por parte de gasto, coma, importes con punto decimal, UTF-8 con BOM; el archivo ignora "ocultar montos"; PDF con las tablas del reporte (2026-11-02) |

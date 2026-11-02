@@ -10,7 +10,10 @@ import com.al3xiel.my_finances.domain.model.TagId
 import java.time.Instant
 import java.time.LocalDate
 
-/** Todos los campos son opcionales y se combinan con "y". `text` busca en las notas. */
+/**
+ * Todos los campos son opcionales y se combinan con "y". `text` busca en las notas. Con `categoryIds` no vacío (la categoría
+ * elegida y sus subcategorías, D37) basta con una parte en cualquiera de ellas; `categoryId` sigue siendo la elegida.
+ */
 data class MovementFilter(
     val accountId: AccountId? = null,
     val type: MovementType? = null,
@@ -19,6 +22,7 @@ data class MovementFilter(
     val from: LocalDate? = null,
     val to: LocalDate? = null,
     val text: String? = null,
+    val categoryIds: Set<CategoryId> = emptySet(),
 )
 
 /** Fila de la lista: lo justo para pintar un movimiento sin cargar sus partes. */

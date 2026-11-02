@@ -102,7 +102,7 @@ Formato: **ID · Nombre (UI)** · `RouteKey` · propósito · acciones principal
 
 | ID | Pantalla | Ruta | Contenido |
 |---|---|---|---|
-| S40 | Resumen | `Reports` | Selector de periodo · ingresos vs. gastos propios · gasto por otros (reembolsable) · línea "No identificado" |
+| S40 | Resumen | `Reports` | Selector de periodo (mes, año o rango; nunca futuro, D36) · ingresos vs. gastos propios · gasto por otros (reembolsable) · línea "No identificado" |
 | S41 | Por categoría | `Reports.ByCategory` | Torta/barras que **suman 100%** · tocar → movimientos filtrados |
 | S42 | Por concepto | `Reports.ByTag` | Total **por concepto por separado** (sin torta comparativa) · cruce con categoría |
 | S43 | Por cuenta | `Reports.ByAccount` | Entradas, salidas y transferencias por cuenta |
@@ -234,6 +234,13 @@ Coincidencia sin tildes ni mayúsculas, por prefijo y por alias. **Siempre muest
 @Serializable data class ReconciliationDetail(val reconciliationId: String) : Route
 @Serializable data class ReconciliationResolve(val reconciliationId: String) : Route
 @Serializable data class DiagnosticWorkspace(val packageId: String) : Route
+@Serializable data class ReportByCategory(val from: String, val to: String) : Route
+@Serializable data class ReportByTag(val from: String, val to: String) : Route
+@Serializable data class ReportByAccount(val from: String, val to: String) : Route
+@Serializable data class ReportExport(val from: String, val to: String) : Route
+@Serializable data class MovementsFiltered(val from: String? = null, val to: String? = null,
+                                           val categoryId: String? = null, val tagId: String? = null,
+                                           val accountId: String? = null) : Route
 // … una clase por fila del inventario (§3)
 ```
 
