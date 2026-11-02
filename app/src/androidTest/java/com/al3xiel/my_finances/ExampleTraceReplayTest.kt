@@ -100,7 +100,7 @@ class ExampleTraceReplayTest {
         createPerson = CreatePersonUseCase(people, recorder, ids)
         createIncomeSource = CreateIncomeSourceUseCase(sources, people, recorder, ids)
         createCategory = CreateCategoryUseCase(categories, recorder, ids)
-        registerExpense = RegisterExpenseUseCase(rules, accounts, recorder, ids)
+        registerExpense = RegisterExpenseUseCase(rules, accounts, recorder, ids, MovementWriteLock())
         registerIncome = RegisterIncomeUseCase(rules, recorder, ids)
         registerTransfer = RegisterTransferUseCase(rules, accounts, recorder, ids)
         correctMovement = CorrectMovementUseCase(rules, accounts, movements, recorder, ids, MovementWriteLock())
