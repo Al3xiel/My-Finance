@@ -91,7 +91,7 @@ class ReconciliationWorld(private val database: AppDatabase, private val clock: 
         resolve = ResolveReconciliationUseCase(reconciliations, recorder, ids, lock)
         val rebuilder = ProjectionRebuilderImpl(database, projectors, store, clock)
         replay = ReplayProjectionsUseCase(store, rebuilder, ids, clock)
-        versionGuard = ProjectionVersionGuard(ProjectionVersionsImpl(projectors, database.projectionStateDao()), store, replay)
+        versionGuard = ProjectionVersionGuard(ProjectionVersionsImpl(projectors, database.projectionStateDao()), store, replay, NoPendingRestore)
     }
 
     fun pen(minor: Long) = Money(minor, CurrencyCode.PEN)
@@ -112,4 +112,10 @@ class ReconciliationWorld(private val database: AppDatabase, private val clock: 
     suspend fun difference(id: ReconciliationId): Money? = reconciliations.remainingDifference(id)
 
     suspend fun movementExists(id: MovementId): Boolean = database.movementDao().movement(id.value) != null
+}
+
+private object NoPendingRestore : com.al3xiel.my_finances.domain.usecase.RestoreMarker {
+    override suspend fun isPending() = false
+    override suspend fun mark() = Unit
+    override suspend fun clear() = Unit
 }

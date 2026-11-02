@@ -73,6 +73,8 @@ object EventCodec {
         "ReconciliationResolved" to ReconciliationResolved.serializer(),
         "ReconciliationCancelled" to ReconciliationCancelled.serializer(),
         "ProjectionsRebuilt" to ProjectionsRebuilt.serializer(),
+        "BackupCreated" to BackupCreated.serializer(),
+        "BackupRestored" to BackupRestored.serializer(),
     )
 
     val types: Set<String> get() = serializers.keys

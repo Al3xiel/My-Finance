@@ -55,6 +55,9 @@ import com.al3xiel.my_finances.data.projection.reconciliation.ReconciliationEnti
 import com.al3xiel.my_finances.data.projection.reconciliation.ReconciliationLinkEntity
 import com.al3xiel.my_finances.data.projection.reconciliation.ReconciliationQueryDao
 
+/** Versión del esquema; el manifiesto del respaldo la anota. */
+const val DATABASE_VERSION = 6
+
 /** Base cifrada con SQLCipher. Cada versión nueva trae su `Migration` en `migration/`. */
 @Database(
     entities = [
@@ -88,7 +91,7 @@ import com.al3xiel.my_finances.data.projection.reconciliation.ReconciliationQuer
         OriginAttributionEntity::class,
         OriginCursorEntity::class,
     ],
-    version = 6,
+    version = DATABASE_VERSION,
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {

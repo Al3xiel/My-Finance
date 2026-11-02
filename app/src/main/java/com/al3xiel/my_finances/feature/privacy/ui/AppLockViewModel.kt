@@ -6,6 +6,7 @@ import com.al3xiel.my_finances.core.security.AuthAvailability
 import com.al3xiel.my_finances.core.security.AuthPrompt
 import com.al3xiel.my_finances.core.security.AuthResult
 import com.al3xiel.my_finances.core.security.Authenticator
+import com.al3xiel.my_finances.core.security.ExternalFlowGuard
 import com.al3xiel.my_finances.core.security.LockPolicy
 import com.al3xiel.my_finances.core.time.MonotonicClock
 import com.al3xiel.my_finances.feature.privacy.domain.model.SecuritySettings
@@ -38,6 +39,7 @@ class AppLockViewModel @Inject constructor(
     settingsRepository: SecuritySettingsRepository,
     private val authenticator: Authenticator,
     private val clock: MonotonicClock,
+    private val externalFlow: ExternalFlowGuard,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AppLockUiState())
@@ -66,6 +68,8 @@ class AppLockViewModel @Inject constructor(
     private fun relockIfNeeded() {
         val backgroundedAt = backgroundedAtMillis ?: return
         backgroundedAtMillis = null
+        // El selector de archivos del sistema no es una salida del usuario (D48).
+        if (externalFlow.isActive()) return
         val mustLock = LockPolicy.shouldLock(
             lockEnabled = settings.lockEnabled,
             autoLockMinutes = settings.autoLockMinutes,

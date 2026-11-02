@@ -41,6 +41,8 @@ class DomainEventSerializationTest {
         MovementCorrected(MovementId("m1"), MovementSnapshot.Income(AccountId("a1"), pen(5_000), IncomeSourceId("s1"), null), "fuente", null),
         MovementVoided(MovementId("m2"), "duplicado", null),
         ProjectionsRebuilt(mapOf("catalog" to 1), "replay"),
+        BackupCreated("b1", 3, "h"),
+        BackupRestored("b1", 3),
     ) + poolLoanSamples + fundSamples + expectedIncomeSamples + reconciliationSamples
 
     @Test
