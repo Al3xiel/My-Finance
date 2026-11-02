@@ -12,8 +12,11 @@ import com.al3xiel.my_finances.core.navigation.RegisterAction
 import com.al3xiel.my_finances.core.navigation.RegisterActionContributor
 import com.al3xiel.my_finances.core.navigation.Route
 import com.al3xiel.my_finances.core.navigation.RouteContributor
+import com.al3xiel.my_finances.core.navigation.ReconciliationDetail
+import com.al3xiel.my_finances.core.navigation.ReconciliationStart
 import com.al3xiel.my_finances.core.navigation.TransferEditor
 import com.al3xiel.my_finances.domain.model.AccountId
+import com.al3xiel.my_finances.domain.model.ReconciliationId
 import com.al3xiel.my_finances.feature.accounts.ui.AccountDetailScreen
 import com.al3xiel.my_finances.feature.accounts.ui.AccountsScreen
 import com.al3xiel.my_finances.feature.accounts.ui.IncomeSourcesScreen
@@ -36,10 +39,17 @@ object AccountsNavigationModule {
                 val navigator = LocalNavigator.current
                 AccountsScreen(onOpenAccount = { navigator.push(AccountDetail(it.value)) })
             }
-            entry<AccountDetail> { key -> AccountDetailScreen(accountId = AccountId(key.id)) }
-            entry<TransferEditor> {
+            entry<AccountDetail> { key ->
                 val navigator = LocalNavigator.current
-                TransferEditorScreen(onFinished = navigator::back)
+                AccountDetailScreen(
+                    accountId = AccountId(key.id),
+                    onReconcile = { navigator.push(ReconciliationStart(it.value)) },
+                    onOpenReconciliation = { navigator.push(ReconciliationDetail(it.value)) },
+                )
+            }
+            entry<TransferEditor> { key ->
+                val navigator = LocalNavigator.current
+                TransferEditorScreen(onFinished = navigator::back, reconciliationId = key.reconciliationId?.let(::ReconciliationId))
             }
             entry<IncomeSources> { IncomeSourcesScreen() }
         }
@@ -48,7 +58,7 @@ object AccountsNavigationModule {
     @Provides
     @IntoSet
     fun registerActions(): RegisterActionContributor = RegisterActionContributor {
-        listOf(RegisterAction("transfer", R.string.register_action_transfer, TransferEditor, order = 30))
+        listOf(RegisterAction("transfer", R.string.register_action_transfer, TransferEditor(), order = 30))
     }
 
     @Provides

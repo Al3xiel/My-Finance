@@ -6,9 +6,11 @@ import com.al3xiel.my_finances.domain.model.AccountId
 import com.al3xiel.my_finances.domain.model.BusinessError
 import com.al3xiel.my_finances.domain.model.MovementId
 import com.al3xiel.my_finances.domain.model.Outcome
+import com.al3xiel.my_finances.domain.model.ReconciliationId
 import com.al3xiel.my_finances.domain.model.event.FeeData
 import com.al3xiel.my_finances.domain.model.event.TransferRegistered
 import com.al3xiel.my_finances.domain.usecase.EventRecorder
+import com.al3xiel.my_finances.domain.usecase.ReconciliationLinkGuard
 import com.al3xiel.my_finances.feature.accounts.domain.repository.AccountRepository
 import com.al3xiel.my_finances.feature.movements.domain.rules.MovementRules
 import java.time.LocalDate
@@ -19,6 +21,7 @@ class RegisterTransferUseCase @Inject constructor(
     private val accounts: AccountRepository,
     private val recorder: EventRecorder,
     private val ids: IdGenerator,
+    private val linkGuards: Set<@JvmSuppressWildcards ReconciliationLinkGuard> = emptySet(),
 ) {
     /** El aviso de saldo negativo cuenta el monto más la comisión, que sale de la cuenta origen. */
     suspend operator fun invoke(
@@ -29,6 +32,7 @@ class RegisterTransferUseCase @Inject constructor(
         note: String?,
         occurredOn: LocalDate,
         confirmNegativeBalance: Boolean = false,
+        reconciliationId: ReconciliationId? = null,
     ): Outcome<MovementId> {
         if (from == to) return Outcome.Failed(BusinessError.SameAccount)
         rules.checkMoney(amount)?.let { return Outcome.Failed(it) }
@@ -39,6 +43,7 @@ class RegisterTransferUseCase @Inject constructor(
         rules.checkDate(occurredOn)?.let { return Outcome.Failed(it) }
         rules.checkAccount(from)?.let { return Outcome.Failed(it) }
         rules.checkAccount(to)?.let { return Outcome.Failed(it) }
+        reconciliationId?.let { rid -> linkGuards.firstNotNullOfOrNull { it.check(rid, setOf(from, to)) }?.let { return Outcome.Failed(it) } }
         if (!confirmNegativeBalance) {
             val balance = accounts.balanceMinor(from)
             val outflow = Math.addExact(amount.amountMinor, fee?.amount?.amountMinor ?: 0L)
@@ -46,7 +51,7 @@ class RegisterTransferUseCase @Inject constructor(
         }
 
         val id = MovementId(ids.newId())
-        recorder.record(TransferRegistered(id, from, to, amount, fee, null, note), occurredOn)
+        recorder.record(TransferRegistered(id, from, to, amount, fee, reconciliationId, note), occurredOn)
         return Outcome.Ok(id)
     }
 }

@@ -33,6 +33,7 @@ class ExpenseEditorFundTest {
         RegisterExpenseUseCase(f.rules, f.accounts, f.recorder, f.ids, f.writeLock, emptySet(), setOf(FundExpenseGuard(funds))),
         CorrectMovementUseCase(f.rules, f.accounts, f.movements, f.recorder, f.ids, f.writeLock, emptySet(), emptySet(), setOf(FundExpenseGuard(funds))),
         f.clock,
+        com.al3xiel.my_finances.feature.reconciliation.domain.FakeReconciliationRepository(),
     )
 
     @Test

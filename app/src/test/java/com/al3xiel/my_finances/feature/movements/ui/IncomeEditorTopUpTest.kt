@@ -35,6 +35,7 @@ class IncomeEditorTopUpTest {
         FakeExpectedIncomeRepository(),
         ConfirmExpectedIncomeUseCase(f.rules, FakeExpectedIncomeRepository(), funds, f.recorder, f.ids, f.writeLock),
         f.clock,
+        com.al3xiel.my_finances.feature.reconciliation.domain.FakeReconciliationRepository(),
     )
 
     @Test

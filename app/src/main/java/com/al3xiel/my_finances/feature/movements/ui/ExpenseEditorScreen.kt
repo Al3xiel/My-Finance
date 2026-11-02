@@ -43,6 +43,7 @@ import com.al3xiel.my_finances.domain.model.CategoryId
 import com.al3xiel.my_finances.domain.model.MovementId
 import com.al3xiel.my_finances.domain.model.FundId
 import com.al3xiel.my_finances.domain.model.PoolId
+import com.al3xiel.my_finances.domain.model.ReconciliationId
 import com.al3xiel.my_finances.feature.movements.ui.components.ExpensePartCard
 import com.al3xiel.my_finances.domain.model.TagId
 import com.al3xiel.my_finances.ui.theme.MyfinancesTheme
@@ -59,9 +60,11 @@ fun ExpenseEditorScreen(
     presetPoolId: PoolId? = null,
     /** Si se abre desde un fondo, la primera parte ya lleva ese fondo. */
     presetFundId: FundId? = null,
+    /** Si se abre desde una conciliación, el gasto queda vinculado a ella. */
+    reconciliationId: ReconciliationId? = null,
     viewModel: ExpenseEditorViewModel = hiltViewModel<ExpenseEditorViewModel, ExpenseEditorViewModel.Factory>(
-        key = "expense-${movementId?.value}-${presetPoolId?.value}-${presetFundId?.value}",
-        creationCallback = { it.create(movementId?.value, presetPoolId?.value, presetFundId?.value) },
+        key = "expense-${movementId?.value}-${presetPoolId?.value}-${presetFundId?.value}-${reconciliationId?.value}",
+        creationCallback = { it.create(movementId?.value, presetPoolId?.value, presetFundId?.value, reconciliationId?.value) },
     ),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()

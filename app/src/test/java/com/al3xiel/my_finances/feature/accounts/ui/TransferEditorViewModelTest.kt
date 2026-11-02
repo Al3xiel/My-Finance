@@ -31,6 +31,7 @@ class TransferEditorViewModelTest {
         f.accounts,
         RegisterTransferUseCase(f.rules, f.accounts, f.recorder, f.ids),
         f.clock,
+        com.al3xiel.my_finances.feature.reconciliation.domain.FakeReconciliationRepository(),
     )
 
     @Test

@@ -82,8 +82,8 @@ Formato: **ID · Nombre (UI)** · `RouteKey` · propósito · acciones principal
 | S20 | Movimientos | `Movements` | Lista agrupada por día, con chips de filtro (cuenta, tipo, categoría, concepto, cúmulo, fondo, rango de fechas) y búsqueda en notas | Tocar → S21 |
 | S21 | Detalle de movimiento | `MovementDetail(id)` | Datos, partes, conceptos, estado de reembolso, **historial de versiones** (eventos del agregado) | Corregir → S22 · Anular → `MovementVoided` (pide motivo; no disponible en transferencias, que se revierten con otra, D12) |
 | S22 | Registrar / corregir gasto | `ExpenseEditor(id?, presetPoolId?, presetFundId?)` | Monto, cuenta, fecha, nota · **partes** (por defecto 1): monto, categoría, conceptos, cúmulo (al elegirlo toma su categoría y conceptos por defecto) **o** fondo · indicador "falta asignar S/ X" | Guardar → `ExpenseRegistered` / `MovementCorrected` (pide motivo) |
-| S23 | Registrar ingreso | `IncomeEditor(id?, expectedIncomeId?)` | Monto, cuenta, fuente, fecha, nota · opción "apartar en fondo" (fondo y monto ≤ el ingreso) · opción "confirma ingreso esperado" (con `expectedIncomeId` llega prellenado; sin él sugiere los pendientes de la misma cuenta y fuente: "¿confirma Sueldo ~S/ 2,000?") | Guardar → `IncomeRegistered` (+ `FundToppedUp` / `ExpectedIncomeConfirmed`) |
-| S24 | Transferencia | `TransferEditor` | Desde, hacia, monto, comisión opcional; etiqueta automática "Retiro"/"Depósito". Solo crea: no se edita ni se corrige; un error se revierte con otra transferencia (D12) | Guardar → `TransferRegistered` |
+| S23 | Registrar ingreso | `IncomeEditor(id?, expectedIncomeId?, reconciliationId?)` | Monto, cuenta, fuente, fecha, nota · opción "apartar en fondo" (fondo y monto ≤ el ingreso) · opción "confirma ingreso esperado" (con `expectedIncomeId` llega prellenado; sin él sugiere los pendientes de la misma cuenta y fuente: "¿confirma Sueldo ~S/ 2,000?") · con `reconciliationId` (desde S61) se oculta "apartar en fondo" y "confirma ingreso esperado", se propone la cuenta de la conciliación y el ingreso queda vinculado (D34) | Guardar → `IncomeRegistered` (+ `FundToppedUp` / `ExpectedIncomeConfirmed`) |
+| S24 | Transferencia | `TransferEditor(reconciliationId?)` | Desde, hacia, monto, comisión opcional; etiqueta automática "Retiro"/"Depósito". Solo crea: no se edita ni se corrige; un error se revierte con otra transferencia (D12) | Guardar → `TransferRegistered` |
 | S25 | Registro rápido | `QuickEntry` | Campo de texto + vista previa interpretada (ver §5) | Confirmar → evento correspondiente |
 
 ### 3.4 Por cobrar
@@ -114,7 +114,7 @@ Formato: **ID · Nombre (UI)** · `RouteKey` · propósito · acciones principal
 | ID | Pantalla | Ruta | Contenido | Acciones → evento |
 |---|---|---|---|---|
 | S50 | Más | `More` | Menú de secciones | — |
-| S51 | Cuentas | `Accounts` / `AccountDetail(id)` | Saldo, saldo a una fecha, asientos, última conciliación | Crear/renombrar/archivar → `Account*` · **Conciliar** → S60 |
+| S51 | Cuentas | `Accounts` / `AccountDetail(id)` | Saldo, saldo a una fecha, asientos, última conciliación | Crear/renombrar/archivar → `Account*` (no se archiva con una conciliación `OPEN`) · **Conciliar** → S60 · aviso `needsReview` |
 | S52 | Fondos | `Funds` / `FundDetail(id)` | Asignado, gastado (detallado + no registrado), restante estimado, días de uso, historial de arqueos y desviación | Recargar → `FundToppedUp` · Marcar día → `UsageDayMarked` · **Arquear** → S53 · Cerrar → `FundClosed` |
 | S53 | Arqueo de fondo | `FundCount(id)` | "¿Cuánto te queda?" · cálculo de gastado vs. estimado · si hay gasto no registrado: cuenta y categoría a cargar | Confirmar → `FundCounted` |
 | S54 | Crear / editar fondo | `FundEditor(id?)` | Nombre, modo de consumo, estimado diario, fechas; el modo y el inicio se muestran bloqueados cuando ya tienen historia | Guardar → `FundCreated` / `FundEdited` |
@@ -134,9 +134,9 @@ Formato: **ID · Nombre (UI)** · `RouteKey` · propósito · acciones principal
 
 | ID | Pantalla | Ruta | Contenido | Acciones → evento |
 |---|---|---|---|---|
-| S60 | Nueva conciliación | `ReconciliationStart(accountId)` | "¿Cuánto dice tu banco?" · saldo de la app · diferencia | Registrar → `BalanceCheckRecorded` (**no ajusta**) |
-| S61 | Conciliación abierta | `ReconciliationDetail(id)` | Saldo real, saldo de la app al momento, **diferencia restante en vivo** · movimientos vinculados · sugerencias (movimientos recientes sin conciliar) | Registrar movimiento olvidado (abre S22/S23/S24 vinculado) · Vincular existente → `MovementLinkedToReconciliation` · **Resolver** → S62 · Cancelar → `ReconciliationCancelled` · **Exportar diagnóstico** → S63 · **Exportar diccionario** → S65 |
-| S62 | Resolver conciliación | `ReconciliationResolve(id)` | Causa (Saldado / Faltó registrar / Registro erróneo / Posible error de la app / Desconocida) · si diferencia ≠ 0: vista del ingreso/egreso no identificado | Confirmar → `ReconciliationResolved` |
+| S60 | Nueva conciliación | `ReconciliationStart(accountId)` | "¿Cuánto dice tu banco?" · saldo de la app · diferencia | Registrar → `BalanceCheckRecorded` (**no ajusta**); el saldo real puede ser 0 o negativo; si ya hay una `OPEN` en la cuenta abre S61 |
+| S61 | Conciliación abierta | `ReconciliationDetail(id)` | Saldo real, saldo de la app al momento, **diferencia restante en vivo** · movimientos vinculados · sugerencias (movimientos recientes sin conciliar) | Registrar movimiento olvidado (abre S22/S23/S24 vinculado) · Vincular existente → `MovementLinkedToReconciliation` · **Resolver** → S62 · Cancelar (motivo obligatorio) → `ReconciliationCancelled` · **Exportar diagnóstico** → S63 · **Exportar diccionario** → S65 |
+| S62 | Resolver conciliación | `ReconciliationResolve(id)` | Causa (Saldado / Faltó registrar / Registro erróneo / Posible error de la app / Desconocida) · solo admite las causas que permite la diferencia (0: Saldado / Faltó registrar / Registro erróneo; ≠ 0: Posible error de la app / Desconocida) · si diferencia ≠ 0: vista del ingreso/egreso no identificado · nota opcional | Confirmar → `ReconciliationResolved` |
 | S63 | Exportar diagnóstico | `DiagnosticExport(reconciliationId)` | Alcance, anonimización (activada), contraseña opcional, **vista previa del contenido** | Exportar → `DiagnosticExportCreated` + Intent |
 | S64 | Espacio de diagnóstico | `DiagnosticWorkspace(packageId)` | Resumen del paquete · **reporte de diferencias** (primer `sequence` divergente, asientos lado a lado) · generar solicitud de diccionario · aplicar diccionario · borrar espacio | — (BD separada) |
 | S65 | Exportar diccionario | `DictionaryExport(exportId)` | Cargar solicitud (código o lista) · alcance parcial/completo · **lista exacta de lo que se revelará** · contraseña obligatoria | Exportar → `DiagnosticDictionaryExported` + Intent |
@@ -218,7 +218,9 @@ Coincidencia sin tildes ni mayúsculas, por prefijo y por alias. **Siempre muest
 @Serializable data class FundDetail(val id: String) : Route
 @Serializable data class FundCount(val id: String) : Route
 @Serializable data class FundEditor(val id: String? = null) : Route
-@Serializable data class IncomeEditor(val id: String? = null, val expectedIncomeId: String? = null) : Route
+@Serializable data class IncomeEditor(val id: String? = null, val expectedIncomeId: String? = null,
+                                      val reconciliationId: String? = null) : Route
+@Serializable data class TransferEditor(val reconciliationId: String? = null) : Route
 @Serializable data object ExpectedIncomes : Route
 @Serializable data class ExpectedIncomeEditor(val id: String? = null) : Route
 @Serializable data class PoolDetail(val id: String) : Route
@@ -228,7 +230,9 @@ Coincidencia sin tildes ni mayúsculas, por prefijo y por alias. **Siempre muest
 @Serializable data class PersonDetail(val id: String) : Route
 @Serializable data class LoanEditor(val personId: String? = null) : Route
 @Serializable data class LoanDetail(val id: String) : Route
+@Serializable data class ReconciliationStart(val accountId: String) : Route
 @Serializable data class ReconciliationDetail(val reconciliationId: String) : Route
+@Serializable data class ReconciliationResolve(val reconciliationId: String) : Route
 @Serializable data class DiagnosticWorkspace(val packageId: String) : Route
 // … una clase por fila del inventario (§3)
 ```

@@ -24,14 +24,20 @@ sealed interface Route : NavKey
     val id: String? = null,
     val presetPoolId: String? = null,
     val presetFundId: String? = null,
+    /** Abierto desde la conciliación S61: el gasto (o su corrección) queda vinculado a ella. */
+    val reconciliationId: String? = null,
 ) : Route
 /** `expectedIncomeId` abre el ingreso prellenado desde un ingreso esperado (S55 → S23); con `id` se corrige un ingreso. */
-@Serializable data class IncomeEditor(val id: String? = null, val expectedIncomeId: String? = null) : Route
+@Serializable data class IncomeEditor(
+    val id: String? = null,
+    val expectedIncomeId: String? = null,
+    val reconciliationId: String? = null,
+) : Route
 
 // Accounts feature
 @Serializable data object Accounts : Route
 @Serializable data class AccountDetail(val id: String) : Route
-@Serializable data object TransferEditor : Route
+@Serializable data class TransferEditor(val reconciliationId: String? = null) : Route
 @Serializable data object IncomeSources : Route
 
 // Catalogs
@@ -53,6 +59,11 @@ sealed interface Route : NavKey
 @Serializable data class FundDetail(val id: String) : Route
 @Serializable data class FundCount(val id: String) : Route
 @Serializable data class FundEditor(val id: String? = null) : Route
+
+// Reconciliation (ids travel as text)
+@Serializable data class ReconciliationStart(val accountId: String) : Route
+@Serializable data class ReconciliationDetail(val reconciliationId: String) : Route
+@Serializable data class ReconciliationResolve(val reconciliationId: String) : Route
 
 // Expected incomes (ids travel as text)
 @Serializable data object ExpectedIncomes : Route

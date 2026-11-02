@@ -41,6 +41,7 @@ class IncomeEditorExpectedTest {
         expected,
         ConfirmExpectedIncomeUseCase(f.rules, expected, funds, f.recorder, f.ids, f.writeLock),
         f.clock,
+        com.al3xiel.my_finances.feature.reconciliation.domain.FakeReconciliationRepository(),
     )
 
     private fun pending(id: String, repeats: Boolean = false, account: com.al3xiel.my_finances.domain.model.AccountId = f.bbva, source: IncomeSourceId = f.source) =

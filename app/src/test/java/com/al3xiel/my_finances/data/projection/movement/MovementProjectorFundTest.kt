@@ -69,7 +69,7 @@ class MovementProjectorFundTest {
 
     @Test
     fun theProjectorVersionIsRaisedSoReplayFillsTheFundColumn() {
-        assertEquals(3, projector.version)
+        assertEquals(4, projector.version)
     }
 
     @Test

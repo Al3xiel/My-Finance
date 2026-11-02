@@ -14,6 +14,7 @@ import com.al3xiel.my_finances.domain.model.MovementStatus
 import com.al3xiel.my_finances.domain.model.FundId
 import com.al3xiel.my_finances.domain.model.PartId
 import com.al3xiel.my_finances.domain.model.PoolId
+import com.al3xiel.my_finances.domain.model.ReconciliationId
 import com.al3xiel.my_finances.domain.model.MovementType
 import com.al3xiel.my_finances.domain.model.PartKind
 import com.al3xiel.my_finances.domain.model.TagId
@@ -27,11 +28,11 @@ import com.al3xiel.my_finances.feature.movements.domain.model.MovementDraft
 import com.al3xiel.my_finances.feature.movements.domain.repository.MovementRepository
 import com.al3xiel.my_finances.feature.movements.domain.usecase.CorrectMovementUseCase
 import com.al3xiel.my_finances.feature.movements.domain.usecase.RegisterExpenseUseCase
-import com.al3xiel.my_finances.feature.pools.domain.model.Pool
 import com.al3xiel.my_finances.feature.funds.domain.model.FundOverview
 import com.al3xiel.my_finances.feature.funds.domain.model.FundStatus
 import com.al3xiel.my_finances.feature.funds.domain.repository.FundRepository
 import com.al3xiel.my_finances.feature.pools.domain.repository.PoolRepository
+import com.al3xiel.my_finances.feature.reconciliation.domain.repository.ReconciliationRepository
 import com.al3xiel.my_finances.feature.tags.domain.repository.TagRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -63,6 +64,8 @@ class ExpenseEditorViewModel @AssistedInject constructor(
     private val registerExpense: RegisterExpenseUseCase,
     private val correctMovement: CorrectMovementUseCase,
     clock: Clock,
+    private val reconciliations: ReconciliationRepository,
+    @Assisted("reconciliation") reconciliationIdValue: String? = null,
 ) : ViewModel() {
     @AssistedFactory
     interface Factory {
@@ -70,6 +73,7 @@ class ExpenseEditorViewModel @AssistedInject constructor(
             @Assisted("movement") movementIdValue: String?,
             @Assisted("preset") presetPoolIdValue: String?,
             @Assisted("presetFund") presetFundIdValue: String?,
+            @Assisted("reconciliation") reconciliationIdValue: String?,
         ): ExpenseEditorViewModel
     }
 
@@ -77,6 +81,9 @@ class ExpenseEditorViewModel @AssistedInject constructor(
     private val movementId = movementIdValue?.let(::MovementId)
     private val presetPoolId = presetPoolIdValue?.let(::PoolId)
     private val presetFundId = presetFundIdValue?.let(::FundId)
+
+    /** Si viene de S61, el gasto queda vinculado a esa conciliación y se propone su cuenta. */
+    private val reconciliationId = reconciliationIdValue?.let(::ReconciliationId)
     private val today = LocalDate.now(clock)
 
     private data class Form(
@@ -108,6 +115,7 @@ class ExpenseEditorViewModel @AssistedInject constructor(
     ) { form, accountList, categoryList, tagList, (poolList, fundList) ->
         ExpenseEditorUiState(
             isCorrection = movementId != null,
+            linkedToReconciliation = reconciliationId != null,
             loaded = form.loaded,
             notFound = form.notFound,
             totalText = form.totalText,
@@ -139,7 +147,8 @@ class ExpenseEditorViewModel @AssistedInject constructor(
     private suspend fun initialize() {
         if (movementId == null) {
             val last = movements.lastExpense()
-            val account = last?.accountId ?: accounts.observeAccounts().first().firstOrNull { !it.account.isArchived }?.account?.id
+            val reconciled = reconciliationId?.let { reconciliations.find(it) }?.accountId
+            val account = reconciled ?: last?.accountId ?: accounts.observeAccounts().first().firstOrNull { !it.account.isArchived }?.account?.id
             val category = last?.parts?.firstOrNull { it.kind == PartKind.NORMAL }?.categoryId
                 ?: categories.observeAll().first().firstOrNull { !it.isArchived }?.id
             val preset = presetPoolId?.let { pools.find(it) }?.takeIf { !it.isArchived }
@@ -209,14 +218,6 @@ class ExpenseEditorViewModel @AssistedInject constructor(
         }
     }
 
-    /** Sin cúmulo conserva lo elegido; con cúmulo toma su categoría y suma sus conceptos por defecto (el usuario puede cambiarlos). */
-    private fun PartDraft.inPool(pool: Pool?): PartDraft =
-        if (pool == null) {
-            copy(poolId = null)
-        } else {
-            copy(poolId = pool.id, fundId = null, categoryId = pool.defaultCategoryId ?: categoryId, tagIds = tagIds + pool.defaultTagIds)
-        }
-
     private fun selectPool(key: Int, id: PoolId?) {
         if (id == null) return editPart(key) { inPool(null) }
         viewModelScope.launch {
@@ -244,7 +245,7 @@ class ExpenseEditorViewModel @AssistedInject constructor(
         if (current.submitting) return
         val total = MoneyInputFilter.toMinor(current.totalText)?.let { Money(it, CurrencyCode.PEN) }
         val account = current.accountId
-        val inputs = partInputs(current, total)
+        val inputs = partInputs(current)
         if (total == null) return fail(BusinessError.InvalidAmount)
         if (account == null || inputs == null) return fail(BusinessError.NotFound)
 
@@ -253,13 +254,14 @@ class ExpenseEditorViewModel @AssistedInject constructor(
             val note = current.note.trim().ifEmpty { null }
             val outcome = attempt {
                 if (movementId == null) {
-                    registerExpense(account, total, inputs, note, current.occurredOn, confirmNegative)
+                    registerExpense(account, total, inputs, note, current.occurredOn, confirmNegative, reconciliationId)
                 } else {
                     correctMovement(
                         movementId,
                         MovementDraft.Expense(account, total, inputs, note, current.occurredOn),
                         current.pendingReason.orEmpty(),
                         confirmNegative,
+                        reconciliationId,
                     )
                 }
             }
@@ -273,11 +275,9 @@ class ExpenseEditorViewModel @AssistedInject constructor(
 
     private fun fail(error: BusinessError) = form.update { it.copy(error = error, pendingReason = null) }
 
-    private fun partInputs(form: Form, total: Money?): List<ExpensePartInput>? {
-        return form.parts.map { part ->
-            val category = part.categoryId ?: return null
-            ExpensePartInput(part.partId, Money(amountMinor(form, part), CurrencyCode.PEN), category, part.tagIds.toList(), part.poolId, part.fundId)
-        }
+    private fun partInputs(form: Form): List<ExpensePartInput>? = form.parts.map { part ->
+        val category = part.categoryId ?: return null
+        ExpensePartInput(part.partId, Money(amountMinor(form, part), CurrencyCode.PEN), category, part.tagIds.toList(), part.poolId, part.fundId)
     }
 
     private fun amountMinor(form: Form, part: PartDraft): Long = // una sola parte lleva el total

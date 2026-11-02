@@ -13,7 +13,7 @@
 | Tipo de cuenta | `AccountType` | enum: `BANK`, `CASH`, `DIGITAL_WALLET` | |
 | Saldo | `balance` | `Money` | Dinero en una cuenta según la app. |
 | Movimiento | `Movement` | entidad | Registro de dinero: ingreso, gasto o transferencia. *Se evita `Transaction` para no chocar con transacciones de BD (`@Transaction`).* |
-| Tipo de movimiento | `MovementType` | enum: `INCOME`, `EXPENSE`, `TRANSFER` (vigentes); `REIMBURSEMENT`, `LOAN_DISBURSEMENT`, `LOAN_REPAYMENT`, `FUND_UNTRACKED_SPEND` (vigentes); `ADJUSTMENT` (futuro: llega con su feature) | Solo `INCOME` y `EXPENSE` cuentan en reportes de ingreso/gasto; además cuentan como gasto, en su categoría, la comisión y el gasto no registrado de un fondo (D11). |
+| Tipo de movimiento | `MovementType` | enum: `INCOME`, `EXPENSE`, `TRANSFER` (vigentes); `REIMBURSEMENT`, `LOAN_DISBURSEMENT`, `LOAN_REPAYMENT`, `FUND_UNTRACKED_SPEND` (vigentes); `ADJUSTMENT` (vigente: ingreso o egreso no identificado de una conciliación; se anula, no se corrige) | Solo `INCOME` y `EXPENSE` cuentan en reportes de ingreso/gasto; además cuentan como gasto, en su categoría, la comisión y el gasto no registrado de un fondo (D11). |
 | Saldo inicial | `openingBalance` | `Money` | Saldo al crear la cuenta; fuente de origen `OPENING_BALANCE`. |
 | Ingreso | `Income` | `MovementType.INCOME` | Dinero que entra a una cuenta desde fuera. |
 | Gasto | `Expense` | `MovementType.EXPENSE` | Dinero que sale de una cuenta hacia fuera. |
@@ -34,6 +34,19 @@
 | Atribución de origen | `OriginAttribution` | valor | Parte de un gasto atribuida a cada fuente. |
 | Ajuste / Desconocido | `UNKNOWN_ADJUSTMENT` | fuente especial | Origen de diferencias de conciliación. |
 | Conciliación | `Reconciliation` | entidad/proceso | Comparar saldo real del banco vs. saldo calculado, investigar y resolver. En dos pasos: registrar y luego resolver. |
+| Ajuste de conciliación | `ADJUSTMENT` | `MovementType` y `LedgerEntryKind` | Movimiento que crea `ReconciliationResolved` por la diferencia restante en valor absoluto; `AdjustmentDirection`: `UNIDENTIFIED_INCOME` (fuente `UNKNOWN_ADJUSTMENT`) o `UNIDENTIFIED_EXPENSE`. |
+| Razón de reconstrucción | `RebuildReason` | constantes: `VERSION_CHANGE`, `MANUAL`, `RESTORE` | Valores fijos de `ProjectionsRebuilt.reason`; solo las dos primeras re-verifican conciliaciones. |
+| Veredicto de re-verificación | `ReviewVerdict` | enum: `OK`, `NEEDS_REVIEW` | Resultado de comparar una conciliación resuelta con la diferencia que calculan las reglas vigentes. |
+| Ajuste calculado | `AdjustmentSpec` | dirección y monto | Ajuste que corresponde a una diferencia restante, antes de que el caso de uso le asigne el id del movimiento. |
+| Ajuste bloqueado | `AdjustmentLocked` | `BusinessError` | El movimiento `ADJUSTMENT` no se corrige; se anula (D33). |
+| Movimiento fuera de la cuenta | `MovementNotInAccount` | `BusinessError` | El movimiento que se vincula no toca la cuenta de la conciliación. |
+| Cuenta con conciliación abierta | `HasOpenReconciliation` | `BusinessError` | Una cuenta con una conciliación `OPEN` no se archiva. |
+| Causa no permitida | `CauseNotAllowed` | `BusinessError` | La causa no corresponde a la diferencia restante (0 vs. distinta de 0). |
+| Ganchos de conciliación | `ReconciliationGuards` | reglas de dominio | Validan el `reconciliationId` de un movimiento (`ReconciliationLinkGuard`) y vetan archivar una cuenta con conciliación abierta (`AccountArchiveGuard`). |
+| Conciliación abierta | `ReconciliationAlreadyOpen` | `BusinessError` | La cuenta ya tiene una conciliación `OPEN`; solo hay una por cuenta. `ReconciliationNotOpen`: la conciliación ya se resolvió o se canceló. |
+| Detalle de conciliación | `ReconciliationDetail` | modelo de lectura | S61: saldo de la app al momento, diferencia restante en vivo, movimientos vinculados y sugeridos (`ReconciliationMovement`). |
+| Ajuste resuelto | `AdjustmentInfo` | modelo de lectura | Movimiento, dirección y monto del ajuste que dejó una resolución. |
+| Versiones de proyectores | `ProjectionVersions` | puerto de dominio | Versión guardada vs. versión del código; `ProjectionVersionGuard` las compara al arrancar y dispara el replay `VERSION_CHANGE` (D32). |
 | Estado de conciliación | `ReconciliationStatus` | enum: `OPEN`, `RESOLVED`, `CANCELLED` | |
 | Causa de la diferencia | `ReconciliationCause` | enum: `BALANCED`, `MISSING_RECORD`, `RECORDING_ERROR`, `SUSPECTED_APP_ERROR`, `UNKNOWN` | Saldado / Faltó registrar / Registro erróneo / Posible error de la app / Desconocida |
 | Diferencia restante | `remainingDifference` | `Money` | Diferencia que queda tras vincular movimientos olvidados o corregidos. |

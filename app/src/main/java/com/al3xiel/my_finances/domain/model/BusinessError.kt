@@ -95,6 +95,24 @@ sealed interface BusinessError {
     /** El rango de un ingreso esperado empieza después de terminar. */
     data object InvalidRange : BusinessError
 
+    /** La cuenta ya tiene una conciliación abierta: se resuelve o se cancela antes de registrar otro saldo real. */
+    data object ReconciliationAlreadyOpen : BusinessError
+
+    /** La conciliación ya se resolvió o se canceló. */
+    data object ReconciliationNotOpen : BusinessError
+
+    /** El ajuste de una conciliación no se corrige; se anula si ya no corresponde (D33). */
+    data object AdjustmentLocked : BusinessError
+
+    /** El movimiento no toca la cuenta de la conciliación. */
+    data object MovementNotInAccount : BusinessError
+
+    /** Una cuenta con una conciliación abierta no se archiva. */
+    data object HasOpenReconciliation : BusinessError
+
+    /** La causa elegida no admite la diferencia restante (con diferencia 0 o distinta de 0). */
+    data object CauseNotAllowed : BusinessError
+
     /** Aviso de saldo negativo (D14): el usuario puede confirmar y repetir la operación. */
     data class WouldGoNegative(val resultingBalanceMinor: Long) : BusinessError
 }

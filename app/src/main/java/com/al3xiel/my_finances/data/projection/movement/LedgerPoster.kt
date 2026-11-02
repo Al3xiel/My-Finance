@@ -23,7 +23,7 @@ class LedgerPoster @Inject constructor(
         val current = movements.movement(movementId) ?: return false
         if (current.status == MovementStatus.VOIDED) return false
         val accounts = ledger.accountIdsOf(movementId)
-        ledger.voidEntriesOf(movementId)
+        ledger.voidEntriesOf(movementId, sequence)
         movements.upsertMovement(current.copy(status = MovementStatus.VOIDED, lastSequence = sequence))
         refreshBalances(accounts, sequence)
         return true

@@ -46,7 +46,8 @@ class VoidMovementUseCase @Inject constructor(
         if (!confirmNegativeBalance) {
             val balance = accounts.balanceMinor(movement.accountId)
             // Anular lo que sumó (ingreso, reembolso, pago de préstamo) resta de la cuenta; lo que restó (gasto, préstamo) devuelve.
-            val addedMoney = movement.type in setOf(MovementType.INCOME, MovementType.REIMBURSEMENT, MovementType.LOAN_REPAYMENT)
+            val addedMoney = movement.type in setOf(MovementType.INCOME, MovementType.REIMBURSEMENT, MovementType.LOAN_REPAYMENT) ||
+                (movement.type == MovementType.ADJUSTMENT && movement.incomeSourceId != null) // ingreso no identificado
             val effect = if (addedMoney) -movement.amount.amountMinor else movement.amount.amountMinor
             rules.negativeBalanceWarning(balance, balance + effect)?.let { return Outcome.Failed(it) }
         }

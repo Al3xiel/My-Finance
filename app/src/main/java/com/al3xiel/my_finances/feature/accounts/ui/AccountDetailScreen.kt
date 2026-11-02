@@ -36,10 +36,12 @@ import com.al3xiel.my_finances.core.money.CurrencyCode
 import com.al3xiel.my_finances.core.money.Money
 import com.al3xiel.my_finances.domain.model.AccountId
 import com.al3xiel.my_finances.domain.model.LedgerEntryKind
+import com.al3xiel.my_finances.domain.model.ReconciliationId
 import com.al3xiel.my_finances.domain.model.event.AccountType
 import com.al3xiel.my_finances.feature.accounts.domain.model.Account
 import com.al3xiel.my_finances.feature.accounts.domain.model.AccountWithBalance
 import com.al3xiel.my_finances.feature.accounts.domain.model.LedgerLine
+import com.al3xiel.my_finances.feature.accounts.ui.components.ReconciliationEntry
 import com.al3xiel.my_finances.ui.theme.MyfinancesTheme
 import java.time.LocalDate
 
@@ -47,6 +49,8 @@ import java.time.LocalDate
 @Composable
 fun AccountDetailScreen(
     accountId: AccountId,
+    onReconcile: (AccountId) -> Unit,
+    onOpenReconciliation: (ReconciliationId) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: AccountDetailViewModel = hiltViewModel<AccountDetailViewModel, AccountDetailViewModel.Factory>(
         key = accountId.value,
@@ -54,13 +58,21 @@ fun AccountDetailScreen(
     ),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    AccountDetailContent(state = state, onAction = viewModel::onAction, modifier = modifier)
+    AccountDetailContent(
+        state = state,
+        onAction = viewModel::onAction,
+        onReconcile = { onReconcile(accountId) },
+        onOpenReconciliation = onOpenReconciliation,
+        modifier = modifier,
+    )
 }
 
 @Composable
 fun AccountDetailContent(
     state: AccountDetailUiState,
     onAction: (AccountDetailUiAction) -> Unit,
+    onReconcile: () -> Unit,
+    onOpenReconciliation: (ReconciliationId) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val account = state.account
@@ -96,6 +108,9 @@ fun AccountDetailContent(
                     } else {
                         TextButton(onClick = { pickingDate = true }) { Text(stringResource(R.string.account_detail_pick_date)) }
                     }
+                }
+                if (state.canReconcile) {
+                    ReconciliationEntry(state, onReconcile, onOpenReconciliation)
                 }
                 Text(
                     stringResource(R.string.account_detail_ledger),
@@ -153,6 +168,7 @@ private fun LedgerEntryKind.labelRes() = when (this) {
     LedgerEntryKind.REIMBURSEMENT_IN -> R.string.ledger_reimbursement_in
     LedgerEntryKind.LOAN_OUT -> R.string.ledger_loan_out
     LedgerEntryKind.LOAN_IN -> R.string.ledger_loan_in
+    LedgerEntryKind.ADJUSTMENT -> R.string.ledger_adjustment
 }
 
 private val previewState = AccountDetailUiState(
@@ -170,11 +186,11 @@ private val previewState = AccountDetailUiState(
 @Preview(showBackground = true)
 @Composable
 private fun AccountDetailContentPreview() {
-    MyfinancesTheme { CompositionLocalProvider(LocalHideAmounts provides false) { AccountDetailContent(previewState, {}) } }
+    MyfinancesTheme { CompositionLocalProvider(LocalHideAmounts provides false) { AccountDetailContent(previewState, {}, {}, {}) } }
 }
 
 @Preview(showBackground = true, uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun AccountDetailContentDarkPreview() {
-    MyfinancesTheme { CompositionLocalProvider(LocalHideAmounts provides true) { AccountDetailContent(previewState, {}) } }
+    MyfinancesTheme { CompositionLocalProvider(LocalHideAmounts provides true) { AccountDetailContent(previewState, {}, {}, {}) } }
 }

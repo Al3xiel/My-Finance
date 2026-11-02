@@ -1,11 +1,13 @@
 package com.al3xiel.my_finances.domain.usecase
 
+import com.al3xiel.my_finances.domain.model.AccountId
 import com.al3xiel.my_finances.domain.model.BusinessError
 import com.al3xiel.my_finances.domain.model.FundId
 import com.al3xiel.my_finances.domain.model.MovementId
 import com.al3xiel.my_finances.domain.model.Outcome
 import com.al3xiel.my_finances.domain.model.PersonId
 import com.al3xiel.my_finances.domain.model.PoolId
+import com.al3xiel.my_finances.domain.model.ReconciliationId
 import com.al3xiel.my_finances.domain.model.event.DomainEvent
 import com.al3xiel.my_finances.domain.model.event.MovementSnapshot
 import java.time.LocalDate
@@ -46,4 +48,17 @@ fun interface FundReferenceGuard {
 
 fun interface ArchiveGuard {
     suspend fun check(personId: PersonId): BusinessError?
+}
+
+/** Veta archivar una cuenta (por ejemplo, con una conciliación abierta). */
+fun interface AccountArchiveGuard {
+    suspend fun check(accountId: AccountId): BusinessError?
+}
+
+/**
+ * Valida el `reconciliationId` de un movimiento registrado, corregido o anulado desde la conciliación: que exista, esté
+ * abierta y sea de una de las cuentas que el movimiento toca.
+ */
+fun interface ReconciliationLinkGuard {
+    suspend fun check(reconciliationId: ReconciliationId, accountIds: Set<AccountId>): BusinessError?
 }

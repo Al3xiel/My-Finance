@@ -27,6 +27,7 @@ import com.al3xiel.my_finances.core.designsystem.EntityPicker
 import com.al3xiel.my_finances.core.designsystem.MoneyInput
 import com.al3xiel.my_finances.core.designsystem.NegativeBalanceDialog
 import com.al3xiel.my_finances.domain.model.AccountId
+import com.al3xiel.my_finances.domain.model.ReconciliationId
 import com.al3xiel.my_finances.ui.theme.MyfinancesTheme
 import java.time.LocalDate
 
@@ -35,7 +36,12 @@ import java.time.LocalDate
 fun TransferEditorScreen(
     onFinished: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: TransferEditorViewModel = hiltViewModel(),
+    /** Si se abre desde una conciliación, la transferencia queda vinculada a ella. */
+    reconciliationId: ReconciliationId? = null,
+    viewModel: TransferEditorViewModel = hiltViewModel<TransferEditorViewModel, TransferEditorViewModel.Factory>(
+        key = "transfer-${reconciliationId?.value.orEmpty()}",
+        creationCallback = { it.create(reconciliationId?.value) },
+    ),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(state.saved) { if (state.saved) onFinished() }

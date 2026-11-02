@@ -135,7 +135,7 @@ class AccountsViewModelTest {
             line("1-0", bbva, 1_000, LedgerEntryKind.OPENING, LocalDate.of(2026, 10, 1)),
             line("3-0", bbva, -50, LedgerEntryKind.EXPENSE, LocalDate.of(2026, 10, 6), voided = true),
         )
-        val detail = AccountDetailViewModel(bbva.value, repository, clock)
+        val detail = AccountDetailViewModel(bbva.value, repository, clock, com.al3xiel.my_finances.feature.reconciliation.domain.FakeReconciliationRepository())
 
         assertEquals(700L, detail.uiState.value.account?.balanceMinor)
         assertEquals(3, detail.uiState.value.ledger.size)

@@ -8,6 +8,7 @@ import com.al3xiel.my_finances.core.money.CurrencyCode
 import com.al3xiel.my_finances.core.money.Money
 import com.al3xiel.my_finances.domain.model.AccountId
 import com.al3xiel.my_finances.domain.model.BusinessError
+import com.al3xiel.my_finances.domain.model.ReconciliationId
 import com.al3xiel.my_finances.domain.model.SystemCatalog
 import com.al3xiel.my_finances.domain.model.attempt
 import com.al3xiel.my_finances.domain.model.errorOrNull
@@ -16,6 +17,10 @@ import com.al3xiel.my_finances.domain.model.event.FeeData
 import com.al3xiel.my_finances.feature.accounts.domain.model.AccountWithBalance
 import com.al3xiel.my_finances.feature.accounts.domain.repository.AccountRepository
 import com.al3xiel.my_finances.feature.accounts.domain.usecase.RegisterTransferUseCase
+import com.al3xiel.my_finances.feature.reconciliation.domain.repository.ReconciliationRepository
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -27,13 +32,14 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.Clock
 import java.time.LocalDate
-import javax.inject.Inject
 
 /** Etiqueta automática: no se guarda, se deduce de los tipos de cuenta (docs/04 §3.2). */
 enum class TransferLabel { WITHDRAWAL, DEPOSIT, TRANSFER }
 
 data class TransferEditorUiState(
     val loaded: Boolean = false,
+    /** Viene de S61: la transferencia queda vinculada a esa conciliación. */
+    val linkedToReconciliation: Boolean = false,
     val fromId: AccountId? = null,
     val toId: AccountId? = null,
     val amountText: String = "",
@@ -61,12 +67,21 @@ sealed interface TransferEditorUiAction {
 }
 
 /** S24: solo crea; un error se revierte con otra transferencia en sentido contrario (D12). */
-@HiltViewModel
-class TransferEditorViewModel @Inject constructor(
+@HiltViewModel(assistedFactory = TransferEditorViewModel.Factory::class)
+class TransferEditorViewModel @AssistedInject constructor(
     private val accounts: AccountRepository,
     private val registerTransfer: RegisterTransferUseCase,
     clock: Clock,
+    private val reconciliations: ReconciliationRepository,
+    @Assisted reconciliationIdValue: String? = null,
 ) : ViewModel() {
+    @AssistedFactory
+    interface Factory {
+        fun create(reconciliationIdValue: String?): TransferEditorViewModel
+    }
+
+    // KSP no puede nombrar una fábrica asistida con un value class: llega el texto y se envuelve aquí.
+    private val reconciliationId = reconciliationIdValue?.let(::ReconciliationId)
     private val today = LocalDate.now(clock)
 
     private data class Form(
@@ -89,6 +104,7 @@ class TransferEditorViewModel @Inject constructor(
         val active = accountList.filter { !it.account.isArchived }
         TransferEditorUiState(
             loaded = form.loaded,
+            linkedToReconciliation = reconciliationId != null,
             fromId = form.fromId,
             toId = form.toId,
             amountText = form.amountText,
@@ -107,7 +123,11 @@ class TransferEditorViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             val active = accounts.observeAccounts().first().filter { !it.account.isArchived }
-            form.update { it.copy(loaded = true, fromId = active.getOrNull(0)?.account?.id, toId = active.getOrNull(1)?.account?.id) }
+            val reconciled = reconciliationId?.let { reconciliations.find(it) }?.accountId
+            // La cuenta que se concilia va de origen; la otra, la primera distinta (el usuario puede cambiarlas).
+            val from = reconciled ?: active.getOrNull(0)?.account?.id
+            val to = active.map { it.account.id }.firstOrNull { it != from }
+            form.update { it.copy(loaded = true, fromId = from, toId = to) }
         }
     }
 
@@ -143,7 +163,7 @@ class TransferEditorViewModel @Inject constructor(
         form.update { it.copy(submitting = true) }
         viewModelScope.launch {
             val note = current.note.trim().ifEmpty { null }
-            val outcome = attempt { registerTransfer(from, to, amount, fee, note, current.occurredOn, confirmNegative) }
+            val outcome = attempt { registerTransfer(from, to, amount, fee, note, current.occurredOn, confirmNegative, reconciliationId) }
             when (val error = outcome.errorOrNull()) {
                 null -> form.update { it.copy(saved = true, submitting = false) }
                 is BusinessError.WouldGoNegative -> form.update { it.copy(negativeWarning = error, submitting = false) }

@@ -35,6 +35,7 @@ import com.al3xiel.my_finances.core.designsystem.ReasonDialog
 import com.al3xiel.my_finances.domain.model.AccountId
 import com.al3xiel.my_finances.domain.model.IncomeSourceId
 import com.al3xiel.my_finances.domain.model.MovementId
+import com.al3xiel.my_finances.domain.model.ReconciliationId
 import com.al3xiel.my_finances.ui.theme.MyfinancesTheme
 import java.time.LocalDate
 
@@ -45,9 +46,11 @@ fun IncomeEditorScreen(
     onFinished: () -> Unit,
     modifier: Modifier = Modifier,
     expectedIncomeId: String? = null,
+    /** Si se abre desde una conciliación, el ingreso queda vinculado a ella. */
+    reconciliationId: ReconciliationId? = null,
     viewModel: IncomeEditorViewModel = hiltViewModel<IncomeEditorViewModel, IncomeEditorViewModel.Factory>(
-        key = "income-${movementId?.value}-${expectedIncomeId.orEmpty()}",
-        creationCallback = { it.create(movementId?.value, expectedIncomeId) },
+        key = "income-${movementId?.value}-${expectedIncomeId.orEmpty()}-${reconciliationId?.value.orEmpty()}",
+        creationCallback = { it.create(movementId?.value, expectedIncomeId, reconciliationId?.value) },
     ),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
