@@ -19,7 +19,14 @@ class ProjectionRebuilderImpl @Inject constructor(
         val ordered = projectors.sortedBy { it.order }
         ordered.forEach { projector ->
             projector.reset()
-            events.forEach { projector.apply(it) }
+            projector.beginReplay()
+            try {
+                events.forEach { projector.apply(it) }
+                projector.finishReplay()
+            } catch (t: Throwable) {
+                projector.abortReplay()
+                throw t
+            }
             database.projectionStateDao().upsert(
                 ProjectionStateEntity(projector.name, projector.version, events.lastOrNull()?.sequence ?: 0, rebuiltAt),
             )

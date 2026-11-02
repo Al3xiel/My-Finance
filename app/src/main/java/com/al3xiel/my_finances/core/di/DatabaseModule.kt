@@ -8,6 +8,7 @@ import com.al3xiel.my_finances.data.database.migration.MIGRATION_1_2
 import com.al3xiel.my_finances.data.database.migration.MIGRATION_2_3
 import com.al3xiel.my_finances.data.database.migration.MIGRATION_3_4
 import com.al3xiel.my_finances.data.database.migration.MIGRATION_4_5
+import com.al3xiel.my_finances.data.database.migration.MIGRATION_5_6
 import com.al3xiel.my_finances.data.eventstore.EventStoreImpl
 import com.al3xiel.my_finances.data.eventstore.EventTriggersCallback
 import com.al3xiel.my_finances.data.projection.EventProjector
@@ -38,6 +39,8 @@ import com.al3xiel.my_finances.data.projection.pool.PoolQueryDao
 import com.al3xiel.my_finances.data.projection.pool.ReimbursementDao
 import com.al3xiel.my_finances.data.projection.pool.ReimbursementProjector
 import com.al3xiel.my_finances.data.projection.reconciliation.ReconciliationDao
+import com.al3xiel.my_finances.data.projection.origin.OriginDao
+import com.al3xiel.my_finances.data.projection.origin.OriginProjector
 import com.al3xiel.my_finances.data.projection.reconciliation.ReconciliationProjector
 import com.al3xiel.my_finances.data.projection.reconciliation.ReconciliationQueryDao
 import com.al3xiel.my_finances.domain.model.event.EventStore
@@ -100,6 +103,10 @@ abstract class DatabaseModule {
     @IntoSet
     abstract fun reconciliationProjector(impl: ReconciliationProjector): EventProjector
 
+    @Binds
+    @IntoSet
+    abstract fun originProjector(impl: OriginProjector): EventProjector
+
     companion object {
         @Provides
         @Singleton
@@ -107,10 +114,13 @@ abstract class DatabaseModule {
             System.loadLibrary("sqlcipher")
             return Room.databaseBuilder(context, AppDatabase::class.java, DATABASE_NAME)
                 .openHelperFactory(SupportOpenHelperFactory(keyProvider.getOrCreate()))
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
                 .addCallback(EventTriggersCallback)
                 .build()
         }
+
+        @Provides
+        fun provideOriginDao(database: AppDatabase): OriginDao = database.originDao()
 
         @Provides
         fun provideCatalogDao(database: AppDatabase): CatalogDao = database.catalogDao()

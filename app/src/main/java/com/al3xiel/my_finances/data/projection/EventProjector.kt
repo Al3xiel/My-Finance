@@ -20,4 +20,16 @@ interface EventProjector {
 
     /** Borra todo lo que este proyector deriva. */
     suspend fun reset()
+
+    /**
+     * Un replay empieza (después de `reset`): los que dependen del orden de todo el libro pueden ignorar `apply` hasta
+     * `finishReplay`, porque en el replay el libro ya está en su estado final.
+     */
+    suspend fun beginReplay() {}
+
+    /** El replay recorrió todo el registro: aquí se calcula lo que no se puede ir haciendo evento a evento. */
+    suspend fun finishReplay() {}
+
+    /** El replay falló: deja al proyector listo para volver a aplicar eventos en vivo. */
+    suspend fun abortReplay() {}
 }
