@@ -13,7 +13,9 @@ interface MovementQueryDao {
         SELECT * FROM movements
         WHERE (:accountId IS NULL OR account_id = :accountId OR counter_account_id = :accountId)
           AND (:type IS NULL OR type = :type)
-          AND (:categoryId IS NULL OR id IN (SELECT movement_id FROM movement_parts WHERE category_id = :categoryId))
+          AND (:categoryId IS NULL OR id IN (
+                SELECT movement_id FROM movement_parts
+                WHERE category_id = :categoryId OR (:useCategorySet = 1 AND category_id IN (:categoryIds))))
           AND (:tagId IS NULL OR id IN (
                 SELECT p.movement_id FROM movement_parts p
                 JOIN movement_part_tags t ON t.part_id = p.id WHERE t.tag_id = :tagId))
@@ -27,6 +29,8 @@ interface MovementQueryDao {
         accountId: String?,
         type: String?,
         categoryId: String?,
+        useCategorySet: Boolean,
+        categoryIds: List<String>,
         tagId: String?,
         from: String?,
         to: String?,

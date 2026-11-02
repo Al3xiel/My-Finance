@@ -136,6 +136,13 @@ class MovementQueriesTest {
     }
 
     @Test
+    fun aCategorySetMatchesAPartInAnyOfItsMembers() {
+        assertEquals(listOf("m4", "m3", "m1"), ids(MovementFilter(categoryId = food, categoryIds = setOf(food, home))))
+        assertEquals(listOf("m4"), ids(MovementFilter(accountId = cash, categoryId = food, categoryIds = setOf(food))))
+        assertEquals(listOf("m4", "m1"), ids(MovementFilter(categoryId = food)))
+    }
+
+    @Test
     fun combinesFiltersWithAnd() {
         assertEquals(listOf("m4"), ids(MovementFilter(accountId = cash, categoryId = food)))
     }

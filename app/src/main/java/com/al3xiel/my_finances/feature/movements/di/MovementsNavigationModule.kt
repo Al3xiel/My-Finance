@@ -7,6 +7,8 @@ import com.al3xiel.my_finances.core.navigation.IncomeEditor
 import com.al3xiel.my_finances.core.navigation.LocalNavigator
 import com.al3xiel.my_finances.core.navigation.MovementDetail
 import com.al3xiel.my_finances.core.navigation.Movements
+import com.al3xiel.my_finances.core.navigation.MovementsFiltered
+import com.al3xiel.my_finances.feature.movements.ui.MovementsPreset
 import com.al3xiel.my_finances.core.navigation.RegisterAction
 import com.al3xiel.my_finances.core.navigation.RegisterActionContributor
 import com.al3xiel.my_finances.core.navigation.Route
@@ -37,6 +39,13 @@ object MovementsNavigationModule {
             entry<Movements> {
                 val navigator = LocalNavigator.current
                 MovementsScreen(onOpenMovement = { navigator.push(MovementDetail(it.value)) })
+            }
+            entry<MovementsFiltered> { key ->
+                val navigator = LocalNavigator.current
+                MovementsScreen(
+                    onOpenMovement = { navigator.push(MovementDetail(it.value)) },
+                    preset = MovementsPreset(key.from, key.to, key.categoryId, key.tagId, key.accountId),
+                )
             }
             entry<MovementDetail> { key ->
                 val navigator = LocalNavigator.current

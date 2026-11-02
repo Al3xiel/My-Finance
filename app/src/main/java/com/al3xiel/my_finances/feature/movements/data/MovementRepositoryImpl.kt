@@ -52,6 +52,8 @@ class MovementRepositoryImpl @Inject constructor(
             accountId = filter.accountId?.value,
             type = filter.type?.name,
             categoryId = filter.categoryId?.value,
+            useCategorySet = filter.categoryIds.isNotEmpty(),
+            categoryIds = filter.categoryIds.map { it.value },
             tagId = filter.tagId?.value,
             from = filter.from?.toString(),
             to = filter.to?.toString(),

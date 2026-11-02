@@ -37,7 +37,11 @@ import java.time.LocalDate
 fun MovementsScreen(
     onOpenMovement: (MovementId) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: MovementsViewModel = hiltViewModel(),
+    preset: MovementsPreset = MovementsPreset(),
+    viewModel: MovementsViewModel = hiltViewModel<MovementsViewModel, MovementsViewModel.Factory>(
+        key = preset.toString(),
+        creationCallback = { it.create(preset) },
+    ),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     MovementsContent(state = state, onAction = viewModel::onAction, onOpenMovement = onOpenMovement, modifier = modifier)

@@ -16,17 +16,21 @@ import com.al3xiel.my_finances.feature.movements.domain.model.MovementFilter
 import com.al3xiel.my_finances.feature.movements.domain.model.MovementSummary
 import com.al3xiel.my_finances.feature.movements.domain.repository.MovementRepository
 import com.al3xiel.my_finances.feature.tags.domain.repository.TagRepository
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import java.time.LocalDate
-import javax.inject.Inject
 
 data class MovementRowUi(
     val id: MovementId,
@@ -67,17 +71,57 @@ sealed interface MovementsUiAction {
     data object ClearFilters : MovementsUiAction
 }
 
+/**
+ * Filtro con que se abre la lista desde otra pantalla (S41–S43 → `MovementsFiltered`, D37). Lleva textos porque una ruta
+ * no puede llevar value classes; el vacío es la pestaña Movimientos sin filtro.
+ */
+data class MovementsPreset(
+    val from: String? = null,
+    val to: String? = null,
+    val categoryId: String? = null,
+    val tagId: String? = null,
+    val accountId: String? = null,
+)
+
 @OptIn(ExperimentalCoroutinesApi::class)
-@HiltViewModel
-class MovementsViewModel @Inject constructor(
+@HiltViewModel(assistedFactory = MovementsViewModel.Factory::class)
+class MovementsViewModel @AssistedInject constructor(
+    @Assisted preset: MovementsPreset,
     movements: MovementRepository,
     accounts: AccountRepository,
     categories: CategoryRepository,
     tags: TagRepository,
 ) : ViewModel() {
+    @AssistedFactory
+    interface Factory {
+        fun create(preset: MovementsPreset): MovementsViewModel
+    }
+
     private data class Query(val searchText: String = "", val filter: MovementFilter = MovementFilter())
 
-    private val query = MutableStateFlow(Query())
+    private val query = MutableStateFlow(
+        Query(
+            filter = MovementFilter(
+                accountId = preset.accountId?.let(::AccountId),
+                categoryId = preset.categoryId?.let(::CategoryId),
+                tagId = preset.tagId?.let(::TagId),
+                from = preset.from?.let(LocalDate::parse),
+                to = preset.to?.let(LocalDate::parse),
+            ),
+        ),
+    )
+
+    init {
+        // Una categoría padre filtra por ella y sus subcategorías (D37); mientras llega el árbol se muestra la exacta.
+        val parent = query.value.filter.categoryId
+        if (parent != null) {
+            viewModelScope.launch {
+                val all = categories.observeAll().first()
+                val family = all.filter { it.parentId == parent }.map { it.id }.toSet() + parent
+                query.update { q -> if (q.filter.categoryId == parent) q.copy(filter = q.filter.copy(categoryIds = family)) else q }
+            }
+        }
+    }
 
     val uiState: StateFlow<MovementsUiState> = combine(
         query,
@@ -105,7 +149,7 @@ class MovementsViewModel @Inject constructor(
         when (action) {
             is MovementsUiAction.SetAccount -> update { copy(accountId = action.id) }
             is MovementsUiAction.SetType -> update { copy(type = action.type) }
-            is MovementsUiAction.SetCategory -> update { copy(categoryId = action.id) }
+            is MovementsUiAction.SetCategory -> update { copy(categoryId = action.id, categoryIds = emptySet()) }
             is MovementsUiAction.SetTag -> update { copy(tagId = action.id) }
             is MovementsUiAction.SetFrom -> update { copy(from = action.day) }
             is MovementsUiAction.SetTo -> update { copy(to = action.day) }
