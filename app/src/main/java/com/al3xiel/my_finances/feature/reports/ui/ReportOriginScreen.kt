@@ -3,13 +3,10 @@ package com.al3xiel.my_finances.feature.reports.ui
 import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
 import androidx.compose.material3.FilterChip
@@ -25,7 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.al3xiel.my_finances.R
-import com.al3xiel.my_finances.core.designsystem.EmptyState
+import com.al3xiel.my_finances.core.designsystem.AMOUNT_MASK
 import com.al3xiel.my_finances.core.designsystem.EstimatedBadge
 import com.al3xiel.my_finances.core.designsystem.LocalHideAmounts
 import com.al3xiel.my_finances.core.designsystem.MoneyText
@@ -40,6 +37,7 @@ import com.al3xiel.my_finances.feature.reports.domain.model.ReportPeriod
 import com.al3xiel.my_finances.feature.reports.domain.model.SankeyLink
 import com.al3xiel.my_finances.feature.reports.domain.model.SankeyNode
 import com.al3xiel.my_finances.feature.reports.domain.model.SankeyNodeKind
+import com.al3xiel.my_finances.feature.reports.ui.components.ReportList
 import com.al3xiel.my_finances.feature.reports.ui.components.reportMoney
 import java.time.YearMonth
 
@@ -64,18 +62,12 @@ fun ReportOriginContent(
     onAction: (ReportOriginUiAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    if (state.loaded && state.accounts.isEmpty() && state.sankey.links.isEmpty()) {
-        EmptyState(
-            title = stringResource(R.string.report_origin_empty_title),
-            body = stringResource(R.string.report_origin_empty_body),
-            modifier = modifier,
-        )
-        return
-    }
-    LazyColumn(
-        modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ReportList(
+        isEmpty = state.loaded && state.accounts.isEmpty() && state.sankey.links.isEmpty(),
+        emptyTitle = stringResource(R.string.report_origin_empty_title),
+        emptyBody = stringResource(R.string.report_origin_empty_body),
+        modifier = modifier,
+        spacing = 12.dp,
     ) {
         item {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -178,7 +170,7 @@ private fun SankeySection(sankey: SankeyUi) {
         SectionTitle(stringResource(R.string.report_origin_sankey_title))
         EstimatedBadge()
         Text(stringResource(R.string.report_origin_sankey_note), style = MaterialTheme.typography.bodyMedium)
-        SankeyDiagram(columns, flows, amountLabel = { if (hidden) "••••" else MoneyFormatter.format(reportMoney(it)) })
+        SankeyDiagram(columns, flows, amountLabel = { if (hidden) AMOUNT_MASK else MoneyFormatter.format(reportMoney(it)) })
     }
 }
 

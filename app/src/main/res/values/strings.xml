@@ -556,6 +556,7 @@
     <string name="report_export_pdf_amount">Monto</string>
     <string name="report_export_pdf_share">%</string>
     <string name="origin_estimated_label">Estimado</string>
+    <string name="origin_sankey_flow">%1$s → %2$s</string>
     <string name="origin_sankey_description">Diagrama de flujo estimado de dónde salió el gasto: %1$s</string>
     <string name="report_origin_title">Origen del dinero</string>
     <string name="report_origin_estimate_note">Todo es una estimación: el dinero de una cuenta se mezcla y cada gasto se reparte entre las fuentes en proporción a lo que la cuenta tenía de cada una.</string>

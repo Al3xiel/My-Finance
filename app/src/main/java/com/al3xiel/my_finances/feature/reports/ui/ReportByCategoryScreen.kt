@@ -4,12 +4,9 @@ import android.content.res.Configuration
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -26,11 +23,11 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.al3xiel.my_finances.R
 import com.al3xiel.my_finances.core.designsystem.ChartSlice
-import com.al3xiel.my_finances.core.designsystem.EmptyState
 import com.al3xiel.my_finances.core.designsystem.MoneyText
 import com.al3xiel.my_finances.core.designsystem.PieChart
 import com.al3xiel.my_finances.core.designsystem.ShareBar
 import com.al3xiel.my_finances.core.designsystem.chartPalette
+import com.al3xiel.my_finances.feature.reports.ui.components.ReportList
 import com.al3xiel.my_finances.feature.reports.ui.components.reportMoney
 import com.al3xiel.my_finances.feature.reports.domain.model.ReportPeriod
 import java.time.YearMonth
@@ -58,19 +55,12 @@ fun ReportByCategoryContent(
     onOpenMovements: (categoryId: String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    if (state.loaded && state.rows.isEmpty()) {
-        EmptyState(
-            title = stringResource(R.string.report_by_category_empty_title),
-            body = stringResource(R.string.report_by_category_empty_body),
-            modifier = modifier,
-        )
-        return
-    }
     val palette = chartPalette()
-    LazyColumn(
-        modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ReportList(
+        isEmpty = state.loaded && state.rows.isEmpty(),
+        emptyTitle = stringResource(R.string.report_by_category_empty_title),
+        emptyBody = stringResource(R.string.report_by_category_empty_body),
+        modifier = modifier,
     ) {
         item {
             Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {

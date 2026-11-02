@@ -68,7 +68,9 @@ fun SankeyDiagram(
 ) {
     if (flows.isEmpty()) return
     val labels = columns.flatten().associate { it.key to it.label }
-    val rows = flows.map { Triple("${labels[it.fromKey] ?: it.fromKey} → ${labels[it.toKey] ?: it.toKey}", amountLabel(it.valueMinor), it) }
+    val rows = flows.map {
+        Triple(stringResource(R.string.origin_sankey_flow, labels[it.fromKey] ?: it.fromKey, labels[it.toKey] ?: it.toKey), amountLabel(it.valueMinor), it)
+    }
     val description = stringResource(R.string.origin_sankey_description, rows.joinToString("; ") { "${it.first}, ${it.second}" })
     val palette = chartPalette()
     val measurer = rememberTextMeasurer()

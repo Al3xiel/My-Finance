@@ -33,6 +33,15 @@
 | Composición de origen | `OriginComposition` | proyección | Monto del saldo de cada cuenta que proviene de cada fuente (el porcentaje se calcula al mostrar, por mayor residuo). Siempre *estimado*. |
 | Atribución de origen | `OriginAttribution` | valor | Parte de un gasto atribuida a cada fuente. |
 | Ajuste / Desconocido | `UNKNOWN_ADJUSTMENT` | fuente especial | Origen de diferencias de conciliación. |
+| Fuentes del sistema (ids) | `OriginSourceIds` | valor técnico | Ids de `OPENING_BALANCE` y `UNKNOWN_ADJUSTMENT` que usa el motor de origen. |
+| Asiento para el origen | `OriginEntry` (con `OriginPart`) | valor técnico | Asiento vigente del libro con su fuente, su clave de orden y las partes del gasto, tal como lo lee el motor. |
+| Fila de atribución | `OriginAttributionRow` / `OriginAttributionRecord` | valor técnico | Una porción de un gasto atribuida a una fuente: la del motor (por asiento y parte) y la de consulta (con cuenta y categoría). |
+| Fila de saldo de origen | `OriginBalanceRow` | valor técnico | Fila de `origin_balances`: monto de una cuenta que viene de una fuente. |
+| Tramo de origen | `OriginSlice` / `AccountOrigin` | valor | Una fuente en la composición de una cuenta, con su porcentaje por mayor residuo; `AccountOrigin` agrupa los tramos y marca el faltante. |
+| Fila de gasto por fuente | `SourceSpendRow` | valor técnico | Fila de `SourceSpend`: cuenta, categoría y monto. |
+| Tipo de nodo | `SankeyNodeKind` | enum | `SOURCE`, `ACCOUNT`, `CATEGORY`, `LOANS`, `UNIDENTIFIED`. |
+| Motor de origen | `OriginEngine` | regla | Reparte cada asiento entre las fuentes en proporción, por mayor residuo (04 §5.1). |
+| Cálculos de S44 | `OriginCalculator` | regla | Composición con porcentajes, gasto por fuente y flujos del Sankey. |
 | Gasto por fuente | `SourceSpend` | valor | Lo que una fuente pagó, agrupado por cuenta y categoría, "Préstamos" o "No identificado" (S44). Siempre *estimado*. |
 | Flujo de origen | `SankeyLink` (con `SankeyNode`) | valor | Monto que pasa de una fuente a una cuenta, o de una cuenta a una categoría, en el diagrama de S44. Salida bruta del periodo por fecha del asiento (D42). |
 | Conciliación | `Reconciliation` | entidad/proceso | Comparar saldo real del banco vs. saldo calculado, investigar y resolver. En dos pasos: registrar y luego resolver. |
