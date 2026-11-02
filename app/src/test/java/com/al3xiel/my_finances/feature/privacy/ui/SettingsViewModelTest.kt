@@ -1,6 +1,7 @@
 package com.al3xiel.my_finances.feature.privacy.ui
 
 import com.al3xiel.my_finances.feature.privacy.FakeThemeRepository
+import com.al3xiel.my_finances.core.navigation.SettingsSectionRegistry
 import com.al3xiel.my_finances.feature.privacy.domain.model.ThemeMode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -26,12 +27,12 @@ class SettingsViewModelTest {
 
     @Test
     fun followsTheSystemByDefault() = runTest {
-        assertEquals(ThemeMode.SYSTEM, SettingsViewModel(repository).uiState.value.themeMode)
+        assertEquals(ThemeMode.SYSTEM, SettingsViewModel(repository, SettingsSectionRegistry(emptySet())).uiState.value.themeMode)
     }
 
     @Test
     fun choosingAThemePersistsItAndUpdatesTheState() = runTest {
-        val vm = SettingsViewModel(repository)
+        val vm = SettingsViewModel(repository, SettingsSectionRegistry(emptySet()))
         vm.onAction(SettingsUiAction.SetThemeMode(ThemeMode.DARK))
         assertEquals(ThemeMode.DARK, repository.state.value)
         assertEquals(ThemeMode.DARK, vm.uiState.value.themeMode)

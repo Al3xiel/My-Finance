@@ -153,7 +153,16 @@
 | Ingreso esperado | `ExpectedIncome` | entidad | Ingreso previsto con fecha flexible. |
 | Rango de fechas | `expectedFrom` / `expectedTo` | `LocalDate` | Ventana probable de pago. |
 | Monto estimado | `estimatedAmount` | `Money` | |
-| Estado | `ExpectedIncomeStatus` | enum: `SCHEDULED`, `OVERDUE`, `CONFIRMED`, `CANCELLED` | |
+| Estado | `ExpectedIncomeStatus` | enum: `SCHEDULED`, `OVERDUE`, `CONFIRMED`, `CANCELLED` | `OVERDUE` y "vuelve a pendiente" (movimiento confirmado anulado) son estados **efectivos**: se calculan al consultar; la tabla guarda solo `SCHEDULED/CONFIRMED/CANCELLED`. Pendiente = programado o vencido. |
+| Siguiente esperado | `nextExpectedIncomeId` | `String?` | El esperado que generó una confirmación con `repeatsMonthly`. |
+| Rango esperado | `ExpectedRange` | modelo | Par `from ≤ to` con la ventana probable de pago; puede estar en el pasado. |
+| Siguiente ocurrencia | `NextOccurrence` | regla | +1 mes en `expectedFrom` y `expectedTo`; el último día del mes cae en el último del siguiente (D29). |
+| Cambios de un esperado | `ExpectedIncomeChanges` | modelo | Los campos que el usuario quiere cambiar al editar; `null` = dejar como está. |
+| Seguimiento de anulación | `ExpectedIncomeVoidHooks` | regla | Al anular el ingreso que confirmó un esperado, cancela con motivo el siguiente que generó o veta la anulación si ya se confirmó (D28); se engancha por `MovementVoidFollowUp`. |
+| Política de recordatorio | `ReminderPolicy` | regla | Cuándo avisar de un esperado vencido: el día siguiente a `expectedTo`, luego cada 3 días, máximo 3 avisos. |
+| Sugerencia de esperado | `ExpectedIncomeSuggestion` / `ExpectedIncomeSuggestions` | modelo / regla | Un esperado pendiente de la misma cuenta y fuente que S23 propone confirmar con un toque ("¿confirma Sueldo ~S/ 2,000?"). |
+| Registro de avisos | `ReminderLog` | modelo | Cuántos avisos lleva un esperado y la fecha del último ("ya avisado", en DataStore). |
+| Programador de recordatorios | `ReminderScheduler` | interfaz | Deja programada la corrida diaria del recordatorio o la cancela. |
 
 ### Arquitectura y datos
 | Término (ES) | Código (EN) | Definición |
@@ -187,9 +196,9 @@
 | Resultado del borrado | `WipeResult` | modelo | Qué pasos del borrado total fallaron; vacío = borrado completo. |
 | Pestaña principal | `MainTab` | enum: `HOME`, `MOVEMENTS`, `RECEIVABLES`, `REPORTS`, `MORE` | Una de las 5 pestañas de la barra inferior; cada una con su back stack y su ruta raíz. |
 | Acción de registro | `RegisterAction` | modelo | Entrada del bottom sheet del botón "+" (texto, ruta destino, orden); la aporta cada feature y sin ninguna el botón no se muestra. |
-| Recordatorio | `Reminder` | |
+| Recordatorio | `Reminder` | modelo | Aviso local (notificación privada y genérica) de un ingreso esperado vencido sin confirmar: el día siguiente a `expectedTo`, luego cada 3 días, máximo 3 por esperado; lo emite un Worker diario y se apaga con un interruptor global. |
 | Resultado de caso de uso | `Outcome` | sealed: `Ok(value)` o `Failed(error)`. Un caso de uso informa un rechazo de negocio como valor, sin lanzar excepción. |
-| Error de negocio | `BusinessError` | sealed: la regla que rechazó la operación. Catálogos: `BlankName`, `DuplicateName` (sin tildes ni mayúsculas), `NotFound`, `AlreadyArchived`, `BalanceNotZero` (archivar cuenta), `PersonRequired` / `PersonNotAllowed` (concepto `PERSON` / `TOPIC`), `InvalidParent` (categoría de un solo nivel), `UnsupportedCurrency` (solo `PEN`), `NegativeAmount` (saldo inicial), `Unexpected` (fallo técnico inesperado: no se hizo nada y se puede reintentar). Movimientos: `InvalidAmount`, `FutureDate`, `SameAccount`, `NoParts`, `PartsMismatch`, `InvalidPart`, `ReasonRequired`, `TransferNotEditable` (D12), `AlreadyVoided`, `TypeChangeNotAllowed` (D15). |
+| Error de negocio | `BusinessError` | sealed: la regla que rechazó la operación. Catálogos: `BlankName`, `DuplicateName` (sin tildes ni mayúsculas), `NotFound`, `AlreadyArchived`, `BalanceNotZero` (archivar cuenta), `PersonRequired` / `PersonNotAllowed` (concepto `PERSON` / `TOPIC`), `InvalidParent` (categoría de un solo nivel), `UnsupportedCurrency` (solo `PEN`), `NegativeAmount` (saldo inicial), `Unexpected` (fallo técnico inesperado: no se hizo nada y se puede reintentar). Movimientos: `InvalidAmount`, `FutureDate`, `SameAccount`, `NoParts`, `PartsMismatch`, `InvalidPart`, `ReasonRequired`, `TransferNotEditable` (D12), `AlreadyVoided`, `TypeChangeNotAllowed` (D15). Ingresos esperados: `InvalidRange` (el rango empieza después de terminar), `NotPending` (ya se confirmó o canceló), `NextExpectedConfirmed` (no se anula el ingreso: su siguiente esperado ya se confirmó, D28). |
 | Aviso de saldo negativo | `WouldGoNegative` | `BusinessError` con el saldo resultante: el saldo queda negativo y la operación lo empeora. La UI pide confirmar y repite con `confirmNegativeBalance` (D14). |
 | Catálogo del sistema | `SystemCatalog` | objeto de dominio | Fuentes de ingreso (`SystemIncomeSource`) y categorías por defecto (`DefaultCategory`, incluida "Comisiones") con ids fijos; `SeedCatalogUseCase` las crea al primer arranque, solo las que falten (D10). |
 | Tipo de fuente de ingreso | `IncomeSourceKind` | enum: `REGULAR`, `OPENING_BALANCE`, `UNKNOWN_ADJUSTMENT`, `REIMBURSEMENT`, `LOAN_REPAYMENT` | Las cuatro últimas son del sistema; el proyector deduce el tipo por el id fijo. |
@@ -244,7 +253,7 @@
 | `UsageDayMarked` / `UsageDayUnmarked` | Día de uso marcado / desmarcado |
 | `FundCounted` | Arqueo de fondo |
 | `FundClosed` | Fondo cerrado |
-| `ExpectedIncomeScheduled` / `ExpectedIncomeConfirmed` / `ExpectedIncomeCancelled` | Ingreso esperado programado / confirmado / cancelado |
+| `ExpectedIncomeScheduled` / `ExpectedIncomeEdited` / `ExpectedIncomeConfirmed` / `ExpectedIncomeCancelled` | Ingreso esperado programado / editado / confirmado / cancelado |
 | `BackupCreated` / `BackupRestored` | Respaldo creado / restaurado (auditoría) |
 | `ProjectionsRebuilt` | Proyecciones regeneradas (auditoría) |
 | `DiagnosticExportCreated` | Paquete de diagnóstico exportado (auditoría) |

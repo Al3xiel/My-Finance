@@ -13,6 +13,7 @@ import kotlinx.serialization.Serializable
 @Serializable @JvmInline value class PoolId(val value: String)
 @Serializable @JvmInline value class FundId(val value: String)
 @Serializable @JvmInline value class PoolPeriodId(val value: String)
+@Serializable @JvmInline value class ExpectedIncomeId(val value: String)
 @Serializable @JvmInline value class StatementId(val value: String)
 @Serializable @JvmInline value class ReimbursementId(val value: String)
 @Serializable @JvmInline value class LoanId(val value: String)

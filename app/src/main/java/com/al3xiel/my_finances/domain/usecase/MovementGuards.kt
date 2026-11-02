@@ -3,8 +3,10 @@ package com.al3xiel.my_finances.domain.usecase
 import com.al3xiel.my_finances.domain.model.BusinessError
 import com.al3xiel.my_finances.domain.model.FundId
 import com.al3xiel.my_finances.domain.model.MovementId
+import com.al3xiel.my_finances.domain.model.Outcome
 import com.al3xiel.my_finances.domain.model.PersonId
 import com.al3xiel.my_finances.domain.model.PoolId
+import com.al3xiel.my_finances.domain.model.event.DomainEvent
 import com.al3xiel.my_finances.domain.model.event.MovementSnapshot
 import java.time.LocalDate
 
@@ -14,6 +16,15 @@ import java.time.LocalDate
  */
 fun interface MovementVoidGuard {
     suspend fun check(movementId: MovementId): BusinessError?
+}
+
+/**
+ * Lo que otra feature hace cuando se anula un movimiento suyo: `Failed` veta la anulación y `Ok(eventos)` suma esos
+ * eventos al mismo lote (y la misma correlación) que `MovementVoided`, fechados hoy. Los consulta después de los
+ * guards, con el movimiento ya validado.
+ */
+fun interface MovementVoidFollowUp {
+    suspend fun followUp(movementId: MovementId): Outcome<List<DomainEvent>>
 }
 
 fun interface MovementCorrectionGuard {

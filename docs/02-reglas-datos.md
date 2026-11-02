@@ -149,6 +149,7 @@
 
 ## 8. Ética de diseño (del curso, aplicada)
 - **Uso del tiempo**: sin notificaciones de engagement; solo recordatorios útiles y configurables (respaldo, ingreso esperado vencido, cobro pendiente).
+- **Recordatorio de ingreso esperado** (`Reminder`): notificación local, privada y genérica (sin montos ni nombres); el día siguiente a `expectedTo`, luego cada 3 días, máximo 3 por esperado, y un solo aviso agrupado por corrida; interruptor global apagado por defecto; `POST_NOTIFICATIONS` se pide en contexto y, si se niega, el interruptor queda apagado y solo queda la alerta de Inicio. El estado "ya avisado" vive en DataStore y el Worker se cancela antes de borrar la clave.
 - **Peor escenario** (pregunta de la lámina "Considerar"): alguien con acceso al teléfono desbloqueado → mitigado con bloqueo propio de la app, `FLAG_SECURE` y BD cifrada.
 - **Datos de terceros**: la rendición compartida solo muestra lo necesario para la persona que reembolsa.
 - **Honestidad**: los cálculos estimados (fondos, proporción de origen) se rotulan como **estimados** en la UI.

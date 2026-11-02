@@ -2,6 +2,7 @@ package com.al3xiel.my_finances.core.di
 
 import com.al3xiel.my_finances.domain.usecase.ArchiveGuard
 import com.al3xiel.my_finances.domain.usecase.MovementCorrectionGuard
+import com.al3xiel.my_finances.domain.usecase.MovementVoidFollowUp
 import com.al3xiel.my_finances.domain.usecase.MovementVoidGuard
 import com.al3xiel.my_finances.domain.usecase.PoolReferenceGuard
 import dagger.Module
@@ -14,6 +15,8 @@ import dagger.multibindings.Multibinds
 @InstallIn(SingletonComponent::class)
 abstract class GuardsModule {
     @Multibinds abstract fun movementVoidGuards(): Set<@JvmSuppressWildcards MovementVoidGuard>
+
+    @Multibinds abstract fun movementVoidFollowUps(): Set<@JvmSuppressWildcards MovementVoidFollowUp>
 
     @Multibinds abstract fun movementCorrectionGuards(): Set<@JvmSuppressWildcards MovementCorrectionGuard>
 
