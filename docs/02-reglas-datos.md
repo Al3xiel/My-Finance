@@ -96,7 +96,13 @@
 | Cúmulo | Siempre tiene `responsiblePersonId`. |
 | Gasto | No puede estar en un cúmulo **y** en un fondo a la vez. |
 | Reembolso | Monto asignado a gastos ≤ pendiente total; el excedente se rechaza (D1); no hay saldo a favor. |
-| Arqueo de fondo | Saldo declarado ≥ 0. |
+| Arqueo de fondo | Saldo declarado ≥ 0 y no mayor que lo que le queda al fondo (si lo es, se rechaza: revisa recargas o gastos anulados). |
+| Gasto con fondo | Fondo `ACTIVE`, fecha dentro de su rango y no anterior a su último arqueo (D21). Superar el restante avisa, no bloquea. |
+| Recarga de fondo | Con dinero propio ≤ Disponible libre; con ingreso vinculado, las recargas de ese ingreso suman como máximo su monto (D24). |
+| Ingreso con recargas / gasto no registrado | Un ingreso con recargas vinculadas no se anula ni baja de lo recargado; el gasto no registrado de un arqueo no se anula ni se corrige (D24, D25). Anular o bajar un ingreso (o un reembolso o pago) tampoco se permite si su dinero ya está apartado en fondos: el Disponible libre no puede quedar en negativo. Una parte de gasto no puede tener cúmulo y fondo a la vez. |
+| Día de uso | Solo en `DAILY_ESTIMATE`, dentro del rango del fondo y no futuro. |
+| Edición de fondo | Nombre y estimado siempre se editan. El modo no cambia con días de uso o arqueos; el inicio no cambia con gastos asignados ni días de uso; el fin no puede quedar antes del último día de uso o gasto asignado. |
+| Cierre de fondo | `ROLL_OVER` exige otro fondo `ACTIVE` como destino. |
 | Categoría | Exactamente una por gasto/parte. |
 | Conceptos (tags) | 0..n por gasto; no se suman entre sí en reportes de distribución. |
 

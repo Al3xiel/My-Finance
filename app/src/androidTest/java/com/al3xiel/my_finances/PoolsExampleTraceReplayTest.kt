@@ -137,7 +137,7 @@ class PoolsExampleTraceReplayTest {
         createIncomeSource = CreateIncomeSourceUseCase(sources, people, recorder, ids)
         createCategory = CreateCategoryUseCase(categories, recorder, ids)
         createPool = CreatePoolUseCase(pools, people, categories, tags, recorder, ids)
-        registerExpense = RegisterExpenseUseCase(rules, accounts, recorder, ids, setOf(poolGuard))
+        registerExpense = RegisterExpenseUseCase(rules, accounts, recorder, ids, MovementWriteLock(), setOf(poolGuard))
         registerIncome = RegisterIncomeUseCase(rules, recorder, ids)
         registerTransfer = RegisterTransferUseCase(rules, accounts, recorder, ids)
         val lock = MovementWriteLock()

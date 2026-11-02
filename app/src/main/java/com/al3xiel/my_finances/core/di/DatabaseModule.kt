@@ -5,6 +5,7 @@ import androidx.room.Room
 import com.al3xiel.my_finances.core.security.DatabaseKeyProvider
 import com.al3xiel.my_finances.data.database.AppDatabase
 import com.al3xiel.my_finances.data.database.migration.MIGRATION_1_2
+import com.al3xiel.my_finances.data.database.migration.MIGRATION_2_3
 import com.al3xiel.my_finances.data.eventstore.EventStoreImpl
 import com.al3xiel.my_finances.data.eventstore.EventTriggersCallback
 import com.al3xiel.my_finances.data.projection.EventProjector
@@ -17,6 +18,9 @@ import com.al3xiel.my_finances.data.projection.movement.LedgerQueryDao
 import com.al3xiel.my_finances.data.projection.movement.MovementDao
 import com.al3xiel.my_finances.data.projection.movement.MovementProjector
 import com.al3xiel.my_finances.data.projection.movement.MovementQueryDao
+import com.al3xiel.my_finances.data.projection.fund.FundDao
+import com.al3xiel.my_finances.data.projection.fund.FundProjector
+import com.al3xiel.my_finances.data.projection.fund.FundQueryDao
 import com.al3xiel.my_finances.data.projection.loan.LoanDao
 import com.al3xiel.my_finances.data.projection.loan.LoanProjector
 import com.al3xiel.my_finances.data.projection.loan.LoanQueryDao
@@ -70,6 +74,10 @@ abstract class DatabaseModule {
     @IntoSet
     abstract fun loanProjector(impl: LoanProjector): EventProjector
 
+    @Binds
+    @IntoSet
+    abstract fun fundProjector(impl: FundProjector): EventProjector
+
     companion object {
         @Provides
         @Singleton
@@ -77,7 +85,7 @@ abstract class DatabaseModule {
             System.loadLibrary("sqlcipher")
             return Room.databaseBuilder(context, AppDatabase::class.java, DATABASE_NAME)
                 .openHelperFactory(SupportOpenHelperFactory(keyProvider.getOrCreate()))
-                .addMigrations(MIGRATION_1_2)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                 .addCallback(EventTriggersCallback)
                 .build()
         }
@@ -108,6 +116,12 @@ abstract class DatabaseModule {
 
         @Provides
         fun provideLoanDao(database: AppDatabase): LoanDao = database.loanDao()
+
+        @Provides
+        fun provideFundDao(database: AppDatabase): FundDao = database.fundDao()
+
+        @Provides
+        fun provideFundQueryDao(database: AppDatabase): FundQueryDao = database.fundQueryDao()
 
         @Provides
         fun providePoolQueryDao(database: AppDatabase): PoolQueryDao = database.poolQueryDao()

@@ -8,6 +8,7 @@ import com.al3xiel.my_finances.core.money.CurrencyCode
 import com.al3xiel.my_finances.core.money.Money
 import com.al3xiel.my_finances.domain.model.AccountId
 import com.al3xiel.my_finances.domain.model.BusinessError
+import com.al3xiel.my_finances.domain.model.FundId
 import com.al3xiel.my_finances.domain.model.IncomeSourceId
 import com.al3xiel.my_finances.domain.model.IncomeSourceKind
 import com.al3xiel.my_finances.domain.model.MovementId
@@ -17,6 +18,9 @@ import com.al3xiel.my_finances.domain.model.attempt
 import com.al3xiel.my_finances.domain.model.errorOrNull
 import com.al3xiel.my_finances.feature.accounts.domain.repository.AccountRepository
 import com.al3xiel.my_finances.feature.accounts.domain.repository.IncomeSourceRepository
+import com.al3xiel.my_finances.feature.funds.domain.model.FundStatus
+import com.al3xiel.my_finances.feature.funds.domain.repository.FundRepository
+import com.al3xiel.my_finances.feature.funds.domain.usecase.RegisterIncomeWithTopUpUseCase
 import com.al3xiel.my_finances.feature.movements.domain.model.MovementDraft
 import com.al3xiel.my_finances.feature.movements.domain.repository.MovementRepository
 import com.al3xiel.my_finances.feature.movements.domain.usecase.CorrectMovementUseCase
@@ -48,6 +52,10 @@ data class IncomeEditorUiState(
     val note: String = "",
     val accountOptions: List<EntityOption> = emptyList(),
     val sourceOptions: List<EntityOption> = emptyList(),
+    /** Fondos activos para apartar parte del ingreso; vacío al corregir (una recarga no se edita aquí). */
+    val fundOptions: List<EntityOption> = emptyList(),
+    val topUpFundId: FundId? = null,
+    val topUpText: String = "",
     val error: BusinessError? = null,
     val negativeWarning: BusinessError.WouldGoNegative? = null,
     val showReasonDialog: Boolean = false,
@@ -60,6 +68,10 @@ sealed interface IncomeEditorUiAction {
     data class SelectSource(val id: IncomeSourceId) : IncomeEditorUiAction
     data class SelectOccurredOn(val occurredOn: LocalDate) : IncomeEditorUiAction
     data class EditNote(val text: String) : IncomeEditorUiAction
+
+    /** `null` quita la recarga; elegir un fondo propone apartar todo el ingreso. */
+    data class SelectTopUpFund(val id: FundId?) : IncomeEditorUiAction
+    data class EditTopUp(val text: String) : IncomeEditorUiAction
     data object Save : IncomeEditorUiAction
     data class ConfirmReason(val reason: String) : IncomeEditorUiAction
     data object DismissReason : IncomeEditorUiAction
@@ -74,7 +86,9 @@ class IncomeEditorViewModel @AssistedInject constructor(
     private val movements: MovementRepository,
     private val accounts: AccountRepository,
     private val incomeSources: IncomeSourceRepository,
+    funds: FundRepository,
     private val registerIncome: RegisterIncomeUseCase,
+    private val registerIncomeWithTopUp: RegisterIncomeWithTopUpUseCase,
     private val correctMovement: CorrectMovementUseCase,
     clock: Clock,
 ) : ViewModel() {
@@ -95,6 +109,8 @@ class IncomeEditorViewModel @AssistedInject constructor(
         val sourceId: IncomeSourceId? = null,
         val occurredOn: LocalDate,
         val note: String = "",
+        val topUpFundId: FundId? = null,
+        val topUpText: String = "",
         val error: BusinessError? = null,
         val negativeWarning: BusinessError.WouldGoNegative? = null,
         val showReasonDialog: Boolean = false,
@@ -105,7 +121,9 @@ class IncomeEditorViewModel @AssistedInject constructor(
 
     private val form = MutableStateFlow(Form(occurredOn = today))
 
-    val uiState: StateFlow<IncomeEditorUiState> = combine(form, accounts.observeAccounts(), incomeSources.observeAll()) { form, accountList, sourceList ->
+    val uiState: StateFlow<IncomeEditorUiState> = combine(
+        form, accounts.observeAccounts(), incomeSources.observeAll(), funds.observeFunds(),
+    ) { form, accountList, sourceList, fundList ->
         IncomeEditorUiState(
             isCorrection = movementId != null,
             loaded = form.loaded,
@@ -120,6 +138,9 @@ class IncomeEditorViewModel @AssistedInject constructor(
             // Las fuentes del sistema (saldo inicial, ajuste, reembolso…) las usan otras funciones, no el usuario.
             sourceOptions = sourceList.filter { it.kind == IncomeSourceKind.REGULAR || it.id == form.sourceId }
                 .map { EntityOption(it.id.value, it.name) },
+            fundOptions = if (movementId != null) emptyList() else fundList.filter { it.fund.status == FundStatus.ACTIVE }.map { EntityOption(it.fund.id.value, it.fund.name) },
+            topUpFundId = form.topUpFundId,
+            topUpText = form.topUpText,
             error = form.error,
             negativeWarning = form.negativeWarning,
             showReasonDialog = form.showReasonDialog,
@@ -146,7 +167,7 @@ class IncomeEditorViewModel @AssistedInject constructor(
         form.update {
             it.copy(
                 loaded = true,
-                amountText = minorToText(movement.amount.amountMinor),
+                amountText = MoneyInputFilter.fromMinor(movement.amount.amountMinor),
                 accountId = movement.accountId,
                 sourceId = movement.incomeSourceId,
                 occurredOn = movement.occurredOn,
@@ -162,6 +183,9 @@ class IncomeEditorViewModel @AssistedInject constructor(
             is IncomeEditorUiAction.SelectSource -> edit { copy(sourceId = action.id) }
             is IncomeEditorUiAction.SelectOccurredOn -> edit { copy(occurredOn = action.occurredOn) }
             is IncomeEditorUiAction.EditNote -> edit { copy(note = action.text) }
+            is IncomeEditorUiAction.SelectTopUpFund ->
+                edit { copy(topUpFundId = action.id, topUpText = if (action.id == null) "" else topUpText.ifEmpty { amountText }) }
+            is IncomeEditorUiAction.EditTopUp -> edit { copy(topUpText = MoneyInputFilter.sanitize(action.text)) }
             IncomeEditorUiAction.Save ->
                 if (movementId != null && form.value.pendingReason == null) {
                     form.update { it.copy(showReasonDialog = true) }
@@ -190,12 +214,16 @@ class IncomeEditorViewModel @AssistedInject constructor(
             ?: return fail(BusinessError.InvalidAmount)
         val account = current.accountId ?: return fail(BusinessError.NotFound)
         val source = current.sourceId ?: return fail(BusinessError.NotFound)
+        val topUpFund = current.topUpFundId
+        val topUp = topUpFund?.let { MoneyInputFilter.toMinor(current.topUpText)?.let { minor -> Money(minor, CurrencyCode.PEN) } ?: return fail(BusinessError.InvalidAmount) }
 
         form.update { it.copy(submitting = true) }
         viewModelScope.launch {
             val note = current.note.trim().ifEmpty { null }
             val outcome = attempt {
-                if (movementId == null) {
+                if (movementId == null && topUpFund != null && topUp != null) {
+                    registerIncomeWithTopUp(account, amount, source, note, current.occurredOn, topUpFund, topUp)
+                } else if (movementId == null) {
                     registerIncome(account, amount, source, note, current.occurredOn)
                 } else {
                     correctMovement(
@@ -215,9 +243,4 @@ class IncomeEditorViewModel @AssistedInject constructor(
     }
 
     private fun fail(error: BusinessError) = form.update { it.copy(error = error, pendingReason = null) }
-
-    private fun minorToText(minor: Long): String {
-        val cents = minor % 100
-        return if (cents == 0L) (minor / 100).toString() else "${minor / 100}.${cents.toString().padStart(2, '0').trimEnd('0')}"
-    }
 }

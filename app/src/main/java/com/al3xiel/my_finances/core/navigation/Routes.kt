@@ -20,7 +20,11 @@ sealed interface Route : NavKey
 
 // Movements feature (ids travel as text: a value class cannot be a route argument)
 @Serializable data class MovementDetail(val id: String) : Route
-@Serializable data class ExpenseEditor(val id: String? = null, val presetPoolId: String? = null) : Route
+@Serializable data class ExpenseEditor(
+    val id: String? = null,
+    val presetPoolId: String? = null,
+    val presetFundId: String? = null,
+) : Route
 @Serializable data class IncomeEditor(val id: String? = null) : Route
 
 // Accounts feature
@@ -42,3 +46,9 @@ sealed interface Route : NavKey
 @Serializable data class PersonDetail(val id: String) : Route
 @Serializable data class LoanEditor(val personId: String? = null) : Route
 @Serializable data class LoanDetail(val id: String) : Route
+
+// Funds (ids travel as text)
+@Serializable data object Funds : Route
+@Serializable data class FundDetail(val id: String) : Route
+@Serializable data class FundCount(val id: String) : Route
+@Serializable data class FundEditor(val id: String? = null) : Route

@@ -11,6 +11,7 @@ import com.al3xiel.my_finances.domain.model.CategoryId
 import com.al3xiel.my_finances.domain.model.IncomeSourceId
 import com.al3xiel.my_finances.domain.model.MovementId
 import com.al3xiel.my_finances.domain.model.PartId
+import com.al3xiel.my_finances.domain.model.FundId
 import com.al3xiel.my_finances.domain.model.PoolId
 import com.al3xiel.my_finances.domain.model.TagId
 import com.al3xiel.my_finances.domain.model.event.AggregateType
@@ -105,6 +106,7 @@ private fun MovementEntity.toDomain(parts: List<MovementPartEntity>, tags: List<
             kind = part.kind,
             tagIds = tags.filter { it.partId == part.id }.map { TagId(it.tagId) },
             poolId = part.poolId?.let(::PoolId),
+            fundId = part.fundId?.let(::FundId),
         )
     },
 )

@@ -23,7 +23,7 @@ class RegisterExpenseWithPoolTest {
     private val f = MovementFixture()
     private val pools = FakePoolRepository()
     private val guard = PoolExpenseGuard(pools)
-    private val register = RegisterExpenseUseCase(f.rules, f.accounts, f.recorder, f.ids, setOf(guard))
+    private val register = RegisterExpenseUseCase(f.rules, f.accounts, f.recorder, f.ids, f.writeLock, setOf(guard))
     private val correct = CorrectMovementUseCase(f.rules, f.accounts, f.movements, f.recorder, f.ids, f.writeLock, emptySet(), setOf(guard))
 
     private val dogs = PoolId("dogs")
@@ -56,7 +56,7 @@ class RegisterExpenseWithPoolTest {
 
     @Test
     fun withoutPoolsNothingChangesForExistingCallers() = runTest {
-        val plain = RegisterExpenseUseCase(f.rules, f.accounts, f.recorder, f.ids)
+        val plain = RegisterExpenseUseCase(f.rules, f.accounts, f.recorder, f.ids, f.writeLock)
 
         assertEquals(Outcome.Ok(MovementId("id-1")), plain(f.bbva, f.pen(100), listOf(input(100, null)), null, f.today))
     }

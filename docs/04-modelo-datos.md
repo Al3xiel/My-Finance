@@ -296,25 +296,31 @@ Reglas:
 | Evento | Payload |
 |---|---|
 | `FundCreated` | `fundId, name, consumptionMode (DETAILED/DAILY_ESTIMATE/NONE), dailyEstimate?, startsOn, endsOn?` |
+| `FundEdited` | `fundId, name, consumptionMode, dailyEstimate?, startsOn, endsOn?` (el estado completo tras editar) |
 | `FundToppedUp` | `fundId, amount, linkedIncomeMovementId?` |
 | `UsageDayMarked` / `UsageDayUnmarked` | `fundId, day` |
 | `FundCounted` | `fundId, declaredRemaining, untrackedSpend?: UntrackedSpendData` |
-| `FundClosed` | `fundId, remainderPolicy (RELEASE_TO_AVAILABLE/ROLL_OVER), rollOverToFundId?` |
+| `FundClosed` | `fundId, remainderPolicy (RELEASE_TO_AVAILABLE/ROLL_OVER), rollOverToFundId?, rolledOverAmount?` |
 
 ```
-UntrackedSpendData = accountId, categoryId, amount
+UntrackedSpendData = movementId, accountId, categoryId, amount
 ```
 
 **Punto importante del arqueo.** Si no registraste cada pasaje, ese dinero sí salió de una cuenta real (normalmente Efectivo), pero la app no lo sabe. Al arquear:
 
 ```
-gastadoNoRegistrado = asignado − gastadoDetallado − restanteDeclarado
+gastadoNoRegistrado = asignado − gastadoDetallado − noRegistradoYaCargado − restanteDeclarado
 ```
+
+`noRegistradoYaCargado` es lo que arqueos anteriores ya cargaron. Si el resultado es **negativo** el arqueo se rechaza (declaraste más de lo que le queda al fondo: revisa recargas o gastos anulados).
 
 Si es mayor que 0, el arqueo **genera un gasto implícito** (`untrackedSpend`) en la cuenta que elijas. Sin eso, el saldo de Efectivo quedaría inflado y la conciliación mostraría una diferencia "fantasma".
 
 - La recarga de mamá para pasajes = `IncomeRegistered` (fuente Mamá) + `FundToppedUp` con `linkedIncomeMovementId`, emitidos juntos con el mismo `correlation_id`.
-- También se puede apartar dinero que ya tenías (`FundToppedUp` sin ingreso vinculado).
+- También se puede apartar dinero que ya tenías (`FundToppedUp` sin ingreso vinculado), hasta el Disponible libre.
+- Las recargas vinculadas a un mismo ingreso suman como máximo su monto (D24).
+- El caso de uso calcula `rolledOverAmount` (el sobrante) y lo guarda en `FundClosed`; con `ROLL_OVER` sube el `allocated` del fondo destino (D22).
+- Cada arqueo con gasto no registrado trae el `movementId` del movimiento `FUND_UNTRACKED_SPEND` que crea el proyector de movimientos, con una parte sintética `<movementId>-untracked` (D11, D25).
 
 ### 3.7 Ingresos esperados
 
@@ -383,7 +389,7 @@ erDiagram
 | Tabla | Columnas | Notas |
 |---|---|---|
 | `movements` | `id PK, type, account_id FK, counter_account_id FK?, amount_minor, currency, income_source_id FK?, person_id FK?, note, occurred_on, status (ACTIVE/VOIDED), revision INT, last_sequence` | `type`: `INCOME, EXPENSE, TRANSFER, REIMBURSEMENT, LOAN_DISBURSEMENT, LOAN_REPAYMENT, ADJUSTMENT, FUND_UNTRACKED_SPEND`. `revision` crece con cada corrección |
-| `movement_parts` | `id PK, movement_id FK, amount_minor, category_id FK, pool_id FK?, pool_period_id FK?, fund_id FK?, reimbursed_minor, reimbursement_status, kind (NORMAL/FEE/UNTRACKED)` | Gastos. La comisión de una transferencia y el gasto no registrado de un fondo generan una parte sintética (`kind` = `FEE` / `UNTRACKED`, sin `fund_id`) para que cuenten por categoría (D11) |
+| `movement_parts` | `id PK, movement_id FK, amount_minor, category_id FK, pool_id FK?, pool_period_id FK?, fund_id FK? (lo agrega la v3), reimbursed_minor, reimbursement_status, kind (NORMAL/FEE/UNTRACKED)` | Gastos. La comisión de una transferencia y el gasto no registrado de un fondo generan una parte sintética (`kind` = `FEE` / `UNTRACKED`, sin `fund_id`) para que cuenten por categoría (D11) |
 | `movement_part_tags` | `part_id FK, tag_id FK` · PK compuesta | M:N |
 | `ledger_entries` | `id PK, sequence, movement_id FK?, account_id FK, delta_minor (±), entry_kind, occurred_on, is_voided` | **Corazón contable**: cada cambio de saldo es una fila. Transferencia = 2 filas (−origen, +destino). `movement_id` es nulo en `OPENING` (D16). `id` = `<sequence del evento>-<n>`: determinista, para que el replay reproduzca las mismas filas |
 | `account_balances` | `account_id PK, balance_minor, last_sequence` | Caché de `Σ delta` no anulados |
@@ -409,9 +415,10 @@ erDiagram
 
 | Tabla | Columnas |
 |---|---|
-| `funds` | `id PK, name, consumption_mode, daily_estimate_minor?, starts_on, ends_on?, allocated_minor, detailed_spent_minor, untracked_spent_minor, status (ACTIVE/CLOSED), remainder_policy?` |
+| `funds` | `id PK, name, consumption_mode, daily_estimate_minor?, starts_on, ends_on?, allocated_minor, untracked_spent_minor, status (ACTIVE/CLOSED), remainder_policy?, rollover_to_fund_id?, closed_on?` · el gastado detallado **no se guarda**: se calcula de `movement_parts` de movimientos activos (D23) |
+| `fund_topups` | `id PK (<sequence>-topup), fund_id FK, amount_minor, linked_income_movement_id?, occurred_on` |
 | `fund_usage_days` | `fund_id FK, day` · PK compuesta |
-| `fund_counts` | `id PK, fund_id FK, declared_remaining_minor, estimated_spent_minor, real_spent_minor, deviation_minor, occurred_on` |
+| `fund_counts` | `id PK, fund_id FK, declared_remaining_minor, estimated_spent_minor?, real_spent_minor, deviation_minor?, occurred_on` · estimado y desviación solo en `DAILY_ESTIMATE` |
 | `expected_incomes` | `id PK, income_source_id FK, account_id FK, estimated_minor, expected_from, expected_to, repeats_monthly, status, confirmed_movement_id?` |
 
 ### 4.6 Trazabilidad de origen y conciliación
@@ -480,7 +487,7 @@ Así queda evidencia comparable de "vida real (saldo del banco) vs. código (sal
 | Indicador | Fórmula |
 |---|---|
 | Saldo en cuentas | `Σ account_balances.balance_minor` |
-| Apartado en fondos | `Σ (allocated − detailed_spent − untracked_spent)` de fondos `ACTIVE` |
+| Apartado en fondos | `Σ max(0, allocated − detailed_spent − untracked_spent)` de fondos `ACTIVE`, con `detailed_spent` calculado de `movement_parts` |
 | Disponible libre | Saldo en cuentas − Apartado en fondos |
 | Por cobrar | `Σ (parte.amount − parte.reimbursed)` de partes con cúmulo + `Σ (principal − repaid)` de deudas `OPEN` |
 
@@ -537,3 +544,9 @@ Resultado: BBVA 780 · BCP 170 · Efectivo 95 · Apartado Pasajes 45 · Por cobr
 | D18 | Alcance de `OLDEST_FIRST` | El cúmulo de origen (desde S31) o todos los cúmulos de la persona (desde el "+"); parte pendiente de cualquier periodo (2026-10-26) |
 | D19 | Gasto con fecha anterior al último cierre | Cae en el periodo abierto actual; un cúmulo `EVENT` tiene un solo periodo (2026-10-26) |
 | D20 | Anular reembolsos, préstamos y pagos | Se anulan y revierten asignaciones y saldos; no se corrigen. Un gasto con reembolsos no se anula hasta anular el reembolso (2026-10-26) |
+| D21 | Gasto con fondo y fecha del arqueo | "Anterior a un arqueo" es estricto (`occurredOn < fecha del último arqueo`); un gasto del mismo día se acepta (2026-10-27) |
+| D22 | Cierre con `ROLL_OVER` | `FundClosed` guarda `rolledOverAmount` (el sobrante calculado al cerrar) para que el replay no dependa de `movement_parts` (2026-10-27) |
+| D23 | Gastado detallado de un fondo | Se calcula al consultar desde `movement_parts` de movimientos activos; anular o corregir un gasto con fondo después de un arqueo es válido y el siguiente arqueo puede resultar negativo y rechazarse (2026-10-27) |
+| D24 | Recargas | Tabla `fund_topups`; un ingreso con recargas vinculadas no se anula ni baja de lo recargado; una recarga no se anula (se compensa con el cierre o con el arqueo) (2026-10-27) |
+| D25 | Gasto no registrado | El movimiento `FUND_UNTRACKED_SPEND` no se anula ni se corrige (como las transferencias, D12); un arqueo equivocado se compensa con el siguiente (2026-10-27) |
+| D26 | Corregir a la baja un gasto cubierto por un arqueo | Se permite (D23) y no recalcula el arqueo: el apartado sube y lo declarado queda como historia; para reflejarlo se arquea de nuevo (2026-11-02) |

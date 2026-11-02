@@ -18,7 +18,7 @@ import org.junit.Test
 
 class RegisterExpenseUseCaseTest {
     private val f = MovementFixture()
-    private val register = RegisterExpenseUseCase(f.rules, f.accounts, f.recorder, f.ids)
+    private val register = RegisterExpenseUseCase(f.rules, f.accounts, f.recorder, f.ids, f.writeLock)
 
     private fun failed(error: BusinessError) = Outcome.Failed(error)
 

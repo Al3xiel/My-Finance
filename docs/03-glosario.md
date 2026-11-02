@@ -13,7 +13,7 @@
 | Tipo de cuenta | `AccountType` | enum: `BANK`, `CASH`, `DIGITAL_WALLET` | |
 | Saldo | `balance` | `Money` | Dinero en una cuenta según la app. |
 | Movimiento | `Movement` | entidad | Registro de dinero: ingreso, gasto o transferencia. *Se evita `Transaction` para no chocar con transacciones de BD (`@Transaction`).* |
-| Tipo de movimiento | `MovementType` | enum: `INCOME`, `EXPENSE`, `TRANSFER` (vigentes); `REIMBURSEMENT`, `LOAN_DISBURSEMENT`, `LOAN_REPAYMENT`, `ADJUSTMENT`, `FUND_UNTRACKED_SPEND` (futuro: llegan con sus features) | Solo `INCOME` y `EXPENSE` cuentan en reportes de ingreso/gasto; además cuentan como gasto, en su categoría, la comisión y el gasto no registrado de un fondo (D11). |
+| Tipo de movimiento | `MovementType` | enum: `INCOME`, `EXPENSE`, `TRANSFER` (vigentes); `REIMBURSEMENT`, `LOAN_DISBURSEMENT`, `LOAN_REPAYMENT`, `FUND_UNTRACKED_SPEND` (vigentes); `ADJUSTMENT` (futuro: llega con su feature) | Solo `INCOME` y `EXPENSE` cuentan en reportes de ingreso/gasto; además cuentan como gasto, en su categoría, la comisión y el gasto no registrado de un fondo (D11). |
 | Saldo inicial | `openingBalance` | `Money` | Saldo al crear la cuenta; fuente de origen `OPENING_BALANCE`. |
 | Ingreso | `Income` | `MovementType.INCOME` | Dinero que entra a una cuenta desde fuera. |
 | Gasto | `Expense` | `MovementType.EXPENSE` | Dinero que sale de una cuenta hacia fuera. |
@@ -75,10 +75,26 @@
 | Gasto con reembolsos | `HasReimbursements` | `BusinessError` | Un gasto con reembolsos no se anula hasta anular el reembolso (D20). |
 | Bajo lo reembolsado | `BelowReimbursedAmount` | `BusinessError` | Una parte reembolsada no puede quedar por debajo de lo reembolsado. |
 | Parte reembolsada fija | `ReimbursedPartLocked` | `BusinessError` | Una parte reembolsada no se quita ni cambia de cúmulo. |
+| Declarado de más | `DeclaredAboveRemaining` | `BusinessError` | El arqueo declara más de lo que le queda al fondo; se rechaza. |
+| Excede el disponible | `ExceedsAvailable` | `BusinessError` | Una recarga con dinero propio mayor al Disponible libre. |
+| Excede el ingreso | `ExceedsIncome` | `BusinessError` | Las recargas de un ingreso suman más que su monto (D24). |
+| Fondo cerrado (error) | `FundClosed` | `BusinessError` | Un fondo cerrado no recibe gastos, recargas ni ediciones. |
+| Fecha fuera del fondo | `DateOutOfFundRange` | `BusinessError` | La fecha queda fuera de las fechas del fondo. |
+| Fecha anterior al arqueo | `DateBeforeLastCount` | `BusinessError` | Un gasto con fondo no puede ser anterior a su último arqueo (D21). |
+| Día de uso no permitido | `UsageDayNotAllowed` | `BusinessError` | Los días de uso solo existen en el modo estimado. |
+| Dato bloqueado | `FieldLocked` | `BusinessError` | El modo con días de uso o arqueos, o el inicio con gastos, ya no se puede cambiar. |
+| Ingreso con recargas | `HasTopUps` | `BusinessError` | Un ingreso con recargas a fondos no se anula (D24). |
+| Dinero apartado en fondos | `ReservedByFunds` | `BusinessError` | Anular o bajar un ingreso dejaría el Disponible libre en negativo: su dinero ya está apartado en fondos. |
+| Bajo lo recargado | `BelowToppedUpAmount` | `BusinessError` | Un ingreso con recargas no puede quedar por debajo de lo recargado. |
+| Gasto no registrado fijo | `UntrackedSpendLocked` | `BusinessError` | El gasto no registrado de un arqueo no se anula ni se corrige (D25). |
 | Nada pendiente | `NothingPending` | `BusinessError` | No hay partes con algo pendiente: no se rinde. |
 | Préstamo con pagos | `HasRepayments` | `BusinessError` | Un préstamo con pagos no se anula hasta anular los pagos (D20). |
 | Parte reembolsada | `ReimbursedPart` | valor de dominio | Parte de un gasto que ya recibió algo de reembolso. |
 | Guardia de gasto en cúmulo | `PoolExpenseGuard` | regla de dominio | Valida el cúmulo de una parte y protege los gastos con reembolsos al anular o corregir. |
+| Guardia de fondo de un gasto | `FundReferenceGuard` | contrato de dominio | Valida el fondo de una parte de gasto en su fecha; lo aporta `FundExpenseGuard`. |
+| Guardia de gasto con fondo | `FundExpenseGuard` | regla de dominio | Fondo activo, fecha dentro de su rango y no anterior al último arqueo (D21); tolera la parte que ya lo tenía. |
+| Guardias de movimientos de fondos | `FundMovementGuards` | regla de dominio | Impide anular o bajar un ingreso con recargas o con su dinero apartado en fondos, y anular o corregir el gasto no registrado. |
+| Ingreso con recarga | `RegisterIncomeWithTopUpUseCase` | caso de uso | Registra un ingreso y su recarga vinculada a un fondo en una sola correlación. |
 | Guardia de anulación de préstamo | `LoanVoidGuard` | regla de dominio | Impide anular un préstamo con pagos vigentes. |
 | Guardia de archivado de persona | `PersonBalanceGuard` | regla de dominio | Impide archivar una persona con saldo pendiente (cúmulos activos o deudas abiertas). |
 | Parte pendiente con nombres | `PendingPartLine` | valor de dominio | Parte con algo pendiente y los nombres que muestra el registro de un reembolso (S34). |
@@ -108,16 +124,27 @@
 | Término (ES) | Código (EN) | Tipo | Definición |
 |---|---|---|---|
 | Fondo | `Fund` | entidad | Dinero propio apartado para un uso. Reserva virtual, no ligada a una cuenta. |
-| Apartado en fondos | `reservedAmount` | `Money` | Total reservado en fondos activos. |
+| Apartado en fondos | `reservedAmount` | `Money` | Total reservado en fondos activos: por fondo, `asignado − gastado detallado − no registrado`, con mínimo 0. |
 | Disponible libre | `availableBalance` | `Money` | `totalBalance − reservedAmount`. |
 | Modo de consumo | `ConsumptionMode` | enum: `DETAILED`, `DAILY_ESTIMATE`, `NONE` | |
 | Estimado diario | `dailyEstimate` | `Money` | Costo aproximado por día de uso. |
 | Día de uso | `UsageDay` | entidad | Día marcado como usado en modo estimado. |
-| Arqueo | `FundCount` | evento | Declarar cuánto queda realmente en el fondo. |
+| Arqueo | `FundCounted` | evento | Declarar cuánto queda realmente en el fondo. |
 | Gastado (calculado) | `spentAmount` | `Money` | `allocated − declaredRemaining`. |
-| Gasto no registrado | `untrackedSpend` | `Money` + cuenta | Lo gastado del fondo sin anotar; al arquear genera un gasto implícito en la cuenta elegida. |
+| Gasto no registrado | `untrackedSpend` | `Money` + cuenta | Lo gastado del fondo sin anotar; al arquear genera un gasto implícito (`FUND_UNTRACKED_SPEND`) en la cuenta elegida. |
 | Desviación vs. estimado | `estimateDeviation` | `Money` | `spentAmount − estimatedSpent`. |
-| Cierre de fondo | `FundClosure` | evento | |
+| Cierre de fondo | `FundClosed` | evento | Cierra el fondo y libera o acumula el sobrante. |
+| Edición de fondo | `FundEdited` | evento | Cambia nombre, estimado y fechas; el modo solo sin días de uso ni arqueos. |
+| Estado del fondo | `FundStatus` | enum: `ACTIVE`, `CLOSED` | Un fondo cerrado no recibe gastos ni recargas. |
+| Recarga de fondo | `FundTopUp` | entidad | Dinero que entra al fondo, con ingreso vinculado o con dinero propio. |
+| Condiciones del fondo | `FundTerms` | valor de dominio | Estado, modo, fechas y último arqueo de un fondo: lo que las reglas necesitan para validar una fecha o una edición. |
+| Bloqueos de edición | `EditLocks` | valor de dominio | Qué datos de un fondo ya no se pueden cambiar. |
+| Edición bloqueable | `FundEdit` | valor de dominio | Modo e inicio que el usuario quiere dejar al editar. |
+| Fondo con cifras | `FundOverview` | valor de dominio | Un fondo con lo que se calcula al consultar: gastado detallado (partes de gastos activos), días de uso, último arqueo, apartado y restante estimado. |
+| Resumen de fondos | `FundSummary` | valor de dominio | Apartado (suma de lo que aparta cada fondo activo, mínimo 0 por fondo) y Disponible libre (saldo de cuentas − apartado). |
+| Hechos de edición | `FundEditFacts` | valor de dominio | Días de uso, arqueos, gastos asignados y el día más reciente con actividad: lo que bloquea campos del editor. |
+| Arqueo registrado | `FundCountRecord` | valor de dominio | Lo declarado, gastado real, estimado y desviación de un arqueo. No es la ruta `FundCount` (S53, la pantalla de arqueo). |
+| Serializador de fechas | `LocalDateSerializer` | utilidad de eventos | Las fechas de un payload viajan como texto ISO. |
 | Destino del sobrante | `RemainderPolicy` | enum: `RELEASE_TO_AVAILABLE`, `ROLL_OVER` | Vuelve a disponible / se acumula. |
 
 ### Ingresos esperados
@@ -212,6 +239,7 @@
 | `ReimbursementReceived` | Reembolso recibido (con asignaciones) |
 | `LoanGranted` / `LoanRepaymentReceived` | Deuda suelta creada / pago recibido |
 | `FundCreated` | Fondo creado |
+| `FundEdited` | Fondo editado |
 | `FundToppedUp` | Fondo recargado |
 | `UsageDayMarked` / `UsageDayUnmarked` | Día de uso marcado / desmarcado |
 | `FundCounted` | Arqueo de fondo |

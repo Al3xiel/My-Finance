@@ -25,6 +25,12 @@ internal object MoneyInputFilter {
         return "$integer.$fraction"
     }
 
+    /** `1250` céntimos → `"12.5"`, el mismo texto que el usuario habría tecleado. */
+    fun fromMinor(minor: Long): String {
+        val cents = minor % 100
+        return if (cents == 0L) (minor / 100).toString() else "${minor / 100}.${cents.toString().padStart(2, '0').trimEnd('0')}"
+    }
+
     /** Céntimos del texto tecleado, o `null` si todavía no es un monto (vacío o solo el separador). */
     fun toMinor(text: String): Long? = MoneyFormatter.parseMinor(text.trimEnd('.'))
 }

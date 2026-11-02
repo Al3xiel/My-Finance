@@ -14,6 +14,7 @@ import com.al3xiel.my_finances.domain.model.event.PoolKind
 import com.al3xiel.my_finances.feature.movements.domain.usecase.CorrectMovementUseCase
 import com.al3xiel.my_finances.feature.movements.domain.usecase.MovementFixture
 import com.al3xiel.my_finances.feature.movements.domain.usecase.RegisterExpenseUseCase
+import com.al3xiel.my_finances.feature.funds.domain.usecase.FakeFundRepository
 import com.al3xiel.my_finances.feature.pools.domain.model.Pool
 import com.al3xiel.my_finances.feature.pools.domain.usecase.FakePoolRepository
 import org.junit.Assert.assertEquals
@@ -37,8 +38,8 @@ class ExpenseEditorViewModelTest {
     }
 
     private fun viewModel(id: String? = null, presetPoolId: String? = null) = ExpenseEditorViewModel(
-        id, presetPoolId, f.movements, f.accounts, f.categories, f.tags, pools,
-        RegisterExpenseUseCase(f.rules, f.accounts, f.recorder, f.ids),
+        id, presetPoolId, null, f.movements, f.accounts, f.categories, f.tags, pools, FakeFundRepository(),
+        RegisterExpenseUseCase(f.rules, f.accounts, f.recorder, f.ids, f.writeLock),
         CorrectMovementUseCase(f.rules, f.accounts, f.movements, f.recorder, f.ids, f.writeLock),
         f.clock,
     )

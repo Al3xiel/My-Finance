@@ -1,10 +1,12 @@
 package com.al3xiel.my_finances.domain.usecase
 
 import com.al3xiel.my_finances.domain.model.BusinessError
+import com.al3xiel.my_finances.domain.model.FundId
 import com.al3xiel.my_finances.domain.model.MovementId
 import com.al3xiel.my_finances.domain.model.PersonId
 import com.al3xiel.my_finances.domain.model.PoolId
 import com.al3xiel.my_finances.domain.model.event.MovementSnapshot
+import java.time.LocalDate
 
 /**
  * Ganchos para que una feature vete una operación de otra sin que se conozcan: cada feature aporta los suyos a un
@@ -21,6 +23,14 @@ fun interface MovementCorrectionGuard {
 /** Valida el cúmulo de una parte de gasto; `unchanged` = la parte ya lo tenía antes de corregir (aunque hoy esté archivado). */
 fun interface PoolReferenceGuard {
     suspend fun check(poolId: PoolId, unchanged: Boolean): BusinessError?
+}
+
+/**
+ * Valida el fondo de una parte de gasto en su fecha; `unchanged` = la parte ya tenía ese fondo, ese día y no sube de monto
+ * (un fondo que se cerró o se arqueó después no impide corregir lo que ya estaba).
+ */
+fun interface FundReferenceGuard {
+    suspend fun check(fundId: FundId, occurredOn: LocalDate, unchanged: Boolean): BusinessError?
 }
 
 fun interface ArchiveGuard {

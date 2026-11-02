@@ -41,6 +41,7 @@ import com.al3xiel.my_finances.core.money.Money
 import com.al3xiel.my_finances.domain.model.AccountId
 import com.al3xiel.my_finances.domain.model.CategoryId
 import com.al3xiel.my_finances.domain.model.MovementId
+import com.al3xiel.my_finances.domain.model.FundId
 import com.al3xiel.my_finances.domain.model.PoolId
 import com.al3xiel.my_finances.feature.movements.ui.components.ExpensePartCard
 import com.al3xiel.my_finances.domain.model.TagId
@@ -56,9 +57,11 @@ fun ExpenseEditorScreen(
     modifier: Modifier = Modifier,
     /** Si se abre desde un cúmulo, la primera parte ya lleva ese cúmulo. */
     presetPoolId: PoolId? = null,
+    /** Si se abre desde un fondo, la primera parte ya lleva ese fondo. */
+    presetFundId: FundId? = null,
     viewModel: ExpenseEditorViewModel = hiltViewModel<ExpenseEditorViewModel, ExpenseEditorViewModel.Factory>(
-        key = "expense-${movementId?.value}-${presetPoolId?.value}",
-        creationCallback = { it.create(movementId?.value, presetPoolId?.value) },
+        key = "expense-${movementId?.value}-${presetPoolId?.value}-${presetFundId?.value}",
+        creationCallback = { it.create(movementId?.value, presetPoolId?.value, presetFundId?.value) },
     ),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -115,6 +118,9 @@ fun ExpenseEditorContent(
             ExpensePartCard(index + 1, part, state, onAction)
         }
         if (state.parts.size > 1) UnassignedIndicator(state.unassignedMinor)
+        if (state.overspentFunds.isNotEmpty()) {
+            Text(stringResource(R.string.expense_fund_overspent, state.overspentFunds.joinToString()), color = MaterialTheme.colorScheme.error)
+        }
         OutlinedButton(onClick = { onAction(ExpenseEditorUiAction.AddPart) }) { Text(stringResource(R.string.expense_add_part)) }
 
         EditorFooter(error = state.error, onSave = { onAction(ExpenseEditorUiAction.Save) })

@@ -81,8 +81,8 @@ Formato: **ID · Nombre (UI)** · `RouteKey` · propósito · acciones principal
 |---|---|---|---|---|
 | S20 | Movimientos | `Movements` | Lista agrupada por día, con chips de filtro (cuenta, tipo, categoría, concepto, cúmulo, fondo, rango de fechas) y búsqueda en notas | Tocar → S21 |
 | S21 | Detalle de movimiento | `MovementDetail(id)` | Datos, partes, conceptos, estado de reembolso, **historial de versiones** (eventos del agregado) | Corregir → S22 · Anular → `MovementVoided` (pide motivo; no disponible en transferencias, que se revierten con otra, D12) |
-| S22 | Registrar / corregir gasto | `ExpenseEditor(id?, presetPoolId?)` | Monto, cuenta, fecha, nota · **partes** (por defecto 1): monto, categoría, conceptos, cúmulo (al elegirlo toma su categoría y conceptos por defecto) **o** fondo · indicador "falta asignar S/ X" | Guardar → `ExpenseRegistered` / `MovementCorrected` (pide motivo) |
-| S23 | Registrar ingreso | `IncomeEditor(id?)` | Monto, cuenta, fuente, fecha, nota · opción "apartar en fondo" · opción "confirma ingreso esperado" | Guardar → `IncomeRegistered` (+ `FundToppedUp` / `ExpectedIncomeConfirmed`) |
+| S22 | Registrar / corregir gasto | `ExpenseEditor(id?, presetPoolId?, presetFundId?)` | Monto, cuenta, fecha, nota · **partes** (por defecto 1): monto, categoría, conceptos, cúmulo (al elegirlo toma su categoría y conceptos por defecto) **o** fondo · indicador "falta asignar S/ X" | Guardar → `ExpenseRegistered` / `MovementCorrected` (pide motivo) |
+| S23 | Registrar ingreso | `IncomeEditor(id?)` | Monto, cuenta, fuente, fecha, nota · opción "apartar en fondo" (fondo y monto ≤ el ingreso) · opción "confirma ingreso esperado" | Guardar → `IncomeRegistered` (+ `FundToppedUp` / `ExpectedIncomeConfirmed`) |
 | S24 | Transferencia | `TransferEditor` | Desde, hacia, monto, comisión opcional; etiqueta automática "Retiro"/"Depósito". Solo crea: no se edita ni se corrige; un error se revierte con otra transferencia (D12) | Guardar → `TransferRegistered` |
 | S25 | Registro rápido | `QuickEntry` | Campo de texto + vista previa interpretada (ver §5) | Confirmar → evento correspondiente |
 
@@ -117,7 +117,7 @@ Formato: **ID · Nombre (UI)** · `RouteKey` · propósito · acciones principal
 | S51 | Cuentas | `Accounts` / `AccountDetail(id)` | Saldo, saldo a una fecha, asientos, última conciliación | Crear/renombrar/archivar → `Account*` · **Conciliar** → S60 |
 | S52 | Fondos | `Funds` / `FundDetail(id)` | Asignado, gastado (detallado + no registrado), restante estimado, días de uso, historial de arqueos y desviación | Recargar → `FundToppedUp` · Marcar día → `UsageDayMarked` · **Arquear** → S53 · Cerrar → `FundClosed` |
 | S53 | Arqueo de fondo | `FundCount(id)` | "¿Cuánto te queda?" · cálculo de gastado vs. estimado · si hay gasto no registrado: cuenta y categoría a cargar | Confirmar → `FundCounted` |
-| S54 | Crear fondo | `FundEditor(id?)` | Nombre, modo de consumo, estimado diario, fechas | Guardar → `FundCreated` |
+| S54 | Crear / editar fondo | `FundEditor(id?)` | Nombre, modo de consumo, estimado diario, fechas; el modo y el inicio se muestran bloqueados cuando ya tienen historia | Guardar → `FundCreated` / `FundEdited` |
 | S55 | Ingresos esperados | `ExpectedIncomes` / `ExpectedIncomeEditor(id?)` | Lista con estado (programado/vencido/confirmado), rango de fechas | Programar → `ExpectedIncomeScheduled` · Confirmar (abre S23) · Cancelar |
 | S56 | Categorías | `Categories` | Árbol de 1 nivel | `Category*` |
 | S57 | Conceptos | `Tags` | Lista por tipo (persona/tema) | `Tag*` |
@@ -214,6 +214,10 @@ Coincidencia sin tildes ni mayúsculas, por prefijo y por alias. **Siempre muest
 @Serializable data class MovementDetail(val movementId: String) : Route
 @Serializable data class ExpenseEditor(val id: String? = null, val presetPoolId: String? = null,
                                        val presetFundId: String? = null, val reconciliationId: String? = null) : Route
+@Serializable data object Funds : Route
+@Serializable data class FundDetail(val id: String) : Route
+@Serializable data class FundCount(val id: String) : Route
+@Serializable data class FundEditor(val id: String? = null) : Route
 @Serializable data class PoolDetail(val id: String) : Route
 @Serializable data class PoolEditor(val id: String? = null) : Route
 @Serializable data class SettlementStatement(val poolId: String) : Route

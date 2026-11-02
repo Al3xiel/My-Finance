@@ -13,6 +13,7 @@ import com.al3xiel.my_finances.domain.model.event.MovementCorrected
 import com.al3xiel.my_finances.domain.model.event.MovementSnapshot
 import com.al3xiel.my_finances.domain.usecase.EventRecorder
 import com.al3xiel.my_finances.domain.usecase.MovementCorrectionGuard
+import com.al3xiel.my_finances.domain.usecase.FundReferenceGuard
 import com.al3xiel.my_finances.domain.usecase.PoolReferenceGuard
 import com.al3xiel.my_finances.feature.accounts.domain.repository.AccountRepository
 import com.al3xiel.my_finances.feature.movements.domain.model.Movement
@@ -33,6 +34,7 @@ class CorrectMovementUseCase @Inject constructor(
     private val lock: MovementWriteLock,
     private val guards: Set<@JvmSuppressWildcards MovementCorrectionGuard> = emptySet(),
     private val poolGuards: Set<@JvmSuppressWildcards PoolReferenceGuard> = emptySet(),
+    private val fundGuards: Set<@JvmSuppressWildcards FundReferenceGuard> = emptySet(),
 ) {
     suspend operator fun invoke(
         id: MovementId,
@@ -51,6 +53,7 @@ class CorrectMovementUseCase @Inject constructor(
         if (cleanReason.isEmpty()) return Outcome.Failed(BusinessError.ReasonRequired)
         val current = movements.find(id) ?: return Outcome.Failed(BusinessError.NotFound)
         if (current.type == MovementType.TRANSFER) return Outcome.Failed(BusinessError.TransferNotEditable)
+        if (current.type == MovementType.FUND_UNTRACKED_SPEND) return Outcome.Failed(BusinessError.UntrackedSpendLocked)
         if (current.status == MovementStatus.VOIDED) return Outcome.Failed(BusinessError.AlreadyVoided)
 
         rules.checkDate(draft.occurredOn)?.let { return Outcome.Failed(it) }
@@ -101,9 +104,17 @@ class CorrectMovementUseCase @Inject constructor(
             val unchanged = before?.poolId == pool && input.amount.amountMinor <= before.amount.amountMinor
             poolGuards.firstNotNullOfOrNull { it.check(pool, unchanged) }?.let { return Outcome.Failed(it) }
         }
+        for (input in draft.parts) {
+            val fund = input.fundId ?: continue
+            // El fondo de la parte que ya lo tenía se tolera (cerrado o arqueado después) mientras ni la fecha ni el monto suban.
+            val before = input.partId?.let { id -> current.parts.firstOrNull { it.id == id } }
+            val unchanged = before?.fundId == fund && input.amount.amountMinor <= before.amount.amountMinor &&
+                draft.occurredOn == current.occurredOn
+            fundGuards.firstNotNullOfOrNull { it.check(fund, draft.occurredOn, unchanged) }?.let { return Outcome.Failed(it) }
+        }
 
         val parts = draft.parts.map {
-            ExpensePartData(it.partId ?: PartId(ids.newId()), it.amount, it.categoryId, it.tagIds, it.poolId, null)
+            ExpensePartData(it.partId ?: PartId(ids.newId()), it.amount, it.categoryId, it.tagIds, it.poolId, it.fundId)
         }
         return Outcome.Ok(MovementSnapshot.Expense(draft.accountId, draft.total, parts, draft.note))
     }
