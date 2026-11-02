@@ -514,6 +514,7 @@
     <string name="report_summary_by_category">Por categoría</string>
     <string name="report_summary_by_tag">Por concepto</string>
     <string name="report_summary_by_account">Por cuenta</string>
+    <string name="report_summary_origin">Origen del dinero</string>
     <string name="report_summary_export">Exportar reporte</string>
     <string name="report_summary_loading">Calculando…</string>
     <string name="report_by_category_title">Gasto propio por categoría</string>
@@ -554,4 +555,24 @@
     <string name="report_export_pdf_name">Nombre</string>
     <string name="report_export_pdf_amount">Monto</string>
     <string name="report_export_pdf_share">%</string>
+    <string name="origin_estimated_label">Estimado</string>
+    <string name="origin_sankey_description">Diagrama de flujo estimado de dónde salió el gasto: %1$s</string>
+    <string name="report_origin_title">Origen del dinero</string>
+    <string name="report_origin_estimate_note">Todo es una estimación: el dinero de una cuenta se mezcla y cada gasto se reparte entre las fuentes en proporción a lo que la cuenta tenía de cada una.</string>
+    <string name="report_origin_funds_note">Los fondos no se rastrean por fuente: su dinero cuenta dentro de la cuenta que lo respalda.</string>
+    <string name="report_origin_shortfall_warning">En alguna cuenta el gasto superó lo que tenía de fuentes conocidas. Esa diferencia figura como «No identificado» y también es una estimación.</string>
+    <string name="report_origin_shortfall_account">Con faltante</string>
+    <string name="report_origin_composition_title">Composición por cuenta</string>
+    <string name="report_origin_balance">Saldo</string>
+    <string name="report_origin_spend_title">¿En qué se gastó lo de %1$s?</string>
+    <string name="report_origin_spend_pick">Fuente</string>
+    <string name="report_origin_spend_row">%1$s · %2$s</string>
+    <string name="report_origin_sankey_title">Del origen al gasto</string>
+    <string name="report_origin_sankey_note">Es la salida bruta del periodo por fecha: incluye lo que luego te reembolsen, así que puede diferir del gasto propio.</string>
+    <string name="report_origin_target_loans">Préstamos</string>
+    <string name="report_origin_target_unidentified">No identificado</string>
+    <string name="report_origin_empty_title">Sin datos de origen</string>
+    <string name="report_origin_empty_body">Cuando registres ingresos y gastos, aquí verás de dónde viene tu dinero.</string>
+    <string name="report_export_pdf_origin_spend">Gasto por fuente</string>
+    <string name="report_export_pdf_target">Destino</string>
 </resources>
