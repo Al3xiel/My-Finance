@@ -616,3 +616,7 @@ Resultado: BBVA 780 · BCP 170 · Efectivo 95 · Apartado Pasajes 45 · Por cobr
 | D64 | Conflicto en el registro rápido | `cúmulo + fondo`, y dos cuentas o dos categorías en la misma línea, se marcan conflicto y bloquean Guardar hasta elegir (2026-11-02) |
 | D65 | Privacidad del texto | El texto del registro rápido no se guarda en DataStore, no se restaura tras cerrar la app y no se registra; la nota final sigue las reglas de nota de los editores (2026-11-02) |
 | D66 | Un solo armado | `ConfirmQuickEntryUseCase` reutiliza la función de armado de partes y etiquetas de los editores para que el texto no pueda saltarse una validación (2026-11-02) |
+| D67 | Color | Turquesa como principal; el color del sistema queda apagado por defecto y es opcional. Cambia U7 de `docs/05` (2026-11-03) |
+| D68 | Apariencia | `ThemeMode` suma `AMOLED` y se guarda un ajuste aparte (`appearance.dynamic_color`) para el color del sistema; las claves existentes siguen valiendo (2026-11-03) |
+| D69 | Iconos | Vectores propios de Material Symbols Rounded solo de los usados, sin `material-icons-extended` (2026-11-03) |
+| D70 | Tipografía | Inter (OFL) empaquetada, cifras tabulares. Convención, vetable (alternativa: Plus Jakarta Sans si trae `tnum`) (2026-11-03) |

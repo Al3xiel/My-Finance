@@ -234,7 +234,8 @@
 | Ocultar montos | `hideAmounts` | `Boolean` | Enmascara los montos en pantalla; persiste entre bloqueos. |
 | Borrado total | `WipeAllData` | caso de uso | Borra clave, bases, preferencias y caché; la clave primero. |
 | Ajustes de seguridad | `SecuritySettings` | modelo | Bloqueo, minutos en segundo plano, pantalla segura y ocultar montos; viven en DataStore. |
-| Modo de tema | `ThemeMode` | enum: `SYSTEM`, `LIGHT`, `DARK` | Apariencia de la app; persiste como preferencia. |
+| Modo de tema | `ThemeMode` | enum: `SYSTEM`, `LIGHT`, `DARK`, `AMOLED` | Apariencia de la app; `AMOLED` («Oscuro puro») usa fondo negro; persiste como preferencia. |
+| Color del sistema | `DynamicColor` | `Boolean` | Usa los colores del teléfono (Android 12+) en lugar de la paleta turquesa; apagado por defecto; persiste como preferencia. |
 | Paso de borrado | `WipeStep` | interfaz | Una pieza del borrado total (clave, bases, preferencias, caché); cada feature puede sumar la suya y corren por prioridad. |
 | Resultado del borrado | `WipeResult` | modelo | Qué pasos del borrado total fallaron; vacío = borrado completo. |
 | Pestaña principal | `MainTab` | enum: `HOME`, `MOVEMENTS`, `RECEIVABLES`, `REPORTS`, `MORE` | Una de las 5 pestañas de la barra inferior; cada una con su back stack y su ruta raíz. |

@@ -16,7 +16,7 @@
 | U4 | **Lo estimado se rotula** | Fondos estimados y trazabilidad de origen llevan la etiqueta "estimado" |
 | U5 | **Una pantalla, una tarea** | Pantallas cortas; las secciones largas van a pantallas de detalle |
 | U6 | **Privacidad visible** | Bloqueo al abrir, montos ocultables con un toque (ícono de ojo), `FLAG_SECURE` |
-| U7 | **Material 3** | Color dinámico, modo oscuro, tamaño táctil ≥ 48 dp |
+| U7 | **Material 3 con identidad propia** | Turquesa como color principal, estilo One UI (§9), color del sistema opcional (apagado por defecto), modo oscuro y oscuro puro, tamaño táctil ≥ 48 dp |
 
 ---
 
@@ -287,3 +287,24 @@ Valores ausentes (D62): la categoría se sugiere desde la `defaultCategoryId` de
 - Wireframes de baja fidelidad de S10, S22, S31, S53 y S61: https://claude.ai/artifact/2qfasNhbdVdjukB1z83zeH (v0.1, 2026-10-26).
 - Textos finales de UI (`strings.xml`).
 - Estados vacíos, de carga y de error por pantalla.
+
+---
+
+## 9. Sistema visual
+
+Material 3 con estilo One UI y turquesa como color principal. Solo cambia lo visual: casos de uso, eventos y rutas no se tocan.
+
+| Token | Valor | Regla |
+|---|---|---|
+| Color principal | Turquesa (marca ≈ `#00A5A8`) | El tono de texto/botón es más oscuro en claro (`#00696B`) para llegar a contraste AA; la marca pura queda para acentos grandes y gráficos |
+| Esquemas | Claro, oscuro y oscuro puro (AMOLED, fondo `#000000`) | Todo par `on-` / color tiene contraste ≥ 4.5:1 |
+| Color del sistema | Apagado por defecto; interruptor en Ajustes | Solo con Android 12+ (API 31) |
+| Colores de finanzas (`FinanceColors`) | Ingreso, gasto, advertencia, estimado y neutro, cada uno con contenedor y `on-` | El ingreso (verde) no se confunde con el turquesa; el estado nunca se comunica solo con color (texto o icono acompañan) |
+| Tipografía | Inter (OFL) empaquetada en la app; escala M3 completa | Cifras tabulares (`tnum`) en estilos numéricos; la fuente escala hasta 200 % |
+| Formas | 8 / 12 / 16 / 24 / 28 dp | Tarjetas 24, botones en píldora, diálogos 28 |
+| Espaciado | Rejilla de 4 dp | `Spacing` por `CompositionLocal` |
+| Iconos | Vectores Material Symbols Rounded (Apache 2.0), solo los usados, índice `AppIcons` | Sin `material-icons-extended` |
+
+**Estilo One UI.** Encabezado grande que se contrae, contenido en tarjetas agrupadas, acciones en píldoras. Sin la fuente ni los iconos de Samsung.
+
+**Accesibilidad.** Contraste AA, objetivos táctiles ≥ 48 dp, gráficos con texto equivalente, previews en claro, oscuro y fuente grande. «Ocultar montos» cubre toda cifra nueva.
