@@ -105,6 +105,24 @@ class ManifestSecurityTest {
         assertEquals("share/", children.single().getAttribute("path"))
     }
 
+    /** Un `.fdiag` o `.fkey` solo se abre con el selector del sistema: ningún filtro de intents lo recibe desde fuera (DG5). */
+    @Test
+    fun theOnlyIntentFilterIsTheLauncherOne() {
+        val filters = manifest.getElementsByTagName("intent-filter")
+        assertEquals("filtros de intents: ${filters.length}", 1, filters.length)
+        val actions = (filters.item(0) as Element).getElementsByTagName("action")
+        assertEquals("android.intent.action.MAIN", (actions.item(0) as Element).getAttributeNS(androidNs, "name"))
+    }
+
+    @Test
+    fun noComponentIsExportedExceptTheLauncherActivity() {
+        val exported = listOf("activity", "service", "receiver", "provider").flatMap { tag ->
+            val nodes = application.getElementsByTagName(tag)
+            (0 until nodes.length).map { nodes.item(it) as Element }
+        }.filter { it.getAttributeNS(androidNs, "exported") == "true" }
+        assertEquals(listOf("activity"), exported.map { it.tagName })
+    }
+
     private fun Element.excludesAllDomains(): Boolean {
         val excludes = getElementsByTagName("exclude")
         val domains = (0 until excludes.length).map { (excludes.item(it) as Element).getAttribute("domain") }
