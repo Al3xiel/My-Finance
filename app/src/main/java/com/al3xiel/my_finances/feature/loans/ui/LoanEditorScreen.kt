@@ -6,8 +6,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -23,9 +21,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.al3xiel.my_finances.R
 import com.al3xiel.my_finances.core.designsystem.AccountAmountFields
 import com.al3xiel.my_finances.core.designsystem.DateField
-import com.al3xiel.my_finances.core.designsystem.EditorFooter
+import com.al3xiel.my_finances.core.designsystem.EditorLayout
 import com.al3xiel.my_finances.core.designsystem.EntityOption
-import com.al3xiel.my_finances.core.designsystem.EntityPicker
+import com.al3xiel.my_finances.core.designsystem.EntityChips
 import com.al3xiel.my_finances.core.designsystem.MoneyInput
 import com.al3xiel.my_finances.core.designsystem.NegativeBalanceDialog
 import com.al3xiel.my_finances.domain.model.AccountId
@@ -54,12 +52,9 @@ fun LoanEditorContent(
     onAction: (LoanEditorUiAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
+    EditorLayout(error = state.error, onSave = { onAction(LoanEditorUiAction.Save) }, modifier = modifier) {
         Text(stringResource(R.string.loan_editor_title), style = MaterialTheme.typography.titleLarge)
-        EntityPicker(
+        EntityChips(
             label = stringResource(R.string.loan_editor_person),
             options = state.personOptions,
             selectedId = state.personId?.value,
@@ -86,7 +81,6 @@ fun LoanEditorContent(
             label = { Text(stringResource(R.string.editor_note)) },
             modifier = Modifier.fillMaxWidth(),
         )
-        EditorFooter(error = state.error, onSave = { onAction(LoanEditorUiAction.Save) })
     }
     state.negativeWarning?.let {
         NegativeBalanceDialog(

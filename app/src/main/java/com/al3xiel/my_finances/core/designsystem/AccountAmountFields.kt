@@ -22,8 +22,8 @@ fun AccountAmountFields(
     onAmountChange: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        EntityPicker(
+    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        EntityChips(
             label = accountLabel,
             options = accountOptions,
             selectedId = accountId?.value,
@@ -35,6 +35,7 @@ fun AccountAmountFields(
             onValueChange = onAmountChange,
             label = stringResource(R.string.editor_amount),
             modifier = Modifier.fillMaxWidth(),
+            large = true,
         )
     }
 }

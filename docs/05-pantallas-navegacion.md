@@ -90,6 +90,12 @@ Orden de arranque: `AppLock` → `Onboarding` → `MainScaffold`. El flujo no ti
 | S24 | Transferencia | `TransferEditor(reconciliationId?)` | Desde, hacia, monto, comisión opcional; etiqueta automática "Retiro"/"Depósito". Solo crea: no se edita ni se corrige; un error se revierte con otra transferencia (D12) | Guardar → `TransferRegistered` |
 | S25 | Registro rápido | `QuickEntry` | Campo de texto + vista previa interpretada (ver §5) | Confirmar → evento correspondiente |
 
+**Disposición de los editores de registro (S22–S25, S32, S34, S36).** Solo cambia lo visual; validaciones, orden de errores y textos de negocio no se mueven.
+- Monto grande arriba (`MoneyInput` grande, teclado numérico del sistema, D72). Cuenta, categoría, concepto y fuente se eligen en **chips** (`EntityChips`); las opciones se acomodan en varias líneas, sin desplazamiento horizontal.
+- Las partes del gasto son tarjetas (`SectionCard`), una por parte; el indicador "falta asignar" va bajo ellas.
+- El pie (`EditorFooter`) con la píldora "Guardar" y el error de negocio queda **fijo** al fondo y sube con el teclado; el aviso de saldo negativo (D14) se conserva.
+- En el registro rápido, los tramos reconocidos y los ambiguos se distinguen con `StatusBadge` y texto; un conflicto (D64) bloquea Guardar y se explica con texto.
+
 ### 3.4 Por cobrar
 
 | ID | Pantalla | Ruta | Contenido | Acciones → evento |

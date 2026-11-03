@@ -5,9 +5,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -18,18 +15,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.LiveRegionMode
-import androidx.compose.ui.semantics.liveRegion
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.remember
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.al3xiel.my_finances.R
+import com.al3xiel.my_finances.core.designsystem.EditorLayout
 import com.al3xiel.my_finances.core.designsystem.EntityOption
 import com.al3xiel.my_finances.core.designsystem.NegativeBalanceDialog
-import com.al3xiel.my_finances.core.designsystem.message
 import com.al3xiel.my_finances.feature.quickentry.ui.components.EntryPreviewCard
 import com.al3xiel.my_finances.ui.theme.MyfinancesTheme
 
@@ -53,33 +47,19 @@ fun QuickEntryContent(
 ) {
     val focus = remember { FocusRequester() }
     LaunchedEffect(Unit) { focus.requestFocus() }
-    Column(
-        modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
+    EditorLayout(error = state.error, onSave = { onAction(QuickEntryUiAction.Save) }, saveEnabled = state.canSave, modifier = modifier) {
         Text(stringResource(R.string.quick_entry_title), style = MaterialTheme.typography.titleLarge)
         OutlinedTextField(
             value = state.line,
             onValueChange = { onAction(QuickEntryUiAction.EditLine(it)) },
             label = { Text(stringResource(R.string.quick_entry_line_label)) },
             placeholder = { Text(stringResource(R.string.quick_entry_line_hint)) },
+            shape = MaterialTheme.shapes.medium,
             modifier = Modifier.fillMaxWidth().focusRequester(focus),
         )
         if (state.hasLine) {
             EntryPreviewCard(state = state, onAction = onAction)
         }
-        state.error?.let {
-            Text(
-                it.message(),
-                color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
-            )
-        }
-        Button(
-            onClick = { onAction(QuickEntryUiAction.Save) },
-            enabled = state.canSave,
-            modifier = Modifier.fillMaxWidth(),
-        ) { Text(stringResource(R.string.editor_save)) }
     }
     state.negativeWarning?.let {
         NegativeBalanceDialog(

@@ -7,7 +7,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.al3xiel.my_finances.R
 import com.al3xiel.my_finances.core.designsystem.EntityOption
-import com.al3xiel.my_finances.core.designsystem.EntityPicker
+import com.al3xiel.my_finances.core.designsystem.EntityChips
 import com.al3xiel.my_finances.domain.model.PoolId
 
 private const val NO_POOL = ""
@@ -20,7 +20,7 @@ fun PartPoolPicker(
     onSelect: (PoolId?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    EntityPicker(
+    EntityChips(
         label = stringResource(R.string.expense_part_pool),
         options = listOf(EntityOption(NO_POOL, stringResource(R.string.expense_part_no_pool))) + options,
         selectedId = selectedId?.value ?: NO_POOL,

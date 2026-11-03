@@ -8,8 +8,6 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -24,10 +22,10 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.al3xiel.my_finances.R
-import com.al3xiel.my_finances.core.designsystem.EditorFooter
+import com.al3xiel.my_finances.core.designsystem.EditorLayout
 import com.al3xiel.my_finances.core.designsystem.EmptyState
 import com.al3xiel.my_finances.core.designsystem.EntityOption
-import com.al3xiel.my_finances.core.designsystem.EntityPicker
+import com.al3xiel.my_finances.core.designsystem.EntityChips
 import com.al3xiel.my_finances.domain.model.CategoryId
 import com.al3xiel.my_finances.domain.model.PersonId
 import com.al3xiel.my_finances.domain.model.TagId
@@ -62,10 +60,7 @@ fun PoolEditorContent(
         EmptyState(title = stringResource(R.string.error_not_found), body = "", modifier = modifier)
         return
     }
-    Column(
-        modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
+    EditorLayout(error = state.error, onSave = { onAction(PoolEditorUiAction.Save) }, modifier = modifier) {
         Text(
             stringResource(if (state.isEditing) R.string.pool_editor_title_edit else R.string.pool_editor_title_new),
             style = MaterialTheme.typography.titleLarge,
@@ -81,13 +76,17 @@ fun PoolEditorContent(
             // Responsable y tipo no cambian: solo se renombra (no hay evento para cambiarlos).
             Text(stringResource(R.string.pool_editor_locked), color = MaterialTheme.colorScheme.onSurfaceVariant)
         } else {
-            EntityPicker(
+            EntityChips(
                 label = stringResource(R.string.pool_editor_responsible),
                 options = state.personOptions,
                 selectedId = state.personId?.value,
                 onSelect = { onAction(PoolEditorUiAction.SelectPerson(PersonId(it))) },
                 modifier = Modifier.fillMaxWidth(),
-                supportingText = stringResource(R.string.pool_editor_responsible_hint),
+            )
+            Text(
+                stringResource(R.string.pool_editor_responsible_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(stringResource(R.string.pool_editor_kind), style = MaterialTheme.typography.labelLarge)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -99,7 +98,7 @@ fun PoolEditorContent(
                     )
                 }
             }
-            EntityPicker(
+            EntityChips(
                 label = stringResource(R.string.pool_editor_category),
                 options = listOf(EntityOption(NO_CATEGORY, stringResource(R.string.pool_editor_no_category))) + state.categoryOptions,
                 selectedId = state.categoryId?.value ?: NO_CATEGORY,
@@ -120,7 +119,6 @@ fun PoolEditorContent(
                 }
             }
         }
-        EditorFooter(error = state.error, onSave = { onAction(PoolEditorUiAction.Save) })
     }
 }
 

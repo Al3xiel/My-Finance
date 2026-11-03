@@ -3,12 +3,11 @@ package com.al3xiel.my_finances.feature.pools.ui
 import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -26,9 +25,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.al3xiel.my_finances.R
 import com.al3xiel.my_finances.core.designsystem.AccountAmountFields
 import com.al3xiel.my_finances.core.designsystem.DateField
-import com.al3xiel.my_finances.core.designsystem.EditorFooter
+import com.al3xiel.my_finances.core.designsystem.EditorLayout
 import com.al3xiel.my_finances.core.designsystem.EntityOption
-import com.al3xiel.my_finances.core.designsystem.EntityPicker
+import com.al3xiel.my_finances.core.designsystem.EntityChips
 import com.al3xiel.my_finances.core.designsystem.MoneyInput
 import com.al3xiel.my_finances.core.designsystem.MoneyText
 import com.al3xiel.my_finances.core.designsystem.dayText
@@ -60,6 +59,7 @@ fun ReimbursementEditorScreen(
     ReimbursementEditorContent(state, viewModel::onAction, personLocked = personId != null, modifier = modifier)
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ReimbursementEditorContent(
     state: ReimbursementEditorUiState,
@@ -67,13 +67,10 @@ fun ReimbursementEditorContent(
     personLocked: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
+    EditorLayout(error = state.error, onSave = { onAction(ReimbursementEditorUiAction.Save) }, modifier = modifier) {
         Text(stringResource(R.string.reimbursement_title), style = MaterialTheme.typography.titleLarge)
         if (!personLocked) {
-            EntityPicker(
+            EntityChips(
                 label = stringResource(R.string.reimbursement_person),
                 options = state.personOptions,
                 selectedId = state.personId?.value,
@@ -93,7 +90,7 @@ fun ReimbursementEditorContent(
             amountText = state.amountText,
             onAmountChange = { onAction(ReimbursementEditorUiAction.EditAmount(it)) },
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             AllocationStrategy.entries.forEach { strategy ->
                 FilterChip(
                     selected = state.strategy == strategy,
@@ -115,7 +112,6 @@ fun ReimbursementEditorContent(
             label = { Text(stringResource(R.string.editor_note)) },
             modifier = Modifier.fillMaxWidth(),
         )
-        EditorFooter(error = state.error, onSave = { onAction(ReimbursementEditorUiAction.Save) })
     }
 }
 

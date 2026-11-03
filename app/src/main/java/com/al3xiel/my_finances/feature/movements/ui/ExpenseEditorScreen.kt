@@ -7,8 +7,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
@@ -28,9 +26,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.al3xiel.my_finances.R
 import com.al3xiel.my_finances.core.designsystem.DateField
 import com.al3xiel.my_finances.core.designsystem.EmptyState
-import com.al3xiel.my_finances.core.designsystem.EditorFooter
+import com.al3xiel.my_finances.core.designsystem.EditorLayout
 import com.al3xiel.my_finances.core.designsystem.EntityOption
-import com.al3xiel.my_finances.core.designsystem.EntityPicker
+import com.al3xiel.my_finances.core.designsystem.EntityChips
+import com.al3xiel.my_finances.core.designsystem.PillButton
+import com.al3xiel.my_finances.core.designsystem.PillStyle
 import com.al3xiel.my_finances.core.designsystem.LocalHideAmounts
 import com.al3xiel.my_finances.core.designsystem.MoneyInput
 import com.al3xiel.my_finances.core.designsystem.NegativeBalanceDialog
@@ -82,10 +82,7 @@ fun ExpenseEditorContent(
         EmptyState(title = stringResource(R.string.editor_not_found), body = "", modifier = modifier)
         return
     }
-    Column(
-        modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
+    EditorLayout(error = state.error, onSave = { onAction(ExpenseEditorUiAction.Save) }, modifier = modifier) {
         Text(
             stringResource(if (state.isCorrection) R.string.expense_correct_title else R.string.expense_new_title),
             style = MaterialTheme.typography.titleLarge,
@@ -95,8 +92,9 @@ fun ExpenseEditorContent(
             onValueChange = { onAction(ExpenseEditorUiAction.EditTotal(it)) },
             label = stringResource(R.string.editor_total),
             modifier = Modifier.fillMaxWidth(),
+            large = true,
         )
-        EntityPicker(
+        EntityChips(
             label = stringResource(R.string.editor_account),
             options = state.accountOptions,
             selectedId = state.accountId?.value,
@@ -116,7 +114,6 @@ fun ExpenseEditorContent(
             modifier = Modifier.fillMaxWidth(),
         )
 
-        Text(stringResource(R.string.expense_parts), style = MaterialTheme.typography.titleMedium)
         state.parts.forEachIndexed { index, part ->
             ExpensePartCard(index + 1, part, state, onAction)
         }
@@ -124,9 +121,11 @@ fun ExpenseEditorContent(
         if (state.overspentFunds.isNotEmpty()) {
             Text(stringResource(R.string.expense_fund_overspent, state.overspentFunds.joinToString()), color = MaterialTheme.colorScheme.error)
         }
-        OutlinedButton(onClick = { onAction(ExpenseEditorUiAction.AddPart) }) { Text(stringResource(R.string.expense_add_part)) }
-
-        EditorFooter(error = state.error, onSave = { onAction(ExpenseEditorUiAction.Save) })
+        PillButton(
+            text = stringResource(R.string.expense_add_part),
+            onClick = { onAction(ExpenseEditorUiAction.AddPart) },
+            style = PillStyle.TONAL,
+        )
     }
     if (state.showReasonDialog) {
         ReasonDialog(
