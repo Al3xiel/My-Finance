@@ -1,6 +1,7 @@
 package com.al3xiel.my_finances.feature.movements.ui
 
 import com.al3xiel.my_finances.core.designsystem.EntityOption
+import com.al3xiel.my_finances.feature.movements.domain.rules.PoolDefaults
 import com.al3xiel.my_finances.domain.model.AccountId
 import com.al3xiel.my_finances.domain.model.BusinessError
 import com.al3xiel.my_finances.domain.model.CategoryId
@@ -28,7 +29,12 @@ internal fun PartDraft.inPool(pool: Pool?): PartDraft =
     if (pool == null) {
         copy(poolId = null)
     } else {
-        copy(poolId = pool.id, fundId = null, categoryId = pool.defaultCategoryId ?: categoryId, tagIds = tagIds + pool.defaultTagIds)
+        copy(
+            poolId = pool.id,
+            fundId = null,
+            categoryId = PoolDefaults.categoryFor(pool, categoryId),
+            tagIds = PoolDefaults.tagsFor(pool, tagIds),
+        )
     }
 
 data class ExpenseEditorUiState(
