@@ -95,6 +95,9 @@ sealed interface Route : NavKey
 @Serializable data object ExpectedIncomes : Route
 @Serializable data class ExpectedIncomeEditor(val id: String? = null) : Route
 
+// Quick entry (S25): the line is never part of a route, so it cannot be saved or restored
+@Serializable data object QuickEntry : Route
+
 // Diagnostics (ids travel as text). One workspace holds one package, so S64 needs no id; S65 carries the reconciliation the
 // package came from, because a dictionary can only be exported from it.
 @Serializable data object DevTools : Route
