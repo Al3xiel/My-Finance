@@ -86,3 +86,10 @@ sealed interface Route : NavKey
 // Expected incomes (ids travel as text)
 @Serializable data object ExpectedIncomes : Route
 @Serializable data class ExpectedIncomeEditor(val id: String? = null) : Route
+
+// Diagnostics (ids travel as text). One workspace holds one package, so S64 needs no id; S65 carries the reconciliation the
+// package came from, because a dictionary can only be exported from it.
+@Serializable data object DevTools : Route
+@Serializable data class DiagnosticExport(val reconciliationId: String? = null) : Route
+@Serializable data object DiagnosticWorkspace : Route
+@Serializable data class DictionaryExport(val reconciliationId: String) : Route
