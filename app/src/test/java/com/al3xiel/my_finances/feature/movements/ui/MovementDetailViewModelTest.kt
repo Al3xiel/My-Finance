@@ -6,7 +6,7 @@ import com.al3xiel.my_finances.core.money.Money
 import com.al3xiel.my_finances.domain.model.PartId
 import com.al3xiel.my_finances.domain.model.PoolId
 import com.al3xiel.my_finances.feature.movements.domain.model.PartReimbursement
-import com.al3xiel.my_finances.feature.pools.domain.rules.ReimbursementStatus
+import com.al3xiel.my_finances.domain.model.ReimbursementStatus
 import com.al3xiel.my_finances.domain.model.BusinessError
 import com.al3xiel.my_finances.domain.model.MovementId
 import com.al3xiel.my_finances.domain.model.MovementStatus

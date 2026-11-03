@@ -1,5 +1,6 @@
 package com.al3xiel.my_finances.feature.loans.ui
 
+import com.al3xiel.my_finances.core.designsystem.progressFraction
 import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -24,7 +25,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.al3xiel.my_finances.R
-import com.al3xiel.my_finances.core.designsystem.BadgeStatus
 import com.al3xiel.my_finances.core.designsystem.EmptyState
 import com.al3xiel.my_finances.core.designsystem.EntityOption
 import com.al3xiel.my_finances.core.designsystem.MoneyText
@@ -49,6 +49,8 @@ import com.al3xiel.my_finances.feature.loans.domain.model.LoanDetail
 import com.al3xiel.my_finances.feature.loans.domain.model.LoanRepaymentLine
 import com.al3xiel.my_finances.feature.loans.domain.model.LoanStatus
 import com.al3xiel.my_finances.feature.loans.ui.components.LoanPayDialogContent
+import com.al3xiel.my_finances.feature.loans.ui.components.badge
+import com.al3xiel.my_finances.feature.loans.ui.components.loanStatusLabelRes
 import com.al3xiel.my_finances.ui.theme.LocalSpacing
 import com.al3xiel.my_finances.ui.theme.MyfinancesTheme
 import java.time.LocalDate
@@ -93,10 +95,10 @@ fun LoanDetailContent(
                     Column(modifier = Modifier.padding(spacing.lg), verticalArrangement = Arrangement.spacedBy(spacing.sm)) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(spacing.sm)) {
                             Text(dayText(loan.occurredOn), color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
-                            StatusBadge(loan.status.badge(loan.repaid.isPositive), label = stringResource(loan.status.labelRes(loan.repaid.isPositive)))
+                            StatusBadge(loan.status.badge(), label = stringResource(loanStatusLabelRes(loan.status, loan.isPartlyRepaid)))
                         }
                         // Decorativa: lo pagado y lo pendiente van en texto debajo.
-                        val fraction = if (loan.principal.amountMinor <= 0) 0f else (loan.repaid.amountMinor.toFloat() / loan.principal.amountMinor).coerceIn(0f, 1f)
+                        val fraction = progressFraction(loan.repaid, loan.principal)
                         LinearProgressIndicator(progress = { fraction }, modifier = Modifier.fillMaxWidth().clearAndSetSemantics {})
                         AmountLine(stringResource(R.string.loan_detail_principal), loan.principal)
                         AmountLine(stringResource(R.string.loan_detail_repaid), loan.repaid)
@@ -181,17 +183,6 @@ private fun AmountLine(label: String, amount: Money, emphasis: Boolean = false) 
         Text(label, style = style, modifier = Modifier.weight(1f))
         MoneyText(amount, style = style)
     }
-}
-
-/** Tabla de estados (§7): abierta y parcial esperan; pagada ya está. */
-private fun LoanStatus.badge(partlyRepaid: Boolean) = when (this) {
-    LoanStatus.OPEN -> BadgeStatus.PENDING
-    LoanStatus.REPAID -> BadgeStatus.RECONCILED
-}
-
-private fun LoanStatus.labelRes(partlyRepaid: Boolean) = when (this) {
-    LoanStatus.OPEN -> if (partlyRepaid) R.string.status_partial else R.string.loan_detail_status_open
-    LoanStatus.REPAID -> R.string.loan_detail_status_repaid
 }
 
 private fun pen(minor: Long) = Money(minor, CurrencyCode.PEN)

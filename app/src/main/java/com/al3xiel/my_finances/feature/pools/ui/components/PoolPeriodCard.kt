@@ -1,5 +1,6 @@
 package com.al3xiel.my_finances.feature.pools.ui.components
 
+import com.al3xiel.my_finances.core.designsystem.progressFraction
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -43,7 +44,7 @@ fun PeriodCard(period: PoolPeriod, title: String?) {
                 StatusBadge(period.status.badge(), label = stringResource(period.status.labelRes()))
             }
             // La barra es decorativa: lo reembolsado y lo pendiente van en texto justo debajo.
-            val fraction = if (period.total.amountMinor <= 0) 0f else (period.reimbursed.amountMinor.toFloat() / period.total.amountMinor).coerceIn(0f, 1f)
+            val fraction = progressFraction(period.reimbursed, period.total)
             LinearProgressIndicator(progress = { fraction }, modifier = Modifier.fillMaxWidth().clearAndSetSemantics {})
             AmountLine(stringResource(R.string.pool_period_total), period.total)
             AmountLine(stringResource(R.string.pool_period_reimbursed), period.reimbursed)

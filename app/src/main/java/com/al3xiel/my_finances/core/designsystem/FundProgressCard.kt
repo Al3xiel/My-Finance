@@ -38,7 +38,7 @@ fun FundProgressCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val fraction = if (allocated.amountMinor <= 0) 0f else (spent.amountMinor.toFloat() / allocated.amountMinor).coerceIn(0f, 1f)
+    val fraction = progressFraction(spent, allocated)
     val overspent = remaining.amountMinor < 0
     val spacing = LocalSpacing.current
     Card(

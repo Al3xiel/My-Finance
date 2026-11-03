@@ -4,7 +4,7 @@ import com.al3xiel.my_finances.data.projection.movement.FakeLedgerDao
 import com.al3xiel.my_finances.data.projection.movement.FakeMovementDao
 import com.al3xiel.my_finances.domain.model.LedgerEntryKind
 import com.al3xiel.my_finances.domain.model.MovementType
-import com.al3xiel.my_finances.feature.pools.domain.rules.ReimbursementStatus
+import com.al3xiel.my_finances.domain.model.ReimbursementStatus
 
 /** DAO en memoria; comparte partes, movimientos y asientos con los fakes de los otros proyectores. */
 class FakeReimbursementDao(

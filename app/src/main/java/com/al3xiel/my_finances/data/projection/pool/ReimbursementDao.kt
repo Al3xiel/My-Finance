@@ -3,7 +3,7 @@ package com.al3xiel.my_finances.data.projection.pool
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
-import com.al3xiel.my_finances.feature.pools.domain.rules.ReimbursementStatus
+import com.al3xiel.my_finances.domain.model.ReimbursementStatus
 
 /** Escritura para el proyector de reembolsos; las consultas de pantalla vienen en T15. */
 @Dao

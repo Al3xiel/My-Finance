@@ -1,5 +1,7 @@
 package com.al3xiel.my_finances.feature.people.ui
 
+import com.al3xiel.my_finances.feature.loans.ui.components.loanStatusLabelRes
+import com.al3xiel.my_finances.feature.loans.ui.components.badge
 import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -125,17 +127,12 @@ fun PersonDetailContent(
                     SectionCard(title = stringResource(R.string.person_detail_loans)) {
                         detail.loans.forEachIndexed { index, line ->
                             if (index > 0) SectionDivider()
-                            val repaid = line.status == LoanStatus.REPAID
                             Line(
                                 dayText(line.loan.occurredOn),
                                 null,
                                 line.loan.pending,
                                 onClick = { onOpenLoan(line.loan.loanId) },
-                                badge = if (repaid) {
-                                    BadgeStatus.RECONCILED to stringResource(R.string.person_detail_loan_repaid)
-                                } else {
-                                    BadgeStatus.PENDING to stringResource(if (line.loan.isPartlyRepaid) R.string.status_partial else R.string.loan_detail_status_open)
-                                },
+                                badge = line.status.badge() to stringResource(loanStatusLabelRes(line.status, line.loan.isPartlyRepaid)),
                             )
                         }
                     }

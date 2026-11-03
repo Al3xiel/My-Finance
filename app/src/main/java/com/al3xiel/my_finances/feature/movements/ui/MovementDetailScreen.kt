@@ -35,7 +35,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.al3xiel.my_finances.R
 import com.al3xiel.my_finances.core.designsystem.EmptyState
 import com.al3xiel.my_finances.core.designsystem.LocalHideAmounts
-import com.al3xiel.my_finances.core.designsystem.BadgeStatus
 import com.al3xiel.my_finances.core.designsystem.MoneyText
 import com.al3xiel.my_finances.core.designsystem.StatusBadge
 import com.al3xiel.my_finances.core.designsystem.NegativeBalanceDialog
@@ -60,7 +59,8 @@ import com.al3xiel.my_finances.feature.movements.domain.model.MovementDetail
 import com.al3xiel.my_finances.feature.movements.domain.model.MovementHistoryEntry
 import com.al3xiel.my_finances.feature.movements.domain.model.MovementPart
 import com.al3xiel.my_finances.feature.movements.domain.model.PartReimbursement
-import com.al3xiel.my_finances.feature.pools.domain.rules.ReimbursementStatus
+import com.al3xiel.my_finances.feature.movements.ui.components.badge
+import com.al3xiel.my_finances.feature.movements.ui.components.labelRes
 import com.al3xiel.my_finances.ui.theme.MyfinancesTheme
 import java.time.Instant
 import java.time.LocalDate
@@ -196,18 +196,6 @@ private fun PartRow(part: MovementPart, currency: CurrencyCode, names: CatalogNa
             }
         },
     )
-}
-
-/** Tabla de estados (§7): pendiente y parcial esperan; reembolsada ya está. */
-private fun ReimbursementStatus.badge() = when (this) {
-    ReimbursementStatus.PENDING, ReimbursementStatus.PARTIALLY_REIMBURSED -> BadgeStatus.PENDING
-    ReimbursementStatus.REIMBURSED -> BadgeStatus.RECONCILED
-}
-
-private fun ReimbursementStatus.labelRes() = when (this) {
-    ReimbursementStatus.PENDING -> R.string.status_pending
-    ReimbursementStatus.PARTIALLY_REIMBURSED -> R.string.status_partial
-    ReimbursementStatus.REIMBURSED -> R.string.status_reimbursed
 }
 
 @Composable

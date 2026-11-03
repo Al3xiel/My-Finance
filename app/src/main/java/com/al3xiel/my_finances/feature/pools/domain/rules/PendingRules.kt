@@ -1,8 +1,7 @@
 package com.al3xiel.my_finances.feature.pools.domain.rules
 
 import com.al3xiel.my_finances.core.money.Money
-
-enum class ReimbursementStatus { PENDING, PARTIALLY_REIMBURSED, REIMBURSED }
+import com.al3xiel.my_finances.domain.model.ReimbursementStatus
 
 enum class PoolPeriodStatus { OPEN, STATEMENT_SENT, SETTLED }
 

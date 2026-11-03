@@ -19,7 +19,7 @@ import com.al3xiel.my_finances.domain.model.PartId
 import com.al3xiel.my_finances.domain.model.PartKind
 import com.al3xiel.my_finances.domain.model.PoolId
 import com.al3xiel.my_finances.feature.movements.domain.model.PartReimbursement
-import com.al3xiel.my_finances.feature.pools.domain.rules.ReimbursementStatus
+import com.al3xiel.my_finances.domain.model.ReimbursementStatus
 import com.al3xiel.my_finances.feature.movements.domain.model.HistoryKind
 import com.al3xiel.my_finances.feature.movements.domain.model.Movement
 import com.al3xiel.my_finances.feature.movements.domain.model.MovementDetail

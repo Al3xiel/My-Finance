@@ -2,7 +2,7 @@ package com.al3xiel.my_finances.data.projection.movement
 
 import androidx.room.Dao
 import androidx.room.Query
-import com.al3xiel.my_finances.feature.pools.domain.rules.ReimbursementStatus
+import com.al3xiel.my_finances.domain.model.ReimbursementStatus
 import kotlinx.coroutines.flow.Flow
 
 /** Una parte con cúmulo y lo que se le reembolsó; las columnas salen de `movement_parts` y `pools`. */
@@ -73,7 +73,9 @@ interface MovementQueryDao {
         """
         SELECT p.id AS partId, p.pool_id AS poolId, pl.name AS poolName, p.amount_minor AS amountMinor,
                p.reimbursed_minor AS reimbursedMinor, p.reimbursement_status AS status
-        FROM movement_parts p JOIN pools pl ON pl.id = p.pool_id
+        FROM movement_parts p
+        JOIN pools pl ON pl.id = p.pool_id
+        JOIN movements m ON m.id = p.movement_id AND m.status = 'ACTIVE'
         WHERE p.movement_id = :id AND p.pool_id IS NOT NULL
         ORDER BY p.rowid
         """,

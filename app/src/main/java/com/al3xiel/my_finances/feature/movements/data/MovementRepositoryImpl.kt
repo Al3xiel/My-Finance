@@ -70,9 +70,13 @@ class MovementRepositoryImpl @Inject constructor(
             queries.observePartTags(id.value),
             queries.observePartReimbursements(id.value),
         ) { movement, parts, tags, reimbursements ->
-            movement?.let { it.toDomain(parts, tags) to reimbursements.map { row -> row.toDomain(it.currency) } }
-        }.map { pair ->
-            pair?.let { (movement, reimbursements) -> MovementDetail(movement, history(id), reimbursements) }
+            movement?.let {
+                MovementDetail(
+                    movement = it.toDomain(parts, tags),
+                    history = history(id),
+                    reimbursements = reimbursements.map { row -> row.toDomain(it.currency) },
+                )
+            }
         }
 
     private suspend fun history(id: MovementId): List<MovementHistoryEntry> =

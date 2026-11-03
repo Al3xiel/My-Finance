@@ -33,7 +33,7 @@ import com.al3xiel.my_finances.domain.model.event.ReimbursementReceived
 import com.al3xiel.my_finances.domain.model.event.SettlementStatementGenerated
 import com.al3xiel.my_finances.domain.model.event.StatementFormat
 import com.al3xiel.my_finances.domain.model.event.StoredEvent
-import com.al3xiel.my_finances.feature.pools.domain.rules.ReimbursementStatus
+import com.al3xiel.my_finances.domain.model.ReimbursementStatus
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Test

@@ -1,5 +1,6 @@
 package com.al3xiel.my_finances.feature.pools.domain.rules
 
+import com.al3xiel.my_finances.domain.model.ReimbursementStatus
 import com.al3xiel.my_finances.core.money.CurrencyCode
 import com.al3xiel.my_finances.core.money.Money
 import org.junit.Assert.assertEquals

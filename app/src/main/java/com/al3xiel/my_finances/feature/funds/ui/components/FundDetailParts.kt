@@ -1,5 +1,6 @@
 package com.al3xiel.my_finances.feature.funds.ui.components
 
+import com.al3xiel.my_finances.core.designsystem.progressFraction
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -48,7 +49,7 @@ internal fun FundHeader(overview: FundOverview) {
     val fund = overview.fund
     val spacing = LocalSpacing.current
     val spent = overview.detailedSpent + fund.untrackedSpent
-    val fraction = if (fund.allocated.amountMinor <= 0) 0f else (spent.amountMinor.toFloat() / fund.allocated.amountMinor).coerceIn(0f, 1f)
+    val fraction = progressFraction(spent, fund.allocated)
     val overspent = overview.estimatedRemaining.amountMinor < 0
     SectionCard {
         Column(modifier = Modifier.padding(spacing.lg), verticalArrangement = Arrangement.spacedBy(spacing.sm)) {

@@ -13,7 +13,7 @@ import com.al3xiel.my_finances.data.projection.catalog.CatalogProjector
 import com.al3xiel.my_finances.data.projection.movement.MovementProjector
 import com.al3xiel.my_finances.data.projection.pool.PoolEntity
 import com.al3xiel.my_finances.domain.model.event.PoolKind
-import com.al3xiel.my_finances.feature.pools.domain.rules.ReimbursementStatus
+import com.al3xiel.my_finances.domain.model.ReimbursementStatus
 import com.al3xiel.my_finances.domain.model.AccountId
 import com.al3xiel.my_finances.domain.model.CategoryId
 import com.al3xiel.my_finances.domain.model.IncomeSourceId
@@ -131,6 +131,16 @@ class MovementQueriesTest {
         assertEquals(listOf(2_000L, 600L), m1.map { it.pending.amountMinor })
         assertEquals("Perros", m1.first().poolName)
         assertEquals(listOf(ReimbursementStatus.REIMBURSED), movements.observeDetail(MovementId("m4")).first()!!.reimbursements.map { it.status })
+    }
+
+    @Test
+    fun aVoidedMovementShowsNoReimbursementState() = runBlocking {
+        linkToPool("p1", 2_000, food)
+        assertEquals(1, movements.observeDetail(MovementId("m1")).first()!!.reimbursements.size)
+
+        append(day(20), MovementVoided(MovementId("m1"), "duplicado", null))
+
+        assertEquals(emptyList<Any>(), movements.observeDetail(MovementId("m1")).first()!!.reimbursements)
     }
 
     @Test

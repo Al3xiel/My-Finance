@@ -1,5 +1,8 @@
 package com.al3xiel.my_finances.feature.pools.ui
 
+import com.al3xiel.my_finances.feature.loans.ui.components.loanStatusLabelRes
+import com.al3xiel.my_finances.feature.loans.ui.components.badge
+import com.al3xiel.my_finances.feature.loans.domain.model.LoanStatus
 import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -149,14 +152,13 @@ private fun LazyListScope.receivablesSections(
             SectionCard(title = stringResource(R.string.receivables_loans)) {
                 state.loans.forEachIndexed { index, loan ->
                     if (index > 0) SectionDivider()
-                    val label = stringResource(if (loan.isPartlyRepaid) R.string.status_partial else R.string.loan_detail_status_open)
-                    ReceivableRow(
+                                        ReceivableRow(
                         title = loan.alias,
                         subtitle = null,
                         subtitleDay = loan.occurredOn,
                         amount = loan.pending,
                         onClick = { onOpenLoan(loan.loanId) },
-                        status = ReceivableStatus(BadgeStatus.PENDING, label),
+                        status = ReceivableStatus(LoanStatus.OPEN.badge(), loanStatusLabelRes(LoanStatus.OPEN, loan.isPartlyRepaid)),
                     )
                 }
             }
