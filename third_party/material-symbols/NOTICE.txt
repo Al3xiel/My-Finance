@@ -1,3 +1,3 @@
 Material Symbols (Rounded, peso 400, 24 px) de Google, licencia Apache 2.0:
 https://github.com/google/material-design-icons (symbols/web). Solo los iconos usados, convertidos a vector drawable (decision D69).
-Iconos: home, receipt_long, payments, bar_chart, more_horiz, add, visibility, visibility_off, arrow_back, schedule, error, flag, check_circle, info (estos cinco de Material Icons, mismo licenciamiento).
+Iconos: home, receipt_long, payments, bar_chart, more_horiz, add, visibility, visibility_off, arrow_back, schedule, error, flag, check_circle, info, remove, swap_horiz, undo, bolt (estos de Material Icons, mismo licenciamiento).

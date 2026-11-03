@@ -1,0 +1,12 @@
+<!-- Material Icons "bolt" (Apache 2.0, viewport 24 escalado a 960); ver third_party/material-symbols/NOTICE.txt -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="960"
+    android:viewportHeight="960">
+    <group android:scaleX="40" android:scaleY="40">
+        <path
+            android:fillColor="#FF000000"
+            android:pathData="M7,2v11h3v9l7,-12h-4l4,-8z" />
+    </group>
+</vector>
