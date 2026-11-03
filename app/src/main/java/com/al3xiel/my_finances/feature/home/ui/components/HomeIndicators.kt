@@ -13,6 +13,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -54,7 +55,8 @@ fun HomeIndicators(
                 MoneyText(
                     accountsBalance,
                     variant = MoneyVariant.HERO,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    tone = MoneyTone.AUTO,
+                    color = if (accountsBalance.amountMinor < 0) Color.Unspecified else MaterialTheme.colorScheme.onPrimaryContainer,
                 )
             }
         }
