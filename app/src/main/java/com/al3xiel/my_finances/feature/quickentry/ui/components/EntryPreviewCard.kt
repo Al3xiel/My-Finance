@@ -2,9 +2,11 @@ package com.al3xiel.my_finances.feature.quickentry.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Card
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -15,7 +17,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.al3xiel.my_finances.R
+import com.al3xiel.my_finances.core.designsystem.BadgeStatus
+import com.al3xiel.my_finances.core.designsystem.EntityChips
 import com.al3xiel.my_finances.core.designsystem.EntityOption
+import com.al3xiel.my_finances.core.designsystem.SectionCard
+import com.al3xiel.my_finances.core.designsystem.StatusBadge
 import com.al3xiel.my_finances.core.designsystem.EntityPicker
 import com.al3xiel.my_finances.core.designsystem.MoneyInput
 import com.al3xiel.my_finances.feature.quickentry.domain.model.Ambiguity
@@ -35,12 +41,11 @@ fun EntryPreviewCard(
 ) {
     val suggested = stringResource(R.string.quick_entry_suggested)
     val pickOne = stringResource(R.string.quick_entry_pick_one)
-    Card(modifier = modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(
-                stringResource(if (state.isIncome) R.string.quick_entry_preview_income else R.string.quick_entry_preview_expense),
-                style = MaterialTheme.typography.titleMedium,
-            )
+    SectionCard(
+        title = stringResource(if (state.isIncome) R.string.quick_entry_preview_income else R.string.quick_entry_preview_expense),
+        modifier = modifier,
+    ) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             state.ambiguities.forEach { AmbiguityRow(it, onAction) }
             state.conflicts.forEach {
                 Text(stringResource(it.messageRes()), color = MaterialTheme.colorScheme.error)
@@ -50,35 +55,33 @@ fun EntryPreviewCard(
                 onValueChange = { onAction(QuickEntryUiAction.EditAmount(it)) },
                 label = stringResource(R.string.editor_amount),
                 modifier = Modifier.fillMaxWidth(),
+                large = true,
             )
-            EntityPicker(
+            ChipsWithHint(
                 label = stringResource(R.string.editor_account),
                 options = state.accountOptions,
                 selectedId = state.accountId,
                 onSelect = { onAction(QuickEntryUiAction.SelectAccount(it)) },
+                hint = hint(state.accountSuggested, Conflict.ACCOUNTS in state.conflicts, suggested, pickOne),
                 isError = Conflict.ACCOUNTS in state.conflicts,
-                supportingText = hint(state.accountSuggested, Conflict.ACCOUNTS in state.conflicts, suggested, pickOne),
-                modifier = Modifier.fillMaxWidth(),
             )
             if (state.isIncome) {
-                EntityPicker(
+                ChipsWithHint(
                     label = stringResource(R.string.income_source),
                     options = state.sourceOptions,
                     selectedId = state.sourceId,
                     onSelect = { onAction(QuickEntryUiAction.SelectSource(it)) },
+                    hint = if (state.sourceId == null || Conflict.SOURCES in state.conflicts) pickOne else null,
                     isError = state.sourceId == null,
-                    supportingText = if (state.sourceId == null || Conflict.SOURCES in state.conflicts) pickOne else null,
-                    modifier = Modifier.fillMaxWidth(),
                 )
             } else {
-                EntityPicker(
+                ChipsWithHint(
                     label = stringResource(R.string.expense_part_category),
                     options = state.categoryOptions,
                     selectedId = state.categoryId,
                     onSelect = { onAction(QuickEntryUiAction.SelectCategory(it)) },
+                    hint = hint(state.categorySuggested, state.categoryId == null || Conflict.CATEGORIES in state.conflicts, suggested, pickOne),
                     isError = state.categoryId == null,
-                    supportingText = hint(state.categorySuggested, state.categoryId == null || Conflict.CATEGORIES in state.conflicts, suggested, pickOne),
-                    modifier = Modifier.fillMaxWidth(),
                 )
                 if (state.tagNames.isNotEmpty()) {
                     Text(stringResource(R.string.quick_entry_tags, state.tagNames.joinToString()), style = MaterialTheme.typography.bodyMedium)
@@ -116,18 +119,45 @@ fun EntryPreviewCard(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun AmbiguityRow(ambiguity: Ambiguity, onAction: (QuickEntryUiAction) -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        StatusBadge(BadgeStatus.NEEDS_REVIEW)
         Text(
             stringResource(R.string.quick_entry_ambiguous, ambiguity.text),
             color = MaterialTheme.colorScheme.error,
             style = MaterialTheme.typography.bodyMedium,
         )
-        ambiguity.candidates.forEach { candidate ->
-            TextButton(onClick = { onAction(QuickEntryUiAction.Choose(ambiguity, candidate)) }) {
-                Text(stringResource(R.string.quick_entry_candidate, candidate.label, stringResource(candidate.kind.labelRes())))
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            ambiguity.candidates.forEach { candidate ->
+                AssistChip(
+                    onClick = { onAction(QuickEntryUiAction.Choose(ambiguity, candidate)) },
+                    label = { Text(stringResource(R.string.quick_entry_candidate, candidate.label, stringResource(candidate.kind.labelRes()))) },
+                )
             }
+        }
+    }
+}
+
+/** Chips de una entidad con, debajo, el texto que dice por qué hay que mirarla (sugerida, a elegir); el color solo refuerza. */
+@Composable
+private fun ChipsWithHint(
+    label: String,
+    options: List<EntityOption>,
+    selectedId: String?,
+    onSelect: (String) -> Unit,
+    hint: String?,
+    isError: Boolean,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        EntityChips(label = label, options = options, selectedId = selectedId, onSelect = onSelect, modifier = Modifier.fillMaxWidth())
+        hint?.let {
+            Text(
+                it,
+                style = MaterialTheme.typography.bodySmall,
+                color = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }

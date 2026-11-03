@@ -76,4 +76,26 @@ class QuickEntryScreenTest {
         rule.onNodeWithText(string(R.string.quick_entry_conflict_accounts)).assertIsDisplayed()
         rule.onNodeWithText(string(R.string.editor_save)).assertIsNotEnabled()
     }
+
+    @Test
+    fun accountAndCategoryOptionsAreChipsAndTappingSelects() {
+        val actions = mutableListOf<QuickEntryUiAction>()
+        show(
+            ready.copy(
+                accountOptions = listOf(EntityOption("a", "BBVA"), EntityOption("b", "Efectivo")),
+                categoryOptions = listOf(EntityOption("c", "Mercado"), EntityOption("d", "Hogar")),
+            ),
+            actions::add,
+        )
+        rule.onNodeWithText("Efectivo").assertIsDisplayed().performClick()
+        rule.onNodeWithText("Hogar").assertIsDisplayed().performClick()
+        assertEquals(listOf(QuickEntryUiAction.SelectAccount("b"), QuickEntryUiAction.SelectCategory("d")), actions)
+    }
+
+    @Test
+    fun anAmbiguousTokenCarriesAReviewBadgeWithText() {
+        val ambiguity = Ambiguity("mer", listOf(Candidate(EntityKind.CATEGORY, "c", "Mercado"), Candidate(EntityKind.CATEGORY, "d", "Mercería")))
+        show(ready.copy(ambiguities = listOf(ambiguity), canSave = false))
+        rule.onNodeWithText(string(R.string.status_needs_review)).assertIsDisplayed()
+    }
 }
