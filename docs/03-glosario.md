@@ -175,6 +175,12 @@
 | Edición bloqueable | `FundEdit` | valor de dominio | Modo e inicio que el usuario quiere dejar al editar. |
 | Fondo con cifras | `FundOverview` | valor de dominio | Un fondo con lo que se calcula al consultar: gastado detallado (partes de gastos activos), días de uso, último arqueo, apartado y restante estimado. |
 | Resumen de fondos | `FundSummary` | valor de dominio | Apartado (suma de lo que aparta cada fondo activo, mínimo 0 por fondo) y Disponible libre (saldo de cuentas − apartado). |
+| Resumen de Inicio | `HomeSummary` | valor de dominio | Lo que muestra S10: los cuatro indicadores, una fila por cuenta, fondos activos, próximo ingreso y hasta 3 alertas; solo se lee de proyecciones. |
+| Alerta de Inicio | `HomeAlert` | valor de dominio | Aviso derivado y no descartable de S10 (`needsReview`, conciliación abierta, ingreso vencido, respaldo vencido); desaparece al resolverse su causa. |
+| Alerta: pide revisión | `NeedsReview` | variante de `HomeAlert` | Una conciliación resuelta con `needsReview`; la más antigua; lleva a `ReconciliationDetail`. |
+| Alerta: conciliación abierta | `OpenReconciliation` | variante de `HomeAlert` | Una conciliación `OPEN`; la más antigua; lleva a `ReconciliationDetail`. |
+| Alerta: ingreso vencido | `OverdueIncome` | variante de `HomeAlert` | El ingreso esperado vencido más antiguo; lleva a `IncomeEditor` prellenado. |
+| Alerta: respaldo vencido | `BackupOverdue` | variante de `HomeAlert` | `BackupStatus.overdue`, aunque las notificaciones estén apagadas (D58); lleva a `Backup`. |
 | Hechos de edición | `FundEditFacts` | valor de dominio | Días de uso, arqueos, gastos asignados y el día más reciente con actividad: lo que bloquea campos del editor. |
 | Arqueo registrado | `FundCountRecord` | valor de dominio | Lo declarado, gastado real, estimado y desviación de un arqueo. No es la ruta `FundCount` (S53, la pantalla de arqueo). |
 | Serializador de fechas | `LocalDateSerializer` | utilidad de eventos | Las fechas de un payload viajan como texto ISO. |

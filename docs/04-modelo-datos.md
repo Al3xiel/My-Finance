@@ -511,6 +511,8 @@ Así queda evidencia comparable de "vida real (saldo del banco) vs. código (sal
 | Disponible libre | Saldo en cuentas − Apartado en fondos |
 | Por cobrar | `Σ (parte.amount − parte.reimbursed)` de partes con cúmulo + `Σ (principal − repaid)` de deudas `OPEN` |
 
+Disponible libre puede ser **negativo** (los fondos apartan más de lo que hay en cuentas): Inicio lo muestra en rojo con un aviso, nunca lo trunca a 0. Apartado suma solo fondos `ACTIVE`: un fondo cerrado con sobrante `ROLL_OVER` ya devolvió su saldo al destino y no cuenta (D57). Inicio no recalcula saldos: lee estas proyecciones (D56).
+
 ### 5.6 Gasto real del mes
 - **Gasto propio** = partes sin cúmulo + **porción pendiente** de las partes con cúmulo (mientras no te paguen, cuenta como gasto).
 - **Gasto por otros** = partes con cúmulo (total, reembolsado, pendiente).
@@ -603,3 +605,6 @@ Resultado: BBVA 780 · BCP 170 · Efectivo 95 · Apartado Pasajes 45 · Por cobr
 | D53 | Guardar y auditar | `.fdiag` y `.fkey` se guardan con `CreateDocument`, sin archivo temporal; el evento de auditoría se emite tras escribir y verificar; cancelar no deja evento; reexportar crea otro `exportId` (2026-11-02) |
 | D54 | Paquete determinista | ZIP con cinco entradas en orden fijo y marcas de tiempo fijas; `contentHash` en `manifest.json`; `packageHash` = SHA-256 del ZIP en claro (2026-11-02) |
 | D55 | Solicitud de diccionario | Código base64url de un JSON con `exportId`, prefijo de `packageHash`, seudónimos y `eventId`, más suma de verificación; sin nombres (2026-11-02) |
+| D56 | Consultas de Inicio | Inicio observa los esperados con `observeAll()` y deriva «vencido» con el reloj inyectado y la regla compartida con Ingresos esperados; las alertas de conciliación necesitan el id, no solo el conteo (2026-11-02) |
+| D57 | Apartado solo `ACTIVE` | Un fondo cerrado con sobrante `ROLL_OVER` ya devolvió su saldo al destino y no cuenta en Apartado. Convención, vetable (2026-11-02) |
+| D58 | Alertas sin descarte | Cada alerta desaparece sola al resolverse su causa; la de respaldo usa `BackupStatus` aunque las notificaciones estén apagadas (2026-11-02) |

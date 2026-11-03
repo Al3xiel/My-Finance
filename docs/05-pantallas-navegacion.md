@@ -73,7 +73,7 @@ Formato: **ID · Nombre (UI)** · `RouteKey` · propósito · acciones principal
 
 | ID | Pantalla | Ruta | Contenido | Acciones → evento |
 |---|---|---|---|---|
-| S10 | Inicio | `Home` | **4 indicadores** (Saldo en cuentas, Apartado en fondos, Disponible libre, Por cobrar) · tarjetas de cuentas con saldo · fondos activos con barra de consumo · próximo ingreso esperado · alertas (respaldo vencido, conciliación abierta, `needsReview`, ingreso vencido) | Tocar tarjeta → detalle · ojo para ocultar montos |
+| S10 | Inicio | `Home` | **4 indicadores** (Saldo en cuentas, Apartado en fondos, Disponible libre —en rojo y con aviso si es negativo—, Por cobrar) · una fila compacta por cuenta con su saldo · fondos activos con barra de lo consumido (rótulo «estimado» solo en los modos estimados) · próximo ingreso esperado (el vencido más antiguo; si no, el programado más cercano; solo `PEN`) · hasta 3 alertas derivadas y no descartables, en este orden: `needsReview`, conciliación abierta, ingreso vencido, respaldo vencido · estados vacíos por bloque (sin cuentas, sin fondos, sin esperados) | Tocar cuenta → detalle de cuenta; fondo → detalle de fondo; `needsReview` y conciliación abierta → `ReconciliationDetail`; ingreso vencido → `IncomeEditor` prellenado desde el esperado; respaldo vencido → `Backup` · ojo en el encabezado alterna `hideAmounts` (persiste; oculta los cuatro números y las filas) |
 
 ### 3.3 Movimientos
 

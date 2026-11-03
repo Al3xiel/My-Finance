@@ -20,6 +20,14 @@ interface ReconciliationQueryDao {
 
     @Query("SELECT COUNT(*) FROM reconciliations WHERE needs_review = 1") fun observeNeedsReviewCount(): Flow<Int>
 
+    /** La conciliación resuelta que pide revisión y lleva más tiempo así (alerta de Inicio, D56). */
+    @Query("SELECT id FROM reconciliations WHERE needs_review = 1 ORDER BY checked_sequence, id LIMIT 1")
+    fun observeOldestNeedsReviewId(): Flow<String?>
+
+    /** La conciliación `OPEN` más antigua, de cualquier cuenta (alerta de Inicio, D56). */
+    @Query("SELECT id FROM reconciliations WHERE status = 'OPEN' ORDER BY checked_sequence, id LIMIT 1")
+    fun observeOpenId(): Flow<String?>
+
     @Query("SELECT COUNT(*) > 0 FROM reconciliation_links WHERE reconciliation_id = :reconciliationId AND movement_id = :movementId")
     suspend fun isLinked(reconciliationId: String, movementId: String): Boolean
 

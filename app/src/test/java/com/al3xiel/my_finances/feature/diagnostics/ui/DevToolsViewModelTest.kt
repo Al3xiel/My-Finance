@@ -65,6 +65,8 @@ class DevToolsViewModelTest {
         override fun observeDetail(id: ReconciliationId): Flow<ReconciliationDetail?> = error("unused")
         override fun observeLatest(accountId: AccountId): Flow<Reconciliation?> = error("unused")
         override fun observeNeedsReviewCount(): Flow<Int> = flowOf(count)
+        override fun observeOldestNeedsReviewId(): Flow<ReconciliationId?> = error("unused")
+        override fun observeOpenId(): Flow<ReconciliationId?> = error("unused")
     }
 
     private class Source(var tables: List<TableFingerprint>) : TableFingerprintSource {

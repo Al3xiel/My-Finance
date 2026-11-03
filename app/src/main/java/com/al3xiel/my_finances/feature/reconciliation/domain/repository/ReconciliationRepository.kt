@@ -24,6 +24,12 @@ interface ReconciliationRepository {
     /** La más reciente de la cuenta, de cualquier estado. */
     fun observeLatest(accountId: AccountId): Flow<Reconciliation?>
 
-    /** Cuántas resueltas piden revisión, para el aviso de inicio. */
+    /** Cuántas resueltas piden revisión (diagnóstico); Inicio usa el id de la más antigua, [observeOldestNeedsReviewId]. */
     fun observeNeedsReviewCount(): Flow<Int>
+
+    /** La que pide revisión desde hace más tiempo, o `null` (alerta de Inicio). */
+    fun observeOldestNeedsReviewId(): Flow<ReconciliationId?>
+
+    /** La `OPEN` más antigua, o `null` (alerta de Inicio). */
+    fun observeOpenId(): Flow<ReconciliationId?>
 }

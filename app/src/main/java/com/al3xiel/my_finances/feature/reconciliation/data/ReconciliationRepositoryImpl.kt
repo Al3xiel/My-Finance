@@ -67,6 +67,11 @@ class ReconciliationRepositoryImpl @Inject constructor(
         queries.observeLatest(accountId.value).map { it?.toDomain() }
 
     override fun observeNeedsReviewCount(): Flow<Int> = queries.observeNeedsReviewCount()
+
+    override fun observeOldestNeedsReviewId(): Flow<ReconciliationId?> =
+        queries.observeOldestNeedsReviewId().map { it?.let(::ReconciliationId) }
+
+    override fun observeOpenId(): Flow<ReconciliationId?> = queries.observeOpenId().map { it?.let(::ReconciliationId) }
 }
 
 private fun ReconciliationEntity.toDomain() = Reconciliation(
