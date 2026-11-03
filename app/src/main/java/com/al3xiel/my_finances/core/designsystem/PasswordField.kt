@@ -2,6 +2,7 @@ package com.al3xiel.my_finances.core.designsystem
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -18,6 +19,7 @@ fun PasswordField(value: String, @StringRes label: Int, modifier: Modifier = Mod
         onValueChange = onChange,
         label = { Text(stringResource(label)) },
         singleLine = true,
+        shape = MaterialTheme.shapes.medium,
         visualTransformation = PasswordVisualTransformation(),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
         modifier = modifier,

@@ -4,8 +4,6 @@ import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.SelectableDates
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
@@ -38,12 +36,13 @@ fun DateChooserDialog(
     DatePickerDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
-            TextButton(
+            PillButton(
+                stringResource(R.string.dialog_date_confirm),
                 onClick = { state.selectedDateMillis?.let { onDateSelected(it.toPickerDate()) } },
                 enabled = state.selectedDateMillis != null,
-            ) { Text(stringResource(R.string.dialog_date_confirm)) }
+            )
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.catalog_cancel)) } },
+        dismissButton = { PillButton(stringResource(R.string.catalog_cancel), onClick = onDismiss, style = PillStyle.TEXT) },
     ) {
         DatePicker(state = state)
     }

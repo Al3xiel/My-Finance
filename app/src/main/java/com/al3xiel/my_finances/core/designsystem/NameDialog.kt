@@ -5,9 +5,9 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -40,6 +40,7 @@ fun NameDialog(
                     onValueChange = onNameChange,
                     label = { Text(label) },
                     singleLine = true,
+                    shape = MaterialTheme.shapes.medium,
                     isError = error != null,
                     supportingText = error?.let { { Text(it.message()) } },
                     modifier = Modifier.fillMaxWidth(),
@@ -48,9 +49,9 @@ fun NameDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onConfirm, enabled = name.isNotBlank()) { Text(stringResource(R.string.catalog_save)) }
+            PillButton(stringResource(R.string.catalog_save), onClick = onConfirm, enabled = name.isNotBlank())
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.catalog_cancel)) } },
+        dismissButton = { PillButton(stringResource(R.string.catalog_cancel), onClick = onDismiss, style = PillStyle.TEXT) },
     )
 }
 

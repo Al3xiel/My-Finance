@@ -16,8 +16,28 @@ import com.al3xiel.my_finances.R
 import com.al3xiel.my_finances.core.money.CurrencyCode
 import com.al3xiel.my_finances.core.money.Money
 import com.al3xiel.my_finances.core.money.MoneyFormatter
+import com.al3xiel.my_finances.ui.theme.LocalFinanceColors
+import com.al3xiel.my_finances.ui.theme.NumericStyles
 
 enum class MoneySign { NONE, PLUS, MINUS }
+
+/** Tamaño de una cifra: héroe (saldo de portada), normal y pequeña. Todas con dígitos tabulares. */
+enum class MoneyVariant { HERO, NORMAL, SMALL }
+
+/** Color semántico opcional; `AUTO` pinta de gasto solo lo negativo. Nunca es la única señal: el signo siempre se muestra. */
+enum class MoneyTone {
+    NONE, INCOME, EXPENSE, AUTO;
+
+    internal fun resolve(money: Money): MoneyTone = if (this == AUTO) (if (money.amountMinor < 0) EXPENSE else NONE) else this
+}
+
+internal fun MoneyVariant.style(): TextStyle = when (this) {
+    MoneyVariant.HERO -> NumericStyles.large
+    MoneyVariant.NORMAL -> NumericStyles.medium
+    MoneyVariant.SMALL -> NumericStyles.small
+}
+
+internal fun TextStyle.tabular(): TextStyle = copy(fontFeatureSettings = "tnum")
 
 internal const val AMOUNT_MASK = "••••"
 
@@ -39,14 +59,22 @@ fun MoneyText(
     style: TextStyle = LocalTextStyle.current,
     color: Color = Color.Unspecified,
     textDecoration: TextDecoration? = null,
+    variant: MoneyVariant? = null,
+    tone: MoneyTone = MoneyTone.NONE,
 ) {
+    val finance = LocalFinanceColors.current
+    val toneColor = when (tone.resolve(money)) {
+        MoneyTone.INCOME -> finance.income
+        MoneyTone.EXPENSE -> finance.expense
+        else -> Color.Unspecified
+    }
     val hidden = LocalHideAmounts.current
     val hiddenDescription = stringResource(R.string.money_hidden_description)
     Text(
         text = moneyDisplayText(money, hidden, sign),
         modifier = if (hidden) modifier.semantics { contentDescription = hiddenDescription } else modifier,
-        style = style,
-        color = color,
+        style = (variant?.style() ?: style).tabular(),
+        color = if (color != Color.Unspecified) color else toneColor,
         textDecoration = textDecoration,
     )
 }

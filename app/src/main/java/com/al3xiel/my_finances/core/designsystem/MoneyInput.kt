@@ -1,6 +1,7 @@
 package com.al3xiel.my_finances.core.designsystem
 
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -9,6 +10,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import com.al3xiel.my_finances.core.money.CurrencyCode
 import com.al3xiel.my_finances.core.money.MoneyFormatter
+import com.al3xiel.my_finances.ui.theme.NumericStyles
 
 /** Lo que se teclea en un campo de monto: dígitos, un separador y hasta dos decimales. */
 internal object MoneyInputFilter {
@@ -56,6 +58,7 @@ fun MoneyInput(
     isError: Boolean = false,
     supportingText: String? = null,
     allowNegative: Boolean = false,
+    large: Boolean = false,
 ) {
     OutlinedTextField(
         value = value,
@@ -64,6 +67,8 @@ fun MoneyInput(
         label = { Text(label) },
         prefix = { Text(currency.symbol) },
         singleLine = true,
+        shape = MaterialTheme.shapes.medium,
+        textStyle = if (large) NumericStyles.large else NumericStyles.medium,
         isError = isError,
         supportingText = supportingText?.let { { Text(it) } },
         keyboardOptions = KeyboardOptions(keyboardType = if (allowNegative) KeyboardType.Text else KeyboardType.Decimal),

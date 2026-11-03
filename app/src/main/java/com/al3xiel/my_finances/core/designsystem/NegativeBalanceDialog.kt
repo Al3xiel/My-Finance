@@ -2,7 +2,6 @@ package com.al3xiel.my_finances.core.designsystem
 
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -16,8 +15,8 @@ fun NegativeBalanceDialog(warning: BusinessError.WouldGoNegative, onConfirm: () 
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.editor_negative_title)) },
         text = { Text(warning.message()) },
-        confirmButton = { TextButton(onClick = onConfirm) { Text(stringResource(R.string.editor_negative_confirm)) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.catalog_cancel)) } },
+        confirmButton = { PillButton(stringResource(R.string.editor_negative_confirm), onClick = onConfirm) },
+        dismissButton = { PillButton(stringResource(R.string.catalog_cancel), onClick = onDismiss, style = PillStyle.TEXT) },
     )
 }
 
