@@ -620,3 +620,6 @@ Resultado: BBVA 780 · BCP 170 · Efectivo 95 · Apartado Pasajes 45 · Por cobr
 | D68 | Apariencia | `ThemeMode` suma `AMOLED` y se guarda un ajuste aparte (`appearance.dynamic_color`) para el color del sistema; las claves existentes siguen valiendo (2026-11-03) |
 | D69 | Iconos | Vectores propios de Material Symbols Rounded solo de los usados, sin `material-icons-extended` (2026-11-03) |
 | D70 | Tipografía | Inter (OFL) empaquetada, cifras tabulares. Convención, vetable (alternativa: Plus Jakarta Sans si trae `tnum`) (2026-11-03) |
+| D71 | Marco de pantalla | Las pantallas adoptan `ScreenScaffold` por fases; el título sale del encabezado y no de un `Text` suelto; el volver usa `LocalNavigator` (2026-11-03) |
+| D72 | Monto | El campo de monto mantiene el teclado numérico del sistema (accesibilidad, IME, sin lógica nueva); no hay teclado propio. Convención, vetable (2026-11-03) |
+| D73 | Estados | Un solo `StatusBadge` con icono y texto para todos los estados; el color solo refuerza (2026-11-03) |
