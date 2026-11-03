@@ -12,36 +12,28 @@ import com.al3xiel.my_finances.data.database.migration.MIGRATION_5_6
 import com.al3xiel.my_finances.data.eventstore.EventStoreImpl
 import com.al3xiel.my_finances.data.eventstore.EventTriggersCallback
 import com.al3xiel.my_finances.data.projection.EventProjector
+import com.al3xiel.my_finances.data.projection.ProjectorSetFactory
 import com.al3xiel.my_finances.data.projection.ProjectionStateDao
 import com.al3xiel.my_finances.data.projection.ProjectionVersionsImpl
 import com.al3xiel.my_finances.data.projection.ProjectionRebuilderImpl
 import com.al3xiel.my_finances.data.projection.catalog.CatalogDao
-import com.al3xiel.my_finances.data.projection.catalog.CatalogProjector
 import com.al3xiel.my_finances.data.projection.catalog.CatalogQueryDao
 import com.al3xiel.my_finances.data.projection.movement.LedgerDao
 import com.al3xiel.my_finances.data.projection.movement.LedgerQueryDao
 import com.al3xiel.my_finances.data.projection.movement.MovementDao
-import com.al3xiel.my_finances.data.projection.movement.MovementProjector
 import com.al3xiel.my_finances.data.projection.movement.MovementQueryDao
 import com.al3xiel.my_finances.data.projection.expectedincome.ExpectedIncomeDao
-import com.al3xiel.my_finances.data.projection.expectedincome.ExpectedIncomeProjector
 import com.al3xiel.my_finances.data.projection.expectedincome.ExpectedIncomeQueryDao
 import com.al3xiel.my_finances.data.projection.fund.FundDao
-import com.al3xiel.my_finances.data.projection.fund.FundProjector
 import com.al3xiel.my_finances.data.projection.fund.FundQueryDao
 import com.al3xiel.my_finances.data.projection.loan.LoanDao
-import com.al3xiel.my_finances.data.projection.loan.LoanProjector
 import com.al3xiel.my_finances.data.projection.loan.LoanQueryDao
 import com.al3xiel.my_finances.data.projection.pool.PersonQueryDao
 import com.al3xiel.my_finances.data.projection.pool.PoolDao
-import com.al3xiel.my_finances.data.projection.pool.PoolProjector
 import com.al3xiel.my_finances.data.projection.pool.PoolQueryDao
 import com.al3xiel.my_finances.data.projection.pool.ReimbursementDao
-import com.al3xiel.my_finances.data.projection.pool.ReimbursementProjector
 import com.al3xiel.my_finances.data.projection.reconciliation.ReconciliationDao
 import com.al3xiel.my_finances.data.projection.origin.OriginDao
-import com.al3xiel.my_finances.data.projection.origin.OriginProjector
-import com.al3xiel.my_finances.data.projection.reconciliation.ReconciliationProjector
 import com.al3xiel.my_finances.data.projection.reconciliation.ReconciliationQueryDao
 import com.al3xiel.my_finances.domain.model.event.EventStore
 import com.al3xiel.my_finances.feature.backup.data.DatabaseFiles
@@ -53,7 +45,6 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import dagger.multibindings.IntoSet
 import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 import javax.inject.Named
 import javax.inject.Singleton
@@ -72,43 +63,12 @@ abstract class DatabaseModule {
     @Binds
     abstract fun projectionVersions(impl: ProjectionVersionsImpl): ProjectionVersions
 
-    @Binds
-    @IntoSet
-    abstract fun catalogProjector(impl: CatalogProjector): EventProjector
-
-    @Binds
-    @IntoSet
-    abstract fun movementProjector(impl: MovementProjector): EventProjector
-
-    @Binds
-    @IntoSet
-    abstract fun poolProjector(impl: PoolProjector): EventProjector
-
-    @Binds
-    @IntoSet
-    abstract fun reimbursementProjector(impl: ReimbursementProjector): EventProjector
-
-    @Binds
-    @IntoSet
-    abstract fun loanProjector(impl: LoanProjector): EventProjector
-
-    @Binds
-    @IntoSet
-    abstract fun fundProjector(impl: FundProjector): EventProjector
-
-    @Binds
-    @IntoSet
-    abstract fun expectedIncomeProjector(impl: ExpectedIncomeProjector): EventProjector
-
-    @Binds
-    @IntoSet
-    abstract fun reconciliationProjector(impl: ReconciliationProjector): EventProjector
-
-    @Binds
-    @IntoSet
-    abstract fun originProjector(impl: OriginProjector): EventProjector
-
     companion object {
+        /** Sin alcance a propósito: cada uso recibe instancias nuevas (`OriginProjector` guarda estado de replay). */
+        @Provides
+        fun provideProjectors(database: AppDatabase): Set<@JvmSuppressWildcards EventProjector> =
+            ProjectorSetFactory(database).create()
+
         @Provides
         @Singleton
         fun provideDatabase(@ApplicationContext context: Context, keyProvider: DatabaseKeyProvider): AppDatabase {
