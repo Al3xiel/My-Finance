@@ -90,3 +90,4 @@ app/src/main/java/com/al3xiel/my_finances/feature/diagnostics/domain/repository/
 app/src/main/java/com/al3xiel/my_finances/feature/diagnostics/domain/repository/DiagnosticPackageReader.kt  # puerto del paquete y del espacio de diagnostico, no es un repositorio CRUD: plan diagnostics (auditoria)
 app/src/main/java/com/al3xiel/my_finances/feature/diagnostics/domain/repository/DiagnosticWorkspaceStore.kt  # puerto del paquete y del espacio de diagnostico, no es un repositorio CRUD: plan diagnostics (auditoria)
 app/src/main/java/com/al3xiel/my_finances/feature/diagnostics/domain/repository/WorkspaceEventWriter.kt  # puerto del paquete y del espacio de diagnostico, no es un repositorio CRUD: plan diagnostics (auditoria)
+app/src/main/java/com/al3xiel/my_finances/feature/onboarding/data/OnboardingPreferences.kt  # bandera onboardingCompleted en DataStore, sin DAO: nombre y ubicacion fijados en plan onboarding T3

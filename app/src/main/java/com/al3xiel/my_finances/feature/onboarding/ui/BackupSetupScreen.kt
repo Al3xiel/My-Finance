@@ -36,9 +36,8 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.al3xiel.my_finances.R
+import com.al3xiel.my_finances.feature.backup.ui.INTERVAL_OPTIONS
 import com.al3xiel.my_finances.ui.theme.MyfinancesTheme
-
-private val INTERVAL_OPTIONS = listOf(7, 15, 30)
 
 /** S05: explica el respaldo, ofrece el recordatorio (permiso en contexto) y enlaza a S70; «Terminar» entra a la app. */
 @Composable
