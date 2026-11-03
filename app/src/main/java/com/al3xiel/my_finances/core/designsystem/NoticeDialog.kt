@@ -2,7 +2,6 @@ package com.al3xiel.my_finances.core.designsystem
 
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -15,7 +14,7 @@ fun NoticeDialog(error: BusinessError, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
         text = { Text(error.message()) },
-        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_accept)) } },
+        confirmButton = { PillButton(stringResource(R.string.common_accept), onClick = onDismiss, style = PillStyle.TEXT) },
     )
 }
 

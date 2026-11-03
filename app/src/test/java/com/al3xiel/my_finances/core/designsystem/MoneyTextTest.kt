@@ -4,6 +4,7 @@ import com.al3xiel.my_finances.core.money.CurrencyCode
 import com.al3xiel.my_finances.core.money.Money
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class MoneyTextTest {
@@ -31,5 +32,25 @@ class MoneyTextTest {
     @Test
     fun negativeBalancesKeepTheirOwnMinus() {
         assertEquals("-S/ 3.00", moneyDisplayText(Money(-300, CurrencyCode.PEN), hidden = false))
+    }
+
+    @Test
+    fun everyVariantUsesTabularFigures() {
+        MoneyVariant.entries.forEach { assertEquals("tnum", it.style().fontFeatureSettings) }
+        assertEquals("tnum", androidx.compose.ui.text.TextStyle.Default.tabular().fontFeatureSettings)
+    }
+
+    @Test
+    fun theHeroIsBiggerThanNormalAndNormalThanSmall() {
+        assertTrue(MoneyVariant.HERO.style().fontSize.value > MoneyVariant.NORMAL.style().fontSize.value)
+        assertTrue(MoneyVariant.NORMAL.style().fontSize.value > MoneyVariant.SMALL.style().fontSize.value)
+    }
+
+    @Test
+    fun autoToneIsExpenseOnlyForNegativeAmounts() {
+        assertEquals(MoneyTone.EXPENSE, MoneyTone.AUTO.resolve(Money(-1, CurrencyCode.PEN)))
+        assertEquals(MoneyTone.NONE, MoneyTone.AUTO.resolve(Money(0, CurrencyCode.PEN)))
+        assertEquals(MoneyTone.NONE, MoneyTone.AUTO.resolve(Money(5, CurrencyCode.PEN)))
+        assertEquals(MoneyTone.INCOME, MoneyTone.INCOME.resolve(Money(-1, CurrencyCode.PEN)))
     }
 }

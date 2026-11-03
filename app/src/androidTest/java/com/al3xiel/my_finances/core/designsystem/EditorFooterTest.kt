@@ -4,7 +4,9 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -41,5 +43,11 @@ class EditorFooterTest {
         rule.onNodeWithText(string(R.string.error_invalid_amount))
             .assertIsDisplayed()
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Polite))
+    }
+
+    @Test
+    fun saveIsAPrimaryPillOfAtLeast48dp() {
+        rule.setContent { EditorFooter(error = null, onSave = {}) }
+        rule.onNodeWithText(string(R.string.editor_save)).assertHeightIsAtLeast(48.dp)
     }
 }

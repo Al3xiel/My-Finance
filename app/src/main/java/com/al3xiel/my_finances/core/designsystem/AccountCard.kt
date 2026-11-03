@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -36,7 +37,12 @@ fun AccountCard(
     accent: Color? = null,
     isArchived: Boolean = false,
 ) {
-    Card(onClick = onClick, modifier = modifier.fillMaxWidth().heightIn(min = 64.dp)) {
+    Card(
+        onClick = onClick,
+        modifier = modifier.fillMaxWidth().heightIn(min = 64.dp),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+    ) {
         Row(
             modifier = Modifier.padding(16.dp).alpha(if (isArchived) 0.6f else 1f),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -54,7 +60,7 @@ fun AccountCard(
                     )
                 }
             }
-            MoneyText(balance, style = MaterialTheme.typography.titleMedium)
+            MoneyText(balance, style = MaterialTheme.typography.titleMedium, tone = MoneyTone.AUTO)
         }
     }
 }

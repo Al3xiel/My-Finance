@@ -16,6 +16,12 @@ object AppIcons {
     @DrawableRes val Add = R.drawable.ic_add
     @DrawableRes val Visibility = R.drawable.ic_visibility
     @DrawableRes val VisibilityOff = R.drawable.ic_visibility_off
+    @DrawableRes val Back = R.drawable.ic_arrow_back
+    @DrawableRes val StatusPending = R.drawable.ic_status_pending
+    @DrawableRes val StatusOverdue = R.drawable.ic_status_overdue
+    @DrawableRes val StatusReview = R.drawable.ic_status_review
+    @DrawableRes val StatusReconciled = R.drawable.ic_status_reconciled
+    @DrawableRes val StatusEstimated = R.drawable.ic_status_estimated
 
     /** Nombre del recurso → id; el test comprueba que cada uno existe en `res/drawable`. */
     val all: Map<String, Int> = mapOf(
@@ -27,5 +33,11 @@ object AppIcons {
         "ic_add" to Add,
         "ic_visibility" to Visibility,
         "ic_visibility_off" to VisibilityOff,
+        "ic_arrow_back" to Back,
+        "ic_status_pending" to StatusPending,
+        "ic_status_overdue" to StatusOverdue,
+        "ic_status_review" to StatusReview,
+        "ic_status_reconciled" to StatusReconciled,
+        "ic_status_estimated" to StatusEstimated,
     )
 }

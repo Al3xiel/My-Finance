@@ -864,4 +864,9 @@
     <string name="quick_entry_conflict_pools">La línea nombra dos cúmulos. Elige uno.</string>
     <string name="quick_entry_conflict_funds">La línea nombra dos fondos. Elige uno.</string>
     <string name="quick_entry_conflict_sources">La línea nombra dos fuentes de ingreso. Elige una.</string>
+    <string name="scaffold_back">Volver</string>
+    <string name="status_pending">Pendiente</string>
+    <string name="status_overdue">Vencido</string>
+    <string name="status_needs_review">Necesita revisión</string>
+    <string name="status_reconciled">Conciliado</string>
 </resources>

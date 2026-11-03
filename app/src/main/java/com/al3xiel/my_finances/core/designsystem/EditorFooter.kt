@@ -3,7 +3,6 @@ package com.al3xiel.my_finances.core.designsystem
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,7 +27,7 @@ fun EditorFooter(error: BusinessError?, onSave: () -> Unit, modifier: Modifier =
                 modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
             )
         }
-        Button(onClick = onSave, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.editor_save)) }
+        PillButton(text = stringResource(R.string.editor_save), onClick = onSave, modifier = Modifier.fillMaxWidth())
     }
 }
 

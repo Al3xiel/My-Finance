@@ -266,19 +266,39 @@ Valores ausentes (D62): la categoría se sugiere desde la `defaultCategoryId` de
 
 ## 7. Componentes reutilizables (design system)
 
+Viven en `core/designsystem`. Los de marco y agrupación son el estilo One UI de la §9; el resto son los de dominio ya existentes, rehechos con los tokens nuevos.
+
+**Marco y agrupación**
+
 | Componente | Uso |
 |---|---|
-| `MoneyText` | Monto formateado `es-PE`, color según signo, respeta "ocultar montos" |
-| `MoneyInput` | Teclado numérico, céntimos, sin decimales flotantes |
+| `ScreenScaffold` | Encabezado grande que se contrae al desplazar, botón volver por `LocalNavigator` y acciones; versión sin volver para las pestañas. Es opt-in: una pantalla no migrada sigue funcionando (D71) |
+| `SectionCard` | Título de sección y tarjeta de esquinas 24 dp que agrupa filas con separadores finos |
+| `PillButton` | Botón en píldora: primario, tonal o texto; objetivo táctil ≥ 48 dp |
+| `IconBadge` | Icono dentro de un contenedor redondeado |
+| `StatusBadge` | Estado con icono, texto y color (pendiente, vencido, necesita revisión, conciliado, estimado); el color solo refuerza (D73) |
+
+**Montos, campos y avisos**
+
+| Componente | Uso |
+|---|---|
+| `MoneyText` | Monto formateado `es-PE` con cifras tabulares; variantes héroe, normal y pequeña; color semántico opcional; respeta "ocultar montos" |
+| `MoneyInput` | Monto grande con el teclado numérico del sistema, céntimos, sin decimales flotantes (D72) |
+| `EntityPicker` | Selector con búsqueda para cuenta, categoría, concepto, persona, cúmulo, fondo |
+| `EditorFooter` | Píldora principal fija y error de negocio del editor |
+| `ReasonDialog` | Pide motivo para corregir o anular |
+| `ShareSheetLauncher` | Genera imagen/PDF y abre el Intent de compartir |
+
+**De dominio**
+
+| Componente | Uso |
+|---|---|
 | `IndicatorCard` | Cada uno de los 4 indicadores de Inicio |
 | `AccountCard` | Saldo y tipo de cuenta |
 | `FundProgressCard` | Barra asignado/gastado/estimado |
 | `MovementRow` | Fila de la lista de movimientos |
 | `ExpensePartEditor` | Una parte del gasto (monto, categoría, conceptos, cúmulo/fondo) |
-| `EntityPicker` | Selector con búsqueda para cuenta, categoría, concepto, persona, cúmulo, fondo |
-| `EstimatedBadge` | Etiqueta "estimado"; todo número de origen la lleva y no depende solo del color |
-| `ReasonDialog` | Pide motivo para corregir o anular |
-| `ShareSheetLauncher` | Genera imagen/PDF y abre el Intent de compartir |
+| `EstimatedBadge` | Etiqueta "estimado" (un `StatusBadge`); todo número de origen la lleva y no depende solo del color |
 | `EmptyState` | Estados vacíos con acción sugerida |
 
 ---

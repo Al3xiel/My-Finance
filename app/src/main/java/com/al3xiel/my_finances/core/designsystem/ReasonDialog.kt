@@ -2,9 +2,9 @@ package com.al3xiel.my_finances.core.designsystem
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -35,15 +35,18 @@ fun ReasonDialog(
                 label = { Text(stringResource(R.string.reason_dialog_label)) },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 2,
+                shape = MaterialTheme.shapes.medium,
             )
         },
         confirmButton = {
-            TextButton(onClick = { onConfirm(reason.trim()) }, enabled = reason.isNotBlank()) {
-                Text(stringResource(R.string.reason_dialog_confirm))
-            }
+            PillButton(
+                stringResource(R.string.reason_dialog_confirm),
+                onClick = { onConfirm(reason.trim()) },
+                enabled = reason.isNotBlank(),
+            )
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.reason_dialog_cancel)) }
+            PillButton(stringResource(R.string.reason_dialog_cancel), onClick = onDismiss, style = PillStyle.TEXT)
         },
     )
 }

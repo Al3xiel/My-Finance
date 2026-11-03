@@ -14,6 +14,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
@@ -40,8 +41,9 @@ fun MovementRow(
         MovementRowKind.EXPENSE -> MoneySign.MINUS
         MovementRowKind.TRANSFER -> MoneySign.NONE
     }
+    val tone = if (kind == MovementRowKind.INCOME) MoneyTone.INCOME else MoneyTone.NONE
     val color = when (kind) {
-        MovementRowKind.INCOME -> MaterialTheme.colorScheme.primary
+        MovementRowKind.INCOME -> Color.Unspecified
         MovementRowKind.EXPENSE -> MaterialTheme.colorScheme.onSurface
         MovementRowKind.TRANSFER -> MaterialTheme.colorScheme.onSurfaceVariant
     }
@@ -67,7 +69,7 @@ fun MovementRow(
                 )
             }
         }
-        MoneyText(amount, sign = sign, style = MaterialTheme.typography.bodyLarge, color = color, textDecoration = strike)
+        MoneyText(amount, sign = sign, style = MaterialTheme.typography.bodyLarge, color = color, textDecoration = strike, tone = tone)
     }
 }
 
