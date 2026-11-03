@@ -6,9 +6,9 @@ import com.al3xiel.my_finances.domain.model.event.NewEvent
 import com.al3xiel.my_finances.domain.usecase.EventRecorder
 import com.al3xiel.my_finances.domain.usecase.FakeEventStore
 import com.al3xiel.my_finances.domain.usecase.SequentialIdGenerator
-import com.al3xiel.my_finances.feature.backup.data.format.BackupFormatException
-import com.al3xiel.my_finances.feature.backup.data.format.BackupLimits
-import com.al3xiel.my_finances.feature.backup.data.format.BackupReader
+import com.al3xiel.my_finances.feature.backup.domain.format.BackupFormatException
+import com.al3xiel.my_finances.feature.backup.domain.format.BackupLimits
+import com.al3xiel.my_finances.feature.backup.domain.format.BackupReader
 import com.al3xiel.my_finances.feature.backup.domain.repository.BackupFilePort
 import com.al3xiel.my_finances.feature.backup.domain.usecase.CreateBackupResult
 import com.al3xiel.my_finances.feature.backup.domain.usecase.CreateBackupUseCase

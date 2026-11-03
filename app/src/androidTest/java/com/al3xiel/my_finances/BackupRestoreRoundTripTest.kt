@@ -26,9 +26,9 @@ import com.al3xiel.my_finances.domain.usecase.RestoreMarker
 import com.al3xiel.my_finances.domain.usecase.VerifyEventChainUseCase
 import com.al3xiel.my_finances.feature.accounts.data.AccountRepositoryImpl
 import com.al3xiel.my_finances.feature.accounts.domain.usecase.CreateAccountUseCase
-import com.al3xiel.my_finances.feature.backup.data.BackupImporter
+import com.al3xiel.my_finances.feature.backup.domain.format.BackupImporter
 import com.al3xiel.my_finances.feature.backup.data.DatabaseFiles
-import com.al3xiel.my_finances.feature.backup.data.StagingSink
+import com.al3xiel.my_finances.feature.backup.domain.format.StagingSink
 import com.al3xiel.my_finances.feature.backup.domain.repository.BackupFilePort
 import com.al3xiel.my_finances.feature.backup.domain.usecase.CanRestoreUseCase
 import com.al3xiel.my_finances.feature.backup.domain.usecase.CreateBackupResult

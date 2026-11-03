@@ -1,4 +1,4 @@
-package com.al3xiel.my_finances.feature.backup.data
+package com.al3xiel.my_finances.feature.backup.domain.usecase
 
 import com.al3xiel.my_finances.core.di.IoDispatcher
 import com.al3xiel.my_finances.domain.usecase.ChainVerification

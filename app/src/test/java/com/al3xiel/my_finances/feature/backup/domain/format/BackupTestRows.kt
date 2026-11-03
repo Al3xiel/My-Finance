@@ -1,4 +1,4 @@
-package com.al3xiel.my_finances.feature.backup.data.format
+package com.al3xiel.my_finances.feature.backup.domain.format
 
 import com.al3xiel.my_finances.core.security.container.EncryptedContainerWriter
 import com.al3xiel.my_finances.domain.model.AccountId

@@ -20,7 +20,7 @@ import com.al3xiel.my_finances.feature.privacy.domain.model.SecuritySettings
 import com.al3xiel.my_finances.feature.privacy.domain.repository.SecuritySettingsRepository
 import com.al3xiel.my_finances.feature.privacy.domain.model.ThemeMode
 import com.al3xiel.my_finances.feature.privacy.domain.repository.ThemeRepository
-import com.al3xiel.my_finances.feature.backup.data.ChainIntegrityMonitor
+import com.al3xiel.my_finances.feature.backup.domain.usecase.ChainIntegrityMonitor
 import com.al3xiel.my_finances.feature.privacy.ui.AppLockGate
 import com.al3xiel.my_finances.ui.theme.MyfinancesTheme
 import dagger.hilt.android.AndroidEntryPoint

@@ -15,13 +15,13 @@ import com.al3xiel.my_finances.domain.usecase.FakeEventStore
 import com.al3xiel.my_finances.domain.usecase.FakeRestoreMarker
 import com.al3xiel.my_finances.domain.usecase.SequentialIdGenerator
 import com.al3xiel.my_finances.domain.usecase.VerifyEventChainUseCase
-import com.al3xiel.my_finances.feature.backup.data.BackupImporter
-import com.al3xiel.my_finances.feature.backup.data.ChainIntegrityMonitor
-import com.al3xiel.my_finances.feature.backup.data.StagingSink
-import com.al3xiel.my_finances.feature.backup.data.format.TEST_PASSWORD
-import com.al3xiel.my_finances.feature.backup.data.format.manifestFor
-import com.al3xiel.my_finances.feature.backup.data.format.testChain
-import com.al3xiel.my_finances.feature.backup.data.format.writeBackup
+import com.al3xiel.my_finances.feature.backup.domain.format.BackupImporter
+import com.al3xiel.my_finances.feature.backup.domain.usecase.ChainIntegrityMonitor
+import com.al3xiel.my_finances.feature.backup.domain.format.StagingSink
+import com.al3xiel.my_finances.feature.backup.domain.format.TEST_PASSWORD
+import com.al3xiel.my_finances.feature.backup.domain.format.manifestFor
+import com.al3xiel.my_finances.feature.backup.domain.format.testChain
+import com.al3xiel.my_finances.feature.backup.domain.format.writeBackup
 import com.al3xiel.my_finances.feature.backup.domain.FakeBackupSettings
 import com.al3xiel.my_finances.feature.backup.domain.repository.BackupFilePort
 import com.al3xiel.my_finances.feature.backup.domain.repository.BackupReminderScheduler
@@ -354,6 +354,6 @@ class BackupViewModelTest {
         userData()
         val vm = viewModel()
         vm.onAction(BackupUiAction.RecheckChain)
-        assertTrue(vm.uiState.value.chain is com.al3xiel.my_finances.feature.backup.data.ChainStatus.Intact)
+        assertTrue(vm.uiState.value.chain is com.al3xiel.my_finances.feature.backup.domain.usecase.ChainStatus.Intact)
     }
 }

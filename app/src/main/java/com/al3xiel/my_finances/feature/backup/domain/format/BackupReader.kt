@@ -1,4 +1,4 @@
-package com.al3xiel.my_finances.feature.backup.data.format
+package com.al3xiel.my_finances.feature.backup.domain.format
 
 import com.al3xiel.my_finances.core.security.container.ContainerException
 import com.al3xiel.my_finances.core.security.container.EncryptedContainerReader
@@ -15,7 +15,7 @@ import java.io.EOFException
 import java.io.InputStream
 import java.util.zip.GZIPInputStream
 import java.util.zip.ZipException
-import com.al3xiel.my_finances.feature.backup.data.format.BackupFormatException.Reason
+import com.al3xiel.my_finances.feature.backup.domain.format.BackupFormatException.Reason
 
 /**
  * Lee un `.fbak` que no es de fiar. [open] valida tamaño, cabecera, contraseña y manifiesto sin leer las filas

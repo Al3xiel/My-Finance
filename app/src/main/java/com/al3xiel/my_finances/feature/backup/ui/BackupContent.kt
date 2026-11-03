@@ -24,7 +24,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.al3xiel.my_finances.R
 import com.al3xiel.my_finances.core.security.AuthPrompt
-import com.al3xiel.my_finances.feature.backup.data.ChainStatus
+import com.al3xiel.my_finances.feature.backup.domain.usecase.ChainStatus
 import com.al3xiel.my_finances.feature.backup.domain.model.BackupStatus
 import com.al3xiel.my_finances.ui.theme.MyfinancesTheme
 

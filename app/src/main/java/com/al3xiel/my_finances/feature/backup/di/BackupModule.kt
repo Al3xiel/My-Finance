@@ -13,7 +13,7 @@ import com.al3xiel.my_finances.feature.backup.data.FileDatabaseSwapper
 import com.al3xiel.my_finances.feature.backup.data.ProcessAppRestarter
 import com.al3xiel.my_finances.feature.backup.data.RoomStagingSinkFactory
 import com.al3xiel.my_finances.feature.backup.data.SafBackupFilePort
-import com.al3xiel.my_finances.feature.backup.data.StagingSinkFactory
+import com.al3xiel.my_finances.feature.backup.domain.format.StagingSinkFactory
 import com.al3xiel.my_finances.feature.backup.data.WorkManagerBackupReminderScheduler
 import com.al3xiel.my_finances.feature.backup.domain.repository.AppRestarter
 import com.al3xiel.my_finances.feature.backup.domain.repository.BackupFilePort

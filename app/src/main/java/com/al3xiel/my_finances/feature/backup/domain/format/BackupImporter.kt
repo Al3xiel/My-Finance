@@ -1,4 +1,4 @@
-package com.al3xiel.my_finances.feature.backup.data
+package com.al3xiel.my_finances.feature.backup.domain.format
 
 import com.al3xiel.my_finances.core.id.IdGenerator
 import com.al3xiel.my_finances.domain.model.event.BackupRestored
@@ -7,9 +7,9 @@ import com.al3xiel.my_finances.domain.model.event.EventCodec
 import com.al3xiel.my_finances.domain.model.event.EventHasher
 import com.al3xiel.my_finances.domain.model.event.HashedFields
 import com.al3xiel.my_finances.domain.usecase.ChainVerifier
-import com.al3xiel.my_finances.feature.backup.data.format.BackupFormatException
-import com.al3xiel.my_finances.feature.backup.data.format.BackupFormatException.Reason
-import com.al3xiel.my_finances.feature.backup.data.format.BackupReader
+import com.al3xiel.my_finances.feature.backup.domain.format.BackupFormatException
+import com.al3xiel.my_finances.feature.backup.domain.format.BackupFormatException.Reason
+import com.al3xiel.my_finances.feature.backup.domain.format.BackupReader
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 import java.time.Clock

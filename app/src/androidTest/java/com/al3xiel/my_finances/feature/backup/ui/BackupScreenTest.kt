@@ -9,7 +9,7 @@ import androidx.compose.ui.test.performClick
 import androidx.test.platform.app.InstrumentationRegistry
 import com.al3xiel.my_finances.R
 import com.al3xiel.my_finances.domain.usecase.ChainVerification
-import com.al3xiel.my_finances.feature.backup.data.ChainStatus
+import com.al3xiel.my_finances.feature.backup.domain.usecase.ChainStatus
 import com.al3xiel.my_finances.feature.backup.domain.usecase.BackupSummary
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue

@@ -1,17 +1,17 @@
-package com.al3xiel.my_finances.feature.backup.data
+package com.al3xiel.my_finances.feature.backup.domain.format
 
 import com.al3xiel.my_finances.domain.model.event.BackupRestored
 import com.al3xiel.my_finances.domain.model.event.ChainRow
 import com.al3xiel.my_finances.domain.model.event.EventCodec
 import com.al3xiel.my_finances.domain.usecase.ChainVerifier
 import com.al3xiel.my_finances.domain.usecase.SequentialIdGenerator
-import com.al3xiel.my_finances.feature.backup.data.format.BackupFormatException
-import com.al3xiel.my_finances.feature.backup.data.format.BackupLimits
-import com.al3xiel.my_finances.feature.backup.data.format.BackupReader
-import com.al3xiel.my_finances.feature.backup.data.format.TEST_PASSWORD
-import com.al3xiel.my_finances.feature.backup.data.format.manifestFor
-import com.al3xiel.my_finances.feature.backup.data.format.testChain
-import com.al3xiel.my_finances.feature.backup.data.format.writeBackup
+import com.al3xiel.my_finances.feature.backup.domain.format.BackupFormatException
+import com.al3xiel.my_finances.feature.backup.domain.format.BackupLimits
+import com.al3xiel.my_finances.feature.backup.domain.format.BackupReader
+import com.al3xiel.my_finances.feature.backup.domain.format.TEST_PASSWORD
+import com.al3xiel.my_finances.feature.backup.domain.format.manifestFor
+import com.al3xiel.my_finances.feature.backup.domain.format.testChain
+import com.al3xiel.my_finances.feature.backup.domain.format.writeBackup
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -53,7 +53,7 @@ class BackupImporterTest {
     private fun reader(bytes: ByteArray) =
         BackupReader.open(ByteArrayInputStream(bytes), TEST_PASSWORD, bytes.size.toLong(), BackupLimits())
 
-    private fun fileOf(rows: List<ChainRow>, manifest: com.al3xiel.my_finances.feature.backup.data.format.BackupManifest = manifestFor(rows)) =
+    private fun fileOf(rows: List<ChainRow>, manifest: com.al3xiel.my_finances.feature.backup.domain.format.BackupManifest = manifestFor(rows)) =
         writeBackup(manifest, rows)
 
     @Test

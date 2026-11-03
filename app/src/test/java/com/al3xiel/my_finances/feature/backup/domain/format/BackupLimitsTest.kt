@@ -1,4 +1,4 @@
-package com.al3xiel.my_finances.feature.backup.data.format
+package com.al3xiel.my_finances.feature.backup.domain.format
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows

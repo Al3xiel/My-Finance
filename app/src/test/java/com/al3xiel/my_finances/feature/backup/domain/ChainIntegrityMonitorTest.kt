@@ -1,5 +1,7 @@
-package com.al3xiel.my_finances.feature.backup.data
+package com.al3xiel.my_finances.feature.backup.domain
 
+import com.al3xiel.my_finances.feature.backup.domain.usecase.ChainIntegrityMonitor
+import com.al3xiel.my_finances.feature.backup.domain.usecase.ChainStatus
 import com.al3xiel.my_finances.domain.model.AccountId
 import com.al3xiel.my_finances.domain.model.event.AccountRenamed
 import com.al3xiel.my_finances.domain.model.event.NewEvent
