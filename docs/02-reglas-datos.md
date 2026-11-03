@@ -25,7 +25,7 @@
 | Financieros | Saldos, montos, cuentas (alias "BBVA", "BCP"), movimientos | **Alta** | BD cifrada |
 | Terceros | Nombres o alias de personas (mamá, pareja) | **Alta** (datos personales de terceros) | BD cifrada |
 | Notas libres | Texto que escribe el usuario | Alta | BD cifrada |
-| Preferencias | Tema, recordatorio de respaldo (activado y cada cuántos días), seguridad (bloqueo, minutos, pantalla segura, ocultar montos) | Baja | DataStore |
+| Preferencias | Tema, primer uso completado (`onboardingCompleted`), recordatorio de respaldo (activado y cada cuántos días), seguridad (bloqueo, minutos, pantalla segura, ocultar montos) | Baja | DataStore |
 | Clave de cifrado | Clave de la BD | **Crítica** | Android Keystore (envuelta), nunca en texto plano |
 
 **No se guarda nunca**: números de cuenta o de tarjeta completos, CCI, claves bancarias, tokens, DNI, ubicación ni contactos del teléfono. Para personas, se recomienda usar alias ("Mamá"), no nombres completos.
