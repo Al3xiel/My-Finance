@@ -1,6 +1,5 @@
 package com.al3xiel.my_finances.feature.pools.ui.components
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.al3xiel.my_finances.core.designsystem.MoneyText
+import com.al3xiel.my_finances.core.designsystem.SectionRow
 import com.al3xiel.my_finances.core.designsystem.dayText
 import com.al3xiel.my_finances.core.money.CurrencyCode
 import com.al3xiel.my_finances.core.money.Money
@@ -22,17 +22,11 @@ import com.al3xiel.my_finances.feature.pools.domain.model.StatementLine
 
 @Composable
 fun StatementLineRow(line: StatementLine) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text((listOf(line.categoryName) + line.tagNames).joinToString(" · "), style = MaterialTheme.typography.bodyLarge)
-            Text(dayText(line.occurredOn), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        MoneyText(line.pending, style = MaterialTheme.typography.bodyLarge)
-    }
+    SectionRow(
+        headline = (listOf(line.categoryName) + line.tagNames).joinToString(" · "),
+        supporting = dayText(line.occurredOn),
+        trailing = { MoneyText(line.pending, style = MaterialTheme.typography.bodyLarge) },
+    )
 }
 
 @Composable

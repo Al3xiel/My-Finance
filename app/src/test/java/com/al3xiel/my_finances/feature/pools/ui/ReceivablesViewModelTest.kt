@@ -69,6 +69,14 @@ class ReceivablesViewModelTest {
     }
 
     @Test
+    fun aLoanIsPartlyRepaidOnlyOnceSomethingCameBack() {
+        val untouched = LoanReceivable(LoanId("l1"), PersonId("pepe"), "Pepe", pen(5_000), pen(0), LocalDate.of(2026, 11, 4))
+
+        assertFalse(untouched.isPartlyRepaid)
+        assertTrue(untouched.copy(repaid = pen(2_000)).isPartlyRepaid)
+    }
+
+    @Test
     fun poolsWithMoreInTheOpenPeriodComeFirstThenByName() {
         source.value = empty().copy(
             pools = listOf(pool("b", "Beta", 0, 100), pool("a", "Alfa", 0, 100), pool("c", "Gama", 500, 600)),

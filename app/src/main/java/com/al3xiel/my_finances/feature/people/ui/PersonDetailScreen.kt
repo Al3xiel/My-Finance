@@ -1,20 +1,15 @@
 package com.al3xiel.my_finances.feature.people.ui
 
 import android.content.res.Configuration
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -27,8 +22,16 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.al3xiel.my_finances.R
+import com.al3xiel.my_finances.core.designsystem.BadgeStatus
 import com.al3xiel.my_finances.core.designsystem.EmptyState
 import com.al3xiel.my_finances.core.designsystem.MoneyText
+import com.al3xiel.my_finances.core.designsystem.PillButton
+import com.al3xiel.my_finances.core.designsystem.PillStyle
+import com.al3xiel.my_finances.core.designsystem.ScreenScaffold
+import com.al3xiel.my_finances.core.designsystem.SectionCard
+import com.al3xiel.my_finances.core.designsystem.SectionDivider
+import com.al3xiel.my_finances.core.designsystem.SectionRow
+import com.al3xiel.my_finances.core.designsystem.StatusBadge
 import com.al3xiel.my_finances.core.designsystem.dayText
 import com.al3xiel.my_finances.core.money.CurrencyCode
 import com.al3xiel.my_finances.core.money.Money
@@ -46,6 +49,8 @@ import com.al3xiel.my_finances.feature.people.domain.model.PersonPartLine
 import com.al3xiel.my_finances.feature.people.domain.model.ReimbursementLine
 import com.al3xiel.my_finances.feature.pools.domain.model.LoanReceivable
 import com.al3xiel.my_finances.feature.pools.domain.model.PoolReceivable
+import com.al3xiel.my_finances.ui.theme.LocalSpacing
+import com.al3xiel.my_finances.ui.theme.MyfinancesTheme
 import java.time.LocalDate
 
 /** S35: saldo con la persona, sus cúmulos, deudas, reembolsos y los gastos con su concepto. */
@@ -77,90 +82,118 @@ fun PersonDetailContent(
 ) {
     val detail = state.detail
     if (detail == null) {
-        if (state.notFound) EmptyState(title = stringResource(R.string.error_not_found), body = "", modifier = modifier)
+        ScreenScaffold(title = "", modifier = modifier) { padding ->
+            if (state.notFound) EmptyState(title = stringResource(R.string.error_not_found), body = "", modifier = Modifier.padding(padding))
+        }
         return
     }
-    LazyColumn(modifier = modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        item {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(detail.person.alias, style = MaterialTheme.typography.titleLarge)
-                Text(
-                    stringResource(R.string.person_detail_balance),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                MoneyText(detail.balance, style = MaterialTheme.typography.headlineMedium)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
-                    Button(onClick = { onReceiveReimbursement(detail.person.id) }, modifier = Modifier.weight(1f)) {
-                        Text(stringResource(R.string.person_detail_receive))
+    val spacing = LocalSpacing.current
+    ScreenScaffold(title = detail.person.alias, modifier = modifier) { padding ->
+        LazyColumn(
+            modifier = Modifier.fillMaxSize().padding(padding),
+            contentPadding = PaddingValues(spacing.lg),
+            verticalArrangement = Arrangement.spacedBy(spacing.lg),
+        ) {
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(spacing.md)) {
+                    Column(modifier = Modifier.padding(horizontal = spacing.sm)) {
+                        Text(
+                            stringResource(R.string.person_detail_balance),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        MoneyText(detail.balance, style = MaterialTheme.typography.displaySmall)
                     }
-                    OutlinedButton(onClick = { onLend(detail.person.id) }, modifier = Modifier.weight(1f)) {
-                        Text(stringResource(R.string.person_detail_lend))
+                    Row(horizontalArrangement = Arrangement.spacedBy(spacing.sm), modifier = Modifier.fillMaxWidth()) {
+                        PillButton(stringResource(R.string.person_detail_receive), { onReceiveReimbursement(detail.person.id) }, Modifier.weight(1f))
+                        PillButton(stringResource(R.string.person_detail_lend), { onLend(detail.person.id) }, Modifier.weight(1f), PillStyle.TONAL)
+                    }
+                }
+            }
+            if (detail.pools.isNotEmpty()) {
+                item {
+                    SectionCard(title = stringResource(R.string.person_detail_pools)) {
+                        detail.pools.forEachIndexed { index, pool ->
+                            if (index > 0) SectionDivider()
+                            Line(pool.name, null, pool.totalPending, onClick = { onOpenPool(pool.poolId) })
+                        }
+                    }
+                }
+            }
+            if (detail.loans.isNotEmpty()) {
+                item {
+                    SectionCard(title = stringResource(R.string.person_detail_loans)) {
+                        detail.loans.forEachIndexed { index, line ->
+                            if (index > 0) SectionDivider()
+                            val repaid = line.status == LoanStatus.REPAID
+                            Line(
+                                dayText(line.loan.occurredOn),
+                                null,
+                                line.loan.pending,
+                                onClick = { onOpenLoan(line.loan.loanId) },
+                                badge = if (repaid) {
+                                    BadgeStatus.RECONCILED to stringResource(R.string.person_detail_loan_repaid)
+                                } else {
+                                    BadgeStatus.PENDING to stringResource(if (line.loan.isPartlyRepaid) R.string.status_partial else R.string.loan_detail_status_open)
+                                },
+                            )
+                        }
+                    }
+                }
+            }
+            if (detail.reimbursements.isNotEmpty()) {
+                item {
+                    SectionCard(title = stringResource(R.string.person_detail_reimbursements)) {
+                        detail.reimbursements.forEachIndexed { index, line ->
+                            if (index > 0) SectionDivider()
+                            Line(
+                                dayText(line.occurredOn),
+                                if (line.isVoided) stringResource(R.string.person_detail_voided) else null,
+                                line.amount,
+                                strike = line.isVoided,
+                            )
+                        }
+                    }
+                }
+            }
+            if (detail.parts.isNotEmpty()) {
+                item {
+                    SectionCard(title = stringResource(R.string.person_detail_expenses)) {
+                        detail.parts.forEachIndexed { index, part ->
+                            if (index > 0) SectionDivider()
+                            Line(
+                                (listOf(part.categoryName) + part.tagNames).joinToString(" · "),
+                                "${part.poolName} · ${dayText(part.occurredOn)}",
+                                part.pending,
+                            )
+                        }
                     }
                 }
             }
         }
-        if (detail.pools.isNotEmpty()) {
-            item { SectionTitle(stringResource(R.string.person_detail_pools)) }
-            items(detail.pools, key = { "pool-${it.poolId.value}" }) { pool ->
-                Line(pool.name, null, pool.totalPending, onClick = { onOpenPool(pool.poolId) })
-            }
-        }
-        if (detail.loans.isNotEmpty()) {
-            item { SectionTitle(stringResource(R.string.person_detail_loans)) }
-            items(detail.loans, key = { "loan-${it.loan.loanId.value}" }) { line ->
-                val repaid = line.status == LoanStatus.REPAID
-                Line(
-                    dayText(line.loan.occurredOn),
-                    if (repaid) stringResource(R.string.person_detail_loan_repaid) else null,
-                    line.loan.pending,
-                    onClick = { onOpenLoan(line.loan.loanId) },
-                )
-            }
-        }
-        if (detail.reimbursements.isNotEmpty()) {
-            item { SectionTitle(stringResource(R.string.person_detail_reimbursements)) }
-            items(detail.reimbursements, key = { "reimbursement-${it.movementId.value}" }) { line ->
-                Line(
-                    dayText(line.occurredOn),
-                    if (line.isVoided) stringResource(R.string.person_detail_voided) else null,
-                    line.amount,
-                    strike = line.isVoided,
-                )
-            }
-        }
-        if (detail.parts.isNotEmpty()) {
-            item { SectionTitle(stringResource(R.string.person_detail_expenses)) }
-            items(detail.parts, key = { "part-${it.partId.value}" }) { part ->
-                Line(
-                    (listOf(part.categoryName) + part.tagNames).joinToString(" · "),
-                    "${part.poolName} · ${dayText(part.occurredOn)}",
-                    part.pending,
-                )
-            }
-        }
     }
 }
 
 @Composable
-private fun SectionTitle(text: String) {
-    Text(text, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 16.dp, bottom = 4.dp))
-}
-
-@Composable
-private fun Line(title: String, subtitle: String?, amount: Money, onClick: (() -> Unit)? = null, strike: Boolean = false) {
-    val base = Modifier.fillMaxWidth().heightIn(min = 48.dp)
-    Row(
-        modifier = (if (onClick != null) base.clickable(onClick = onClick) else base).padding(vertical = 6.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.bodyLarge, textDecoration = if (strike) TextDecoration.LineThrough else null)
-            subtitle?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-        }
-        MoneyText(amount, style = MaterialTheme.typography.bodyLarge, textDecoration = if (strike) TextDecoration.LineThrough else null)
-    }
+private fun Line(
+    title: String,
+    subtitle: String?,
+    amount: Money,
+    onClick: (() -> Unit)? = null,
+    strike: Boolean = false,
+    badge: Pair<BadgeStatus, String>? = null,
+) {
+    SectionRow(
+        headline = title,
+        supporting = subtitle,
+        onClick = onClick,
+        trailing = {
+            Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                MoneyText(amount, style = MaterialTheme.typography.bodyLarge, textDecoration = if (strike) TextDecoration.LineThrough else null)
+                badge?.let { (status, label) -> StatusBadge(status, label = label) }
+            }
+        },
+    )
 }
 
 private fun pen(minor: Long) = Money(minor, CurrencyCode.PEN)
@@ -185,7 +218,8 @@ private val previewState = run {
 
 @Preview(showBackground = true)
 @Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(showBackground = true, fontScale = 2f)
 @Composable
 private fun PersonDetailContentPreview() {
-    PersonDetailContent(previewState, {}, {}, {}, {})
+    MyfinancesTheme { PersonDetailContent(previewState, {}, {}, {}, {}) }
 }
