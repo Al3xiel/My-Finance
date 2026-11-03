@@ -98,7 +98,7 @@ export function relatedTests(paths, tracked, exists) {
   return { unit: [...unit], instrumented: [...instrumented], missing };
 }
 
-const gradlew = process.platform === 'win32' ? 'gradlew.bat' : './gradlew';
+const gradlew = process.platform === 'win32' ? '.\\gradlew.bat' : './gradlew';
 
 /** Tests JVM por clase; los instrumentados necesitan un emulador o dispositivo conectado. */
 export function testCommands({ unit, instrumented }) {
