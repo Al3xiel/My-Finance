@@ -3,6 +3,7 @@ package com.al3xiel.my_finances.feature.privacy.ui
 import com.al3xiel.my_finances.core.security.AuthAvailability
 import com.al3xiel.my_finances.core.security.AuthPrompt
 import com.al3xiel.my_finances.core.security.AuthResult
+import com.al3xiel.my_finances.core.security.ExternalFlowGuard
 import com.al3xiel.my_finances.core.security.FakeAuthenticator
 import com.al3xiel.my_finances.core.time.MonotonicClock
 import com.al3xiel.my_finances.feature.privacy.FakeSecuritySettingsRepository
@@ -39,7 +40,7 @@ class AppLockViewModelTest {
     @After
     fun tearDown() = Dispatchers.resetMain()
 
-    private fun viewModel() = AppLockViewModel(settings, authenticator, clock)
+    private fun viewModel() = AppLockViewModel(settings, authenticator, clock, ExternalFlowGuard(clock))
 
     private fun AppLockViewModel.unlock() = onAction(AppLockUiAction.Unlock(prompt))
 

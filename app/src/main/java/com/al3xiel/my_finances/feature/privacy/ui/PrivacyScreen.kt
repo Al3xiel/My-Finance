@@ -35,6 +35,8 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.al3xiel.my_finances.R
+import com.al3xiel.my_finances.core.navigation.Backup
+import com.al3xiel.my_finances.core.navigation.LocalNavigator
 import com.al3xiel.my_finances.core.security.AuthPrompt
 import com.al3xiel.my_finances.feature.privacy.domain.model.SecuritySettings
 import com.al3xiel.my_finances.ui.theme.MyfinancesTheme
@@ -45,6 +47,7 @@ fun PrivacyScreen(modifier: Modifier = Modifier, viewModel: PrivacyViewModel = h
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    val navigator = LocalNavigator.current
 
     // El usuario puede registrar una credencial en Ajustes del sistema y volver.
     DisposableEffect(lifecycleOwner) {
@@ -58,7 +61,15 @@ fun PrivacyScreen(modifier: Modifier = Modifier, viewModel: PrivacyViewModel = h
         if (state.wipeStage == WipeStage.DONE) restartApp(context)
     }
 
-    PrivacyContent(state = state, onAction = viewModel::onAction, modifier = modifier)
+    PrivacyContent(
+        state = state,
+        onAction = viewModel::onAction,
+        onBackupFirst = {
+            viewModel.onAction(PrivacyUiAction.CancelWipe)
+            navigator.push(Backup)
+        },
+        modifier = modifier,
+    )
 }
 
 /** Primer uso: tarea nueva y proceso nuevo, para que no quede nada en memoria. */
@@ -74,6 +85,7 @@ fun PrivacyContent(
     state: PrivacyUiState,
     onAction: (PrivacyUiAction) -> Unit,
     modifier: Modifier = Modifier,
+    onBackupFirst: () -> Unit = {},
 ) {
     val prompt = AuthPrompt(title = stringResource(R.string.privacy_auth_title))
     Column(
@@ -120,7 +132,7 @@ fun PrivacyContent(
             Text(stringResource(R.string.privacy_wipe), color = MaterialTheme.colorScheme.error)
         }
     }
-    WipeDialogs(state = state, prompt = prompt, onAction = onAction)
+    WipeDialogs(state = state, prompt = prompt, onAction = onAction, onBackupFirst = onBackupFirst)
 }
 
 @Composable
@@ -141,7 +153,12 @@ private fun SwitchRow(label: String, checked: Boolean, onCheckedChange: (Boolean
 }
 
 @Composable
-private fun WipeDialogs(state: PrivacyUiState, prompt: AuthPrompt, onAction: (PrivacyUiAction) -> Unit) {
+private fun WipeDialogs(
+    state: PrivacyUiState,
+    prompt: AuthPrompt,
+    onAction: (PrivacyUiAction) -> Unit,
+    onBackupFirst: () -> Unit,
+) {
     when (state.wipeStage) {
         WipeStage.NONE, WipeStage.DONE -> Unit
         WipeStage.WARNING -> AlertDialog(
@@ -153,7 +170,12 @@ private fun WipeDialogs(state: PrivacyUiState, prompt: AuthPrompt, onAction: (Pr
                     Text(stringResource(R.string.privacy_wipe_continue))
                 }
             },
-            dismissButton = { CancelButton(onAction) },
+            dismissButton = {
+                Row {
+                    TextButton(onClick = onBackupFirst) { Text(stringResource(R.string.privacy_wipe_backup_first)) }
+                    CancelButton(onAction)
+                }
+            },
         )
         WipeStage.CONFIRM_PHRASE -> AlertDialog(
             onDismissRequest = { onAction(PrivacyUiAction.CancelWipe) },

@@ -1,6 +1,8 @@
 package com.al3xiel.my_finances.feature.reports.ui
 
 import com.al3xiel.my_finances.core.MainDispatcherRule
+import com.al3xiel.my_finances.core.security.ExternalFlowGuard
+import com.al3xiel.my_finances.core.time.MonotonicClock
 import com.al3xiel.my_finances.domain.model.PartKind
 import com.al3xiel.my_finances.feature.movements.domain.usecase.MovementFixture
 import com.al3xiel.my_finances.feature.reports.domain.model.PartDetail
@@ -37,12 +39,13 @@ class ReportExportViewModelTest {
         }
     }
 
+    private val guard = ExternalFlowGuard(object : MonotonicClock { override fun nowMillis() = 0L })
     private val f = MovementFixture()
     private val reports = FakeReportRepository()
     private val texts = ReportExportTexts("T", "P", "N", "S", "C", "Tg", "A", "i", "o", "t", "r", "p", "u", "n", "m", "%", "in", "out", "tr", "or", "os", "es", "src", "tgt", "loans", "unid")
 
     private fun viewModel(sink: FakeFiles) =
-        ReportExportViewModel("2026-10-01", "2026-10-31", BuildReportDocumentsUseCase(reports, f.accounts, f.categories, f.tags, FakeOriginRepository(), f.sources), sink)
+        ReportExportViewModel("2026-10-01", "2026-10-31", BuildReportDocumentsUseCase(reports, f.accounts, f.categories, f.tags, FakeOriginRepository(), f.sources), sink, guard)
 
     private fun withData() {
         reports.parts = listOf(PartRow("p1", "bbva", "food", null, 1_250, false, 0, listOf("t1")))
@@ -119,5 +122,27 @@ class ReportExportViewModelTest {
         assertEquals(ExportPhase.PICKER_OPEN, vm.uiState.value.phase)
         vm.onAction(ReportExportUiAction.PickerResult("content://doc/3", texts))
         assertEquals(ExportPhase.DONE, vm.uiState.value.phase)
+    }
+
+    @Test fun `the lock guard is open only while the picker is`() {
+        withData()
+        val vm = viewModel(FakeFiles())
+        vm.onAction(ReportExportUiAction.Export)
+        vm.onAction(ReportExportUiAction.AcceptNotice)
+        assertFalse(guard.isActive())
+        vm.onAction(ReportExportUiAction.PickerOpened)
+        assertTrue(guard.isActive())
+        vm.onAction(ReportExportUiAction.PickerResult(null, texts))
+        assertFalse(guard.isActive())
+    }
+
+    @Test fun `a picked file also closes the lock guard`() {
+        withData()
+        val vm = viewModel(FakeFiles())
+        vm.onAction(ReportExportUiAction.Export)
+        vm.onAction(ReportExportUiAction.AcceptNotice)
+        vm.onAction(ReportExportUiAction.PickerOpened)
+        vm.onAction(ReportExportUiAction.PickerResult("content://doc/4", texts))
+        assertFalse(guard.isActive())
     }
 }

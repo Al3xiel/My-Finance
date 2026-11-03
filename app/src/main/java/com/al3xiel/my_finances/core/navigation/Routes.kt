@@ -18,6 +18,9 @@ sealed interface Route : NavKey
 @Serializable data object Privacy : Route
 @Serializable data object Settings : Route
 
+// Backup feature
+@Serializable data object Backup : Route
+
 // Movements feature (ids travel as text: a value class cannot be a route argument)
 @Serializable data class MovementDetail(val id: String) : Route
 /** La lista de Movimientos abierta desde un reporte (D37): fechas ISO e ids como texto; el ViewModel arma el filtro. */

@@ -6,12 +6,16 @@ import com.al3xiel.my_finances.data.database.AppDatabase
 import com.al3xiel.my_finances.data.projection.EventProjector
 import com.al3xiel.my_finances.data.projection.ProjectionStateEntity
 import com.al3xiel.my_finances.domain.model.event.AggregateType
+import com.al3xiel.my_finances.domain.model.event.BackupTimes
+import com.al3xiel.my_finances.domain.model.event.ChainRow
 import com.al3xiel.my_finances.domain.model.event.EventCodec
 import com.al3xiel.my_finances.domain.model.event.EventHasher
 import com.al3xiel.my_finances.domain.model.event.HashedFields
 import com.al3xiel.my_finances.domain.model.event.EventStore
 import com.al3xiel.my_finances.domain.model.event.NewEvent
 import com.al3xiel.my_finances.domain.model.event.StoredEvent
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
@@ -88,6 +92,23 @@ class EventStoreImpl @Inject constructor(
     override suspend fun readAll(): List<StoredEvent> = dao.all().map { it.toStored() }
 
     override suspend fun readAfter(sequence: Long): List<StoredEvent> = dao.after(sequence).map { it.toStored() }
+
+    override suspend fun readChainPage(afterSequence: Long, limit: Int): List<ChainRow> =
+        dao.page(afterSequence, limit).map { e ->
+            ChainRow(
+                e.sequence, e.hash,
+                HashedFields(
+                    e.previousHash, e.eventId, e.type, e.schemaVersion, e.aggregateType, e.aggregateId,
+                    e.correlationId, e.payload, e.occurredOn, e.recordedAt, e.appVersion,
+                ),
+            )
+        }
+
+    override suspend fun countNonSeed(sourceIds: List<String>, categoryIds: List<String>): Long =
+        dao.countNonSeed(sourceIds, categoryIds)
+
+    override fun observeBackupTimes(): Flow<BackupTimes> =
+        dao.observeBackupTimes().map { BackupTimes(it.firstEventAt, it.lastBackupAt) }
 
     override suspend fun history(aggregateType: AggregateType, aggregateId: String): List<StoredEvent> =
         dao.history(aggregateType.name, aggregateId).map { it.toStored() }

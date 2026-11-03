@@ -2,6 +2,7 @@ package com.al3xiel.my_finances.feature.reports.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.al3xiel.my_finances.core.security.ExternalFlowGuard
 import com.al3xiel.my_finances.feature.reports.domain.model.ReportPeriod
 import com.al3xiel.my_finances.feature.reports.domain.model.ReportExportTexts
 import com.al3xiel.my_finances.feature.reports.domain.repository.ReportFileRepository
@@ -55,6 +56,7 @@ class ReportExportViewModel @AssistedInject constructor(
     @Assisted("to") to: String,
     private val documents: BuildReportDocumentsUseCase,
     private val files: ReportFileRepository,
+    private val externalFlow: ExternalFlowGuard,
 ) : ViewModel() {
     @AssistedFactory
     interface Factory {
@@ -71,10 +73,18 @@ class ReportExportViewModel @AssistedInject constructor(
             is ReportExportUiAction.SetIncludeNotes -> _uiState.update { it.copy(includeNotes = action.include) }
             ReportExportUiAction.Export -> _uiState.update { it.copy(phase = ExportPhase.NOTICE) }
             ReportExportUiAction.AcceptNotice -> _uiState.update { it.copy(phase = ExportPhase.PICKING) }
-            ReportExportUiAction.PickerOpened -> _uiState.update { if (it.phase == ExportPhase.PICKING) it.copy(phase = ExportPhase.PICKER_OPEN) else it }
-            ReportExportUiAction.DismissNotice, ReportExportUiAction.Dismiss -> _uiState.update { it.copy(phase = ExportPhase.IDLE) }
-            is ReportExportUiAction.PickerResult ->
+            ReportExportUiAction.PickerOpened -> if (_uiState.value.phase == ExportPhase.PICKING) {
+                externalFlow.begin()
+                _uiState.update { it.copy(phase = ExportPhase.PICKER_OPEN) }
+            }
+            ReportExportUiAction.DismissNotice, ReportExportUiAction.Dismiss -> {
+                externalFlow.end()
+                _uiState.update { it.copy(phase = ExportPhase.IDLE) }
+            }
+            is ReportExportUiAction.PickerResult -> {
+                externalFlow.end()
                 if (action.uri == null) _uiState.update { it.copy(phase = ExportPhase.IDLE) } else write(action.uri, action.texts)
+            }
         }
     }
 

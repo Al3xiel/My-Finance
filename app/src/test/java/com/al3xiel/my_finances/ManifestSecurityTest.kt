@@ -42,6 +42,22 @@ class ManifestSecurityTest {
         assertTrue("permisos fuera de la lista: $declaredPermissions", allowed.containsAll(declaredPermissions))
     }
 
+    /** El manifiesto fusionado suma el de cada librería: una dependencia no puede colar `INTERNET` (docs/02). */
+    @Test
+    fun theMergedManifestsDoNotDeclareInternetEither() {
+        val merged = listOf(
+            "build/intermediates/merged_manifest/debug/processDebugMainManifest/AndroidManifest.xml",
+            "build/intermediates/merged_manifest/release/processReleaseMainManifest/AndroidManifest.xml",
+        ).map(::File).filter { it.exists() }
+        org.junit.Assume.assumeTrue("no merged manifest built yet", merged.isNotEmpty())
+        merged.forEach { file ->
+            val permissions = parse(file.path).getElementsByTagName("uses-permission").let { nodes ->
+                (0 until nodes.length).map { (nodes.item(it) as Element).getAttributeNS(androidNs, "name") }
+            }
+            assertFalse("${file.name}: $permissions", permissions.contains("android.permission.INTERNET"))
+        }
+    }
+
     @Test
     fun notificationsPermissionIsDeclaredForTheReminders() {
         assertTrue(declaredPermissions.contains("android.permission.POST_NOTIFICATIONS"))

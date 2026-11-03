@@ -32,7 +32,7 @@ class ProjectionVersionGuardTest {
     }
     private val clock = Clock.fixed(Instant.parse("2026-11-02T15:00:00Z"), ZoneOffset.UTC)
     private val replay = ReplayProjectionsUseCase(store, rebuilder, SequentialIdGenerator(), clock)
-    private val guard = ProjectionVersionGuard(versions, store, replay)
+    private val guard = ProjectionVersionGuard(versions, store, replay, FakeRestoreMarker())
 
     private suspend fun withEvents() {
         store.append("c0", listOf(NewEvent(AccountRenamed(AccountId("a1"), "x"), LocalDate.of(2026, 11, 1))))

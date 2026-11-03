@@ -43,7 +43,7 @@ class SeedInitializerTest {
     }
 
     private fun initializer(dispatcher: kotlinx.coroutines.CoroutineDispatcher) = SeedInitializer(
-        ProjectionVersionGuard(versions, store, ReplayProjectionsUseCase(store, rebuilder, ids, clock)),
+        ProjectionVersionGuard(versions, store, ReplayProjectionsUseCase(store, rebuilder, ids, clock), com.al3xiel.my_finances.domain.usecase.FakeRestoreMarker()),
         SeedCatalogUseCase(EventRecorder(store, ids, clock), store),
         dispatcher,
     )

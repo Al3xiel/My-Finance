@@ -25,7 +25,7 @@
 | Financieros | Saldos, montos, cuentas (alias "BBVA", "BCP"), movimientos | **Alta** | BD cifrada |
 | Terceros | Nombres o alias de personas (mamá, pareja) | **Alta** (datos personales de terceros) | BD cifrada |
 | Notas libres | Texto que escribe el usuario | Alta | BD cifrada |
-| Preferencias | Tema, frecuencia de recordatorio, último respaldo, seguridad (bloqueo, minutos, pantalla segura, ocultar montos) | Baja | DataStore |
+| Preferencias | Tema, recordatorio de respaldo (activado y cada cuántos días), seguridad (bloqueo, minutos, pantalla segura, ocultar montos) | Baja | DataStore |
 | Clave de cifrado | Clave de la BD | **Crítica** | Android Keystore (envuelta), nunca en texto plano |
 
 **No se guarda nunca**: números de cuenta o de tarjeta completos, CCI, claves bancarias, tokens, DNI, ubicación ni contactos del teléfono. Para personas, se recomienda usar alias ("Mamá"), no nombres completos.
@@ -114,8 +114,8 @@
 |---|---|---|---|
 | Compartir rendición | Detalle de gastos de un cúmulo/periodo + total pendiente | Imagen PNG o PDF | El usuario elige app destino (Intent nativo). Vista previa antes de enviar. Sin saldos de cuentas. |
 | Exportar reporte | Movimientos / reportes filtrados | CSV o PDF | Aviso: "este archivo no está cifrado". |
-| Respaldo | Registro completo de eventos + metadatos | Archivo `.fbak` (JSON comprimido y cifrado AES-256-GCM, clave derivada de contraseña con PBKDF2/Argon2) | Contraseña obligatoria; destino elegido con Storage Access Framework. |
-| Restaurar | Importa eventos, verifica hashes, reproduce proyecciones | `.fbak` | Requiere contraseña; muestra resumen antes de reemplazar. |
+| Respaldo | Registro completo de eventos + metadatos | Archivo `.fbak` (líneas JSON en gzip, cifrado AES-256-GCM en bloques de 64 KiB; clave por PBKDF2-HMAC-SHA256, 600 000 iteraciones, sal de 16 bytes en la cabecera) | Contraseña obligatoria (≥ 10 caracteres, doble ingreso, nunca se guarda); destino elegido con `CreateDocument` (SAF); se relee y verifica antes de registrar `BackupCreated`; pide re-autenticación si el bloqueo está activo (D48). |
+| Restaurar | Importa eventos a una base de staging, verifica hashes, reproduce proyecciones | `.fbak` | Solo sobre una base sin datos propios (D44); requiere contraseña; muestra un resumen sin montos ni nombres; nada toca la base real hasta verificar todo; reinicia la app (D49). |
 | Exportar diagnóstico | Eventos, asientos y proyecciones del alcance de una conciliación (ver `04-modelo-datos.md` §3.3.1) | `.fdiag` (ZIP: PDF + CSV + JSONL + JSON) | Anonimizado por defecto; contraseña opcional; vista previa de qué se incluye; queda registrado con `DiagnosticExportCreated`. |
 | Abrir diagnóstico | Paquete recibido de otra persona | `.fdiag` | Se importa en una BD **separada** y de solo lectura; nunca se mezcla con los datos propios; borrable. |
 | Exportar diccionario | Seudónimo → nombre real (y notas elegidas) de un paquete ya exportado | `.fkey` (JSON cifrado) | Solo tras la auditoría, desde la misma conciliación; parcial por defecto; contraseña obligatoria; queda registrado con `DiagnosticDictionaryExported`. |
@@ -138,7 +138,13 @@
 - RX3. CSV: una fila por parte de gasto, coma, importes con punto decimal, UTF-8 con BOM; las celdas que empiezan con `=`, `+`, `-`, `@`, tabulador o retorno se prefijan con `'`; comillas y saltos de línea escapados; las notas solo si el usuario lo marca.
 - RX4. El archivo ignora "ocultar montos" (afecta solo a las pantallas); nada del contenido va a logs.
 
-**Recordatorio de respaldo**: WorkManager periódico; notificación si pasaron más de N días (configurable, por defecto 15) desde el último respaldo exitoso.
+**Reglas del respaldo (`.fbak`)**:
+- BK1. Cabecera en claro y autenticada (magic, versión, KDF, sal, prefijo de nonce); datos en bloques GCM de 64 KiB con nonce = prefijo aleatorio + contador y marca de último bloque (D45).
+- BK2. Entrada no confiable: se validan tamaño del archivo, iteraciones del KDF, cantidad de eventos, largo de línea y bytes descomprimidos antes y durante el descifrado (D49).
+- BK3. La restauración importa a `finances-restore.db` (misma clave y esquema), verifica la cadena fila a fila y solo entonces intercambia el archivo; si el proceso muere a mitad, se revierte al reabrir (D44, D49).
+- BK4. El respaldo no incluye DataStore, contraseñas ni la clave de la base. Nada del contenido va a logs ni a mensajes de error.
+
+**Recordatorio de respaldo**: apagado por defecto; Worker `backup_reminder`; avisa si pasaron más de N días (por defecto 15) desde el último respaldo derivado de los eventos (`BackupCreated`/`BackupRestored`; sin respaldo cuenta desde el primer evento) y repite cada 7 días; notificación genérica; `POST_NOTIFICATIONS` se pide al activarlo (D47).
 
 ---
 
