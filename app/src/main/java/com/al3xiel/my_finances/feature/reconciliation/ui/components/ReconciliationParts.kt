@@ -11,6 +11,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import com.al3xiel.my_finances.R
+import com.al3xiel.my_finances.core.designsystem.BadgeStatus
 import com.al3xiel.my_finances.core.designsystem.MoneySign
 import com.al3xiel.my_finances.core.designsystem.MoneyText
 import com.al3xiel.my_finances.core.money.CurrencyCode
@@ -43,6 +44,12 @@ internal fun ReconciliationCause.labelRes() = when (this) {
     ReconciliationCause.RECORDING_ERROR -> R.string.reconciliation_cause_recording_error
     ReconciliationCause.SUSPECTED_APP_ERROR -> R.string.reconciliation_cause_suspected_app_error
     ReconciliationCause.UNKNOWN -> R.string.reconciliation_cause_unknown
+}
+
+/** Tabla de estados (§7): abierta y cancelada son neutras; resuelta ya está. `needsReview` suma su propia insignia. */
+internal fun ReconciliationStatus.badge() = when (this) {
+    ReconciliationStatus.OPEN, ReconciliationStatus.CANCELLED -> BadgeStatus.PENDING
+    ReconciliationStatus.RESOLVED -> BadgeStatus.RECONCILED
 }
 
 internal fun ReconciliationStatus.labelRes() = when (this) {

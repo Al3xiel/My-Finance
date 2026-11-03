@@ -22,10 +22,14 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.al3xiel.my_finances.R
-import com.al3xiel.my_finances.core.designsystem.EditorFooter
+import com.al3xiel.my_finances.ui.theme.LocalSpacing
+import com.al3xiel.my_finances.ui.theme.MyfinancesTheme
+import com.al3xiel.my_finances.core.designsystem.EditorLayout
 import com.al3xiel.my_finances.core.designsystem.EmptyState
 import com.al3xiel.my_finances.core.designsystem.LocalHideAmounts
 import com.al3xiel.my_finances.core.designsystem.MoneyInput
+import com.al3xiel.my_finances.core.designsystem.ScreenScaffold
+import com.al3xiel.my_finances.core.designsystem.SectionCard
 import com.al3xiel.my_finances.core.money.CurrencyCode
 import com.al3xiel.my_finances.core.money.Money
 import com.al3xiel.my_finances.domain.model.AccountId
@@ -57,32 +61,35 @@ fun ReconciliationStartContent(
     modifier: Modifier = Modifier,
 ) {
     if (state.notFound) {
-        EmptyState(title = stringResource(R.string.error_not_found), body = "", modifier = modifier)
+        ScreenScaffold(title = "", modifier = modifier) { padding ->
+            EmptyState(title = stringResource(R.string.error_not_found), body = "", modifier = Modifier.padding(padding))
+        }
         return
     }
     val appBalance = state.appBalance ?: return
-    Column(
-        modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Text(stringResource(R.string.reconciliation_start_title, state.accountName.orEmpty()), style = MaterialTheme.typography.titleLarge)
-        Text(stringResource(R.string.reconciliation_start_hint), color = MaterialTheme.colorScheme.onSurfaceVariant)
-        LabeledMoney(stringResource(R.string.reconciliation_start_app_balance), appBalance)
-        MoneyInput(
-            value = state.realText,
-            onValueChange = { onAction(ReconciliationStartUiAction.EditReal(it)) },
-            label = stringResource(R.string.reconciliation_start_real),
-            currency = state.currency,
-            allowNegative = true,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        state.difference?.let {
-            Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                Text(stringResource(R.string.reconciliation_start_difference), style = MaterialTheme.typography.bodyMedium)
-                DifferenceText(it, style = MaterialTheme.typography.titleMedium)
+    ScreenScaffold(title = stringResource(R.string.reconciliation_start_title, state.accountName.orEmpty()), modifier = modifier) { padding ->
+        EditorLayout(error = state.error, onSave = { onAction(ReconciliationStartUiAction.Confirm) }, modifier = Modifier.padding(padding)) {
+            Text(stringResource(R.string.reconciliation_start_hint), color = MaterialTheme.colorScheme.onSurfaceVariant)
+            MoneyInput(
+                value = state.realText,
+                onValueChange = { onAction(ReconciliationStartUiAction.EditReal(it)) },
+                label = stringResource(R.string.reconciliation_start_real),
+                currency = state.currency,
+                allowNegative = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            SectionCard {
+                Column(modifier = Modifier.padding(LocalSpacing.current.lg), verticalArrangement = Arrangement.spacedBy(LocalSpacing.current.sm)) {
+                    LabeledMoney(stringResource(R.string.reconciliation_start_app_balance), appBalance)
+                    state.difference?.let {
+                        Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                            Text(stringResource(R.string.reconciliation_start_difference), style = MaterialTheme.typography.bodyMedium)
+                            DifferenceText(it, style = MaterialTheme.typography.titleMedium)
+                        }
+                    }
+                }
             }
         }
-        EditorFooter(error = state.error, onSave = { onAction(ReconciliationStartUiAction.Confirm) })
     }
 }
 
@@ -96,7 +103,8 @@ private val previewState = ReconciliationStartUiState(
 
 @Preview(showBackground = true)
 @Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(showBackground = true, fontScale = 2f)
 @Composable
 private fun ReconciliationStartContentPreview() {
-    CompositionLocalProvider(LocalHideAmounts provides false) { ReconciliationStartContent(previewState, {}) }
+    MyfinancesTheme { CompositionLocalProvider(LocalHideAmounts provides false) { ReconciliationStartContent(previewState, {}) } }
 }

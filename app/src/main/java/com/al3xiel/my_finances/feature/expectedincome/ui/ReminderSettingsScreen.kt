@@ -29,6 +29,9 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.al3xiel.my_finances.R
+import com.al3xiel.my_finances.core.designsystem.SectionCard
+import com.al3xiel.my_finances.core.designsystem.SectionDivider
+import com.al3xiel.my_finances.core.designsystem.SectionRow
 import com.al3xiel.my_finances.ui.theme.MyfinancesTheme
 
 /** La sección de recordatorios de ingresos esperados dentro de Ajustes (S72); la monta `SettingsSectionContributor`. */
@@ -63,19 +66,17 @@ fun ReminderSettingsContent(
     hasPermission: () -> Boolean,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(stringResource(R.string.settings_reminders), style = MaterialTheme.typography.titleMedium)
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(stringResource(R.string.settings_reminders_switch), modifier = Modifier.weight(1f))
-            Switch(checked = state.enabled, onCheckedChange = { onAction(ReminderSettingsUiAction.Toggle(it, hasPermission())) })
-        }
-        Text(
-            stringResource(R.string.settings_reminders_hint),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+    SectionCard(title = stringResource(R.string.settings_reminders), modifier = modifier.padding(16.dp)) {
+        SectionRow(
+            headline = stringResource(R.string.settings_reminders_switch),
+            supporting = stringResource(R.string.settings_reminders_hint),
+            trailing = {
+                Switch(checked = state.enabled, onCheckedChange = { onAction(ReminderSettingsUiAction.Toggle(it, hasPermission())) })
+            },
         )
         if (state.permissionDenied) {
-            Text(stringResource(R.string.settings_reminders_denied), color = MaterialTheme.colorScheme.error)
+            SectionDivider()
+            SectionRow(headline = stringResource(R.string.settings_reminders_denied))
         }
     }
     if (state.showExplanation) {
@@ -99,6 +100,7 @@ fun ReminderSettingsContent(
 
 @Preview(showBackground = true)
 @Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(showBackground = true, fontScale = 2f)
 @Composable
 private fun ReminderSettingsContentPreview() {
     MyfinancesTheme { ReminderSettingsContent(ReminderSettingsUiState(enabled = true), onAction = {}, hasPermission = { true }) }
