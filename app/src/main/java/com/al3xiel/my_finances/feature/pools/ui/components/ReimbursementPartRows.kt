@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -15,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import com.al3xiel.my_finances.R
 import com.al3xiel.my_finances.core.designsystem.MoneyInput
 import com.al3xiel.my_finances.core.designsystem.MoneyText
+import com.al3xiel.my_finances.core.designsystem.SectionCard
 import com.al3xiel.my_finances.core.designsystem.dayText
 import com.al3xiel.my_finances.core.money.CurrencyCode
 import com.al3xiel.my_finances.core.money.Money
@@ -29,25 +31,28 @@ import java.time.LocalDate
 
 @Composable
 fun PendingPartsSection(state: ReimbursementEditorUiState, onAction: (ReimbursementEditorUiAction) -> Unit) {
-    Text(stringResource(R.string.reimbursement_parts), style = MaterialTheme.typography.titleMedium)
-    if (state.lines.isEmpty()) {
-        Text(stringResource(R.string.reimbursement_nothing_pending), color = MaterialTheme.colorScheme.onSurfaceVariant)
-        return
-    }
-    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text(stringResource(R.string.reimbursement_pending_total), modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurfaceVariant)
-        MoneyText(state.pendingTotal)
-    }
-    if (state.exceedsPending) {
-        Text(stringResource(R.string.error_exceeds_pending), color = MaterialTheme.colorScheme.error)
-    }
-    state.lines.forEach { row ->
-        PendingPartRow(row, manual = state.strategy == AllocationStrategy.MANUAL, onAction = onAction)
-    }
-    if (state.strategy == AllocationStrategy.MANUAL) {
-        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text(stringResource(R.string.reimbursement_unassigned), modifier = Modifier.weight(1f))
-            MoneyText(state.unassigned)
+    SectionCard(title = stringResource(R.string.reimbursement_parts)) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            if (state.lines.isEmpty()) {
+                Text(stringResource(R.string.reimbursement_nothing_pending), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                return@Column
+            }
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.reimbursement_pending_total), modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                MoneyText(state.pendingTotal)
+            }
+            if (state.exceedsPending) {
+                Text(stringResource(R.string.error_exceeds_pending), color = MaterialTheme.colorScheme.error)
+            }
+            state.lines.forEach { row ->
+                PendingPartRow(row, manual = state.strategy == AllocationStrategy.MANUAL, onAction = onAction)
+            }
+            if (state.strategy == AllocationStrategy.MANUAL) {
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text(stringResource(R.string.reimbursement_unassigned), modifier = Modifier.weight(1f))
+                    MoneyText(state.unassigned)
+                }
+            }
         }
     }
 }

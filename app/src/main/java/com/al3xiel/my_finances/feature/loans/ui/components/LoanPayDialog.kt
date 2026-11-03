@@ -1,6 +1,8 @@
 package com.al3xiel.my_finances.feature.loans.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.AlertDialog
@@ -36,7 +38,7 @@ fun LoanPayDialogContent(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.loan_detail_pay_title)) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(modifier = Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 AccountAmountFields(
                     accountLabel = stringResource(R.string.loan_detail_pay_account),
                     accountOptions = accountOptions,
