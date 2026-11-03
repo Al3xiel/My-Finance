@@ -68,7 +68,6 @@
     <string name="home_fund_of">de</string>
     <string name="home_fund_consumed_estimated">Consumido (estimado)</string>
     <string name="home_loading">Cargando Inicio</string>
-    <string name="home_next_income_overdue">Vencido</string>
     <string name="home_next_income_range">%1$s – %2$s</string>
     <string name="home_alert_needs_review">Una conciliación resuelta pide revisión.</string>
     <string name="home_alert_open_reconciliation">Tienes una conciliación abierta.</string>
@@ -865,6 +864,7 @@
     <string name="quick_entry_conflict_funds">La línea nombra dos fondos. Elige uno.</string>
     <string name="quick_entry_conflict_sources">La línea nombra dos fuentes de ingreso. Elige una.</string>
     <string name="scaffold_back">Volver</string>
+    <string name="onboarding_step">Paso %1$d de %2$d</string>
     <string name="status_pending">Pendiente</string>
     <string name="status_overdue">Vencido</string>
     <string name="status_needs_review">Necesita revisión</string>

@@ -9,11 +9,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -25,6 +23,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.al3xiel.my_finances.R
+import com.al3xiel.my_finances.core.designsystem.AppIcons
+import com.al3xiel.my_finances.core.designsystem.PillButton
+import com.al3xiel.my_finances.core.designsystem.PillStyle
 import com.al3xiel.my_finances.core.designsystem.MoneyInput
 import com.al3xiel.my_finances.core.designsystem.message
 import com.al3xiel.my_finances.domain.model.BusinessError
@@ -64,6 +65,7 @@ fun AccountsSetupContent(
                         onValueChange = { onAction(AccountsSetupUiAction.EditName(row.key, it)) },
                         label = { Text(stringResource(R.string.onboarding_account_name)) },
                         singleLine = true,
+                        shape = MaterialTheme.shapes.medium,
                         modifier = Modifier.weight(1f),
                     )
                     MoneyInput(
@@ -72,15 +74,20 @@ fun AccountsSetupContent(
                         label = stringResource(R.string.onboarding_account_balance),
                         modifier = Modifier.weight(1f),
                     )
-                    TextButton(onClick = { onAction(AccountsSetupUiAction.Remove(row.key)) }) {
-                        Text(stringResource(R.string.onboarding_account_remove))
-                    }
+                    PillButton(
+                        stringResource(R.string.onboarding_account_remove),
+                        onClick = { onAction(AccountsSetupUiAction.Remove(row.key)) },
+                        style = PillStyle.TEXT,
+                    )
                 }
             }
             item {
-                TextButton(onClick = { onAction(AccountsSetupUiAction.Add) }) {
-                    Text(stringResource(R.string.onboarding_account_add))
-                }
+                PillButton(
+                    stringResource(R.string.onboarding_account_add),
+                    onClick = { onAction(AccountsSetupUiAction.Add) },
+                    style = PillStyle.TONAL,
+                    icon = AppIcons.Add,
+                )
             }
         }
         state.error?.let { error ->
@@ -91,13 +98,12 @@ fun AccountsSetupContent(
             }
             Text(text, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
         }
-        Button(
+        PillButton(
+            stringResource(R.string.onboarding_accounts_create),
             onClick = { onAction(AccountsSetupUiAction.Submit) },
             enabled = !state.saving,
             modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-        ) {
-            Text(stringResource(R.string.onboarding_accounts_create))
-        }
+        )
     }
 }
 

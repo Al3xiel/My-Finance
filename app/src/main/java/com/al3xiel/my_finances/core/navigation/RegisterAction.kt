@@ -1,6 +1,8 @@
 package com.al3xiel.my_finances.core.navigation
 
+import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
+import com.al3xiel.my_finances.core.designsystem.AppIcons
 import javax.inject.Inject
 
 data class RegisterAction(
@@ -8,6 +10,7 @@ data class RegisterAction(
     @StringRes val labelRes: Int,
     val route: Route,
     val order: Int,
+    @DrawableRes val iconRes: Int = AppIcons.Add,
 )
 
 fun interface RegisterActionContributor {

@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -17,8 +18,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.al3xiel.my_finances.R
+import com.al3xiel.my_finances.core.designsystem.BadgeStatus
 import com.al3xiel.my_finances.core.designsystem.LocalHideAmounts
 import com.al3xiel.my_finances.core.designsystem.MoneyText
+import com.al3xiel.my_finances.core.designsystem.MoneyVariant
+import com.al3xiel.my_finances.core.designsystem.StatusBadge
 import com.al3xiel.my_finances.core.designsystem.dayText
 import com.al3xiel.my_finances.core.money.CurrencyCode
 import com.al3xiel.my_finances.core.money.Money
@@ -33,7 +37,12 @@ import java.time.LocalDate
 /** El próximo ingreso esperado: el vencido más antiguo o el programado más cercano. */
 @Composable
 fun NextIncomeCard(income: ExpectedIncome, overdue: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    Card(onClick = onClick, modifier = modifier.fillMaxWidth().heightIn(min = 64.dp)) {
+    Card(
+        onClick = onClick,
+        modifier = modifier.fillMaxWidth().heightIn(min = 64.dp),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+    ) {
         Row(
             modifier = Modifier.padding(16.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -44,15 +53,9 @@ fun NextIncomeCard(income: ExpectedIncome, overdue: Boolean, onClick: () -> Unit
                     stringResource(R.string.home_next_income_range, dayText(income.range.from), dayText(income.range.to)),
                     style = MaterialTheme.typography.bodyMedium,
                 )
-                if (overdue) {
-                    Text(
-                        stringResource(R.string.home_next_income_overdue),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                }
+                StatusBadge(if (overdue) BadgeStatus.OVERDUE else BadgeStatus.PENDING, Modifier.padding(top = 4.dp))
             }
-            MoneyText(income.estimated, style = MaterialTheme.typography.titleMedium)
+            MoneyText(income.estimated, variant = MoneyVariant.NORMAL)
         }
     }
 }

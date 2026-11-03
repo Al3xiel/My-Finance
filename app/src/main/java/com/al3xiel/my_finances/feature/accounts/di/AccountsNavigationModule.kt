@@ -2,6 +2,7 @@ package com.al3xiel.my_finances.feature.accounts.di
 
 import androidx.navigation3.runtime.EntryProviderScope
 import com.al3xiel.my_finances.R
+import com.al3xiel.my_finances.core.designsystem.AppIcons
 import com.al3xiel.my_finances.core.navigation.AccountDetail
 import com.al3xiel.my_finances.core.navigation.Accounts
 import com.al3xiel.my_finances.core.navigation.IncomeSources
@@ -58,7 +59,7 @@ object AccountsNavigationModule {
     @Provides
     @IntoSet
     fun registerActions(): RegisterActionContributor = RegisterActionContributor {
-        listOf(RegisterAction("transfer", R.string.register_action_transfer, TransferEditor(), order = 30))
+        listOf(RegisterAction("transfer", R.string.register_action_transfer, TransferEditor(), order = 30, iconRes = AppIcons.ActionTransfer))
     }
 
     @Provides

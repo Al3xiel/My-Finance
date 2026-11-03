@@ -2,6 +2,7 @@ package com.al3xiel.my_finances.feature.movements.di
 
 import androidx.navigation3.runtime.EntryProviderScope
 import com.al3xiel.my_finances.R
+import com.al3xiel.my_finances.core.designsystem.AppIcons
 import com.al3xiel.my_finances.core.navigation.ExpenseEditor
 import com.al3xiel.my_finances.core.navigation.IncomeEditor
 import com.al3xiel.my_finances.core.navigation.LocalNavigator
@@ -90,7 +91,7 @@ object MovementsNavigationModule {
     @IntoSet
     fun registerActions(): RegisterActionContributor = RegisterActionContributor {
         listOf(
-            RegisterAction("expense", R.string.register_action_expense, ExpenseEditor(), order = 10),
+            RegisterAction("expense", R.string.register_action_expense, ExpenseEditor(), order = 10, iconRes = AppIcons.ActionExpense),
             RegisterAction("income", R.string.register_action_income, IncomeEditor(), order = 20),
         )
     }

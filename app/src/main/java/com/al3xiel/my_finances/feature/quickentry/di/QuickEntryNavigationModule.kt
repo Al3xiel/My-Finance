@@ -2,6 +2,7 @@ package com.al3xiel.my_finances.feature.quickentry.di
 
 import androidx.navigation3.runtime.EntryProviderScope
 import com.al3xiel.my_finances.R
+import com.al3xiel.my_finances.core.designsystem.AppIcons
 import com.al3xiel.my_finances.core.navigation.LocalNavigator
 import com.al3xiel.my_finances.core.navigation.QuickEntry
 import com.al3xiel.my_finances.core.navigation.RegisterAction
@@ -35,6 +36,6 @@ object QuickEntryNavigationModule {
     @Provides
     @IntoSet
     fun registerActions(): RegisterActionContributor = RegisterActionContributor {
-        listOf(RegisterAction("quick_entry", R.string.register_action_quick_entry, QuickEntry, order = 90))
+        listOf(RegisterAction("quick_entry", R.string.register_action_quick_entry, QuickEntry, order = 90, iconRes = AppIcons.ActionQuickEntry))
     }
 }

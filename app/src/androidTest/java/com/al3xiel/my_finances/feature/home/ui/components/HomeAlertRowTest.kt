@@ -12,6 +12,7 @@ import com.al3xiel.my_finances.R
 import com.al3xiel.my_finances.domain.model.ExpectedIncomeId
 import com.al3xiel.my_finances.domain.model.ReconciliationId
 import com.al3xiel.my_finances.feature.home.domain.model.HomeAlert
+import com.al3xiel.my_finances.ui.theme.MyfinancesTheme
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -47,5 +48,21 @@ class HomeAlertRowTest {
         rule.onNodeWithText(string(R.string.home_alert_backup_overdue)).performClick()
 
         assertEquals(listOf(alert), tapped)
+    }
+
+    @Test
+    fun eachAlertCarriesAStatusBadgeWithText() {
+        val cases = listOf(
+            HomeAlert.NeedsReview(ReconciliationId("r")) to "Necesita revisión",
+            HomeAlert.OpenReconciliation(ReconciliationId("r")) to "Pendiente",
+            HomeAlert.OverdueIncome(ExpectedIncomeId("e")) to "Vencido",
+            HomeAlert.BackupOverdue to "Vencido",
+        )
+        var current by mutableStateOf<HomeAlert>(cases.first().first)
+        rule.setContent { MyfinancesTheme { HomeAlertRow(current, onClick = {}) } }
+        for ((alert, badge) in cases) {
+            current = alert
+            rule.onNodeWithText(badge).assertIsDisplayed()
+        }
     }
 }

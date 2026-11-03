@@ -51,6 +51,8 @@
 **FAB "Registrar" (+)**: visible en Inicio, Movimientos y Por cobrar. Abre un *bottom sheet*:
 `Gasto` · `Ingreso` · `Transferencia` · `Reembolso recibido` · `Registro rápido (texto)`
 
+La barra inferior usa el indicador en píldora de Material 3 sobre `surfaceContainer`. El FAB es redondeado (16 dp) en el contenedor primario. La hoja muestra cada acción con su icono en un `IconBadge` y el texto, en filas de al menos 56 dp. «Más» es una lista agrupada en una `SectionCard`.
+
 El FAB solo aparece en la raíz de esas pestañas (no sobre un detalle apilado) y se oculta si ninguna feature aportó acciones. **Atrás** desde la raíz de una pestaña distinta de Inicio vuelve a Inicio; desde la raíz de Inicio sale de la app.
 
 ---
@@ -75,7 +77,7 @@ Orden de arranque: `AppLock` → `Onboarding` → `MainScaffold`. El flujo no ti
 
 | ID | Pantalla | Ruta | Contenido | Acciones → evento |
 |---|---|---|---|---|
-| S10 | Inicio | `Home` | **4 indicadores** (Saldo en cuentas, Apartado en fondos, Disponible libre —en rojo y con aviso si es negativo—, Por cobrar) · una fila compacta por cuenta con su saldo · fondos activos con barra de lo consumido (rótulo «estimado» solo en los modos estimados) · próximo ingreso esperado (el vencido más antiguo; si no, el programado más cercano; solo `PEN`) · hasta 3 alertas derivadas y no descartables, en este orden: `needsReview`, conciliación abierta, ingreso vencido, respaldo vencido · estados vacíos por bloque (sin cuentas, sin fondos, sin esperados) | Tocar cuenta → detalle de cuenta; fondo → detalle de fondo; `needsReview` y conciliación abierta → `ReconciliationDetail`; ingreso vencido → `IncomeEditor` prellenado desde el esperado; respaldo vencido → `Backup` · ojo en el encabezado alterna `hideAmounts` (persiste; oculta los cuatro números y las filas) |
+| S10 | Inicio | `Home` | **4 indicadores**: el Saldo en cuentas es el héroe (único número grande, D74) y Apartado en fondos, Disponible libre —en rojo y con aviso si es negativo— y Por cobrar van en tarjetas pequeñas · cuentas en un carrusel horizontal de tarjetas · fondos activos con barra de lo consumido (rótulo «estimado» solo en los modos estimados) · próximo ingreso esperado (el vencido más antiguo; si no, el programado más cercano; solo `PEN`) · hasta 3 alertas derivadas y no descartables, en este orden: `needsReview`, conciliación abierta, ingreso vencido, respaldo vencido · estados vacíos por bloque (sin cuentas, sin fondos, sin esperados) | Tocar cuenta → detalle de cuenta; fondo → detalle de fondo; `needsReview` y conciliación abierta → `ReconciliationDetail`; ingreso vencido → `IncomeEditor` prellenado desde el esperado; respaldo vencido → `Backup` · ojo en el encabezado alterna `hideAmounts` (persiste; oculta los cuatro números y las filas) |
 
 ### 3.3 Movimientos
 

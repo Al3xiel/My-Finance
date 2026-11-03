@@ -3,13 +3,18 @@ package com.al3xiel.my_finances.feature.home.ui.components
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.unit.height
 import androidx.test.platform.app.InstrumentationRegistry
 import com.al3xiel.my_finances.R
 import com.al3xiel.my_finances.core.designsystem.LocalHideAmounts
 import com.al3xiel.my_finances.core.money.CurrencyCode
 import com.al3xiel.my_finances.core.money.Money
 import com.al3xiel.my_finances.core.money.MoneyFormatter
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
@@ -54,5 +59,24 @@ class HomeIndicatorsTest {
         rule.onNodeWithText(MoneyFormatter.format(pen(15_000))).assertDoesNotExist()
         rule.onNodeWithText(MoneyFormatter.format(pen(85_000))).assertDoesNotExist()
         rule.onNodeWithText(MoneyFormatter.format(pen(12_345))).assertDoesNotExist()
+    }
+
+    @Test
+    fun theBalanceIsTheHeroAndTheOthersAreSmaller() {
+        show(free = 85_000)
+
+        val hero = rule.onNodeWithText(MoneyFormatter.format(pen(100_000))).getUnclippedBoundsInRoot().height
+        val small = rule.onNodeWithText(MoneyFormatter.format(pen(15_000))).getUnclippedBoundsInRoot().height
+        assertTrue("el héroe debía ser mayor: $hero vs $small", hero > small)
+    }
+
+    @Test
+    fun aNegativeTotalBalanceKeepsItsSign() {
+        rule.setContent {
+            CompositionLocalProvider(LocalHideAmounts provides false) {
+                HomeIndicators(accountsBalance = pen(-30_000), reserved = pen(0), freeAvailable = pen(-30_000), receivable = pen(0))
+            }
+        }
+        rule.onAllNodesWithText(MoneyFormatter.format(pen(-30_000))).onFirst().assertIsDisplayed()
     }
 }

@@ -8,9 +8,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -31,8 +34,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.al3xiel.my_finances.R
+import com.al3xiel.my_finances.core.designsystem.AccountTile
 import com.al3xiel.my_finances.core.designsystem.AppIcons
-import com.al3xiel.my_finances.core.designsystem.AccountCard
 import com.al3xiel.my_finances.core.designsystem.LocalHideAmounts
 import com.al3xiel.my_finances.core.designsystem.MoneyText
 import com.al3xiel.my_finances.core.money.CurrencyCode
@@ -94,7 +97,7 @@ private fun HomeHeader(hidden: Boolean, onToggle: () -> Unit) {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(stringResource(R.string.home_title), style = MaterialTheme.typography.titleLarge)
+        Text(stringResource(R.string.home_title), style = MaterialTheme.typography.headlineMedium)
         IconButton(onClick = onToggle) {
             val label = stringResource(if (hidden) R.string.home_show_amounts else R.string.home_hide_amounts)
             androidx.compose.material3.Icon(
@@ -129,7 +132,11 @@ private fun HomeList(
         if (summary.accounts.isEmpty()) {
             item { EmptyLine(R.string.home_empty_accounts) }
         } else {
-            items(summary.accounts, key = { it.account.id.value }) { line -> AccountRow(line, onOpenAccount) }
+            item {
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(summary.accounts, key = { it.account.id.value }) { line -> AccountRow(line, onOpenAccount) }
+                }
+            }
         }
         item { SectionTitle(R.string.home_section_funds) }
         if (summary.funds.isEmpty()) {
@@ -160,7 +167,7 @@ private fun EmptyLine(res: Int) {
 
 @Composable
 private fun AccountRow(line: AccountWithBalance, onOpenAccount: (AccountId) -> Unit) {
-    AccountCard(
+    AccountTile(
         name = line.account.name,
         balance = Money(line.balanceMinor, line.account.currency),
         onClick = { onOpenAccount(line.account.id) },
@@ -172,7 +179,12 @@ private fun AccountRow(line: AccountWithBalance, onOpenAccount: (AccountId) -> U
 private fun HomeFundRow(overview: FundOverview, onClick: () -> Unit) {
     val consumed = HomeFundRules.consumed(overview)
     val fraction = HomeFundRules.fraction(consumed, overview.fund.allocated)
-    Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+    ) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(overview.fund.name, style = MaterialTheme.typography.titleMedium)
             // La barra es decorativa: las cifras de abajo dicen lo mismo.

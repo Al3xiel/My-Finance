@@ -16,12 +16,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -36,6 +34,8 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.al3xiel.my_finances.R
+import com.al3xiel.my_finances.core.designsystem.PillButton
+import com.al3xiel.my_finances.core.designsystem.PillStyle
 import com.al3xiel.my_finances.feature.backup.ui.INTERVAL_OPTIONS
 import com.al3xiel.my_finances.ui.theme.MyfinancesTheme
 
@@ -106,14 +106,13 @@ fun BackupSetupContent(
                 }
             }
         }
-        TextButton(onClick = onOpenBackup) { Text(stringResource(R.string.onboarding_backup_open)) }
-        Button(
+        PillButton(stringResource(R.string.onboarding_backup_open), onClick = onOpenBackup, style = PillStyle.TEXT)
+        PillButton(
+            stringResource(R.string.onboarding_finish),
             onClick = { onAction(BackupSetupUiAction.Finish) },
             enabled = !state.finished,
             modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(stringResource(R.string.onboarding_finish))
-        }
+        )
     }
 
     if (state.showExplanation) {
@@ -122,9 +121,7 @@ fun BackupSetupContent(
             title = { Text(stringResource(R.string.backup_reminder_explanation_title)) },
             text = { Text(stringResource(R.string.backup_reminder_explanation)) },
             confirmButton = {
-                TextButton(onClick = { onAction(BackupSetupUiAction.AcceptExplanation) }) {
-                    Text(stringResource(R.string.backup_reminder_explanation_ok))
-                }
+                PillButton(stringResource(R.string.backup_reminder_explanation_ok), onClick = { onAction(BackupSetupUiAction.AcceptExplanation) })
             },
         )
     }

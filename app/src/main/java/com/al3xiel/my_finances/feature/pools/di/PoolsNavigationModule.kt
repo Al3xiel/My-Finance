@@ -2,6 +2,7 @@ package com.al3xiel.my_finances.feature.pools.di
 
 import androidx.navigation3.runtime.EntryProviderScope
 import com.al3xiel.my_finances.R
+import com.al3xiel.my_finances.core.designsystem.AppIcons
 import com.al3xiel.my_finances.core.navigation.ExpenseEditor
 import com.al3xiel.my_finances.core.navigation.LoanDetail
 import com.al3xiel.my_finances.core.navigation.LoanEditor
@@ -78,6 +79,6 @@ object PoolsNavigationModule {
     @Provides
     @IntoSet
     fun registerActions(): RegisterActionContributor = RegisterActionContributor {
-        listOf(RegisterAction("reimbursement", R.string.register_action_reimbursement, ReimbursementEditor(), order = 40))
+        listOf(RegisterAction("reimbursement", R.string.register_action_reimbursement, ReimbursementEditor(), order = 40, iconRes = AppIcons.ActionReimbursement))
     }
 }

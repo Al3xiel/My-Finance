@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -22,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.al3xiel.my_finances.R
+import com.al3xiel.my_finances.core.designsystem.PillButton
 import com.al3xiel.my_finances.ui.theme.MyfinancesTheme
 
 /** S04: revisa el bloqueo y «ocultar en recientes»; al guardar avanza a S05. */
@@ -68,9 +68,7 @@ fun SecuritySetupContent(
             enabled = true,
             onCheckedChange = { onAction(SecuritySetupUiAction.SetSecureScreen(it)) },
         )
-        Button(onClick = { onAction(SecuritySetupUiAction.Save) }, modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(R.string.onboarding_continue))
-        }
+        PillButton(stringResource(R.string.onboarding_continue), onClick = { onAction(SecuritySetupUiAction.Save) }, modifier = Modifier.fillMaxWidth())
     }
 }
 
