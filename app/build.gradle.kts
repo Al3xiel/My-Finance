@@ -24,8 +24,22 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    // La firma de release sale de ~/.gradle/gradle.properties (nunca del repo). Sin esas propiedades la release queda sin firmar.
+    val releaseKeystore = providers.gradleProperty("MYFINANCE_KEYSTORE").orNull
+    signingConfigs {
+        if (releaseKeystore != null) {
+            create("release") {
+                storeFile = file(releaseKeystore)
+                keyAlias = providers.gradleProperty("MYFINANCE_KEY_ALIAS").get()
+                storePassword = providers.gradleProperty("MYFINANCE_STORE_PASSWORD").get()
+                keyPassword = providers.gradleProperty("MYFINANCE_KEY_PASSWORD").get()
+            }
+        }
+    }
+
     buildTypes {
         release {
+            signingConfigs.findByName("release")?.let { signingConfig = it }
             optimization {
                 enable = true
                 packageScope = setOf("androidx.**", "kotlin.**", "kotlinx.**")
