@@ -174,4 +174,20 @@ class MovementQueriesTest {
         assertEquals(10_950L, ledger.sumOf { it.deltaMinor })
         assertEquals(day(12), ledger.first().occurredOn)
     }
+
+    @Test
+    fun lastExpenseIsTheMostRecentActiveExpenseAndIgnoresLaterIncome() = runBlocking {
+        append(day(16), IncomeRegistered(MovementId("m5"), bbva, pen(100), IncomeSourceId("s1"), null, null))
+
+        assertEquals(MovementId("m4"), movements.lastExpense()?.id)
+    }
+
+    @Test
+    fun lastExpenseSkipsAVoidedOneAndIsNullWithoutExpenses() = runBlocking {
+        append(day(16), MovementVoided(MovementId("m4"), "duplicado", null))
+        assertEquals(MovementId("m1"), movements.lastExpense()?.id)
+
+        append(day(17), MovementVoided(MovementId("m1"), "duplicado", null))
+        assertEquals(null, movements.lastExpense())
+    }
 }
