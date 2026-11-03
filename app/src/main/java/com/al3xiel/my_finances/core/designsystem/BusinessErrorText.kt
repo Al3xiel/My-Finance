@@ -52,6 +52,7 @@ fun BusinessError.message(): String = when (this) {
     BusinessError.ExceedsAvailable -> stringResource(R.string.error_exceeds_available)
     BusinessError.ExceedsIncome -> stringResource(R.string.error_exceeds_income)
     BusinessError.FundClosed -> stringResource(R.string.error_fund_closed)
+    BusinessError.NoAccounts -> stringResource(R.string.error_no_accounts)
     BusinessError.DateOutOfFundRange -> stringResource(R.string.error_date_out_of_fund_range)
     BusinessError.DateBeforeLastCount -> stringResource(R.string.error_date_before_last_count)
     BusinessError.UsageDayNotAllowed -> stringResource(R.string.error_usage_day_not_allowed)

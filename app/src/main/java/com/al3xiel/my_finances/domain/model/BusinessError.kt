@@ -115,4 +115,7 @@ sealed interface BusinessError {
 
     /** Aviso de saldo negativo (D14): el usuario puede confirmar y repetir la operación. */
     data class WouldGoNegative(val resultingBalanceMinor: Long) : BusinessError
+
+    /** El primer uso exige al menos una cuenta (D59). */
+    data object NoAccounts : BusinessError
 }

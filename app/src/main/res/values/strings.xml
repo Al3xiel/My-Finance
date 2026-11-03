@@ -257,6 +257,7 @@
     <string name="error_exceeds_available">El monto es mayor a tu disponible libre</string>
     <string name="error_exceeds_income">Las recargas de este ingreso no pueden pasar de su monto</string>
     <string name="error_fund_closed">El fondo está cerrado</string>
+    <string name="error_no_accounts">Crea al menos una cuenta</string>
     <string name="error_date_out_of_fund_range">La fecha queda fuera de las fechas del fondo</string>
     <string name="error_date_before_last_count">La fecha es anterior al último arqueo del fondo</string>
     <string name="error_usage_day_not_allowed">Los días de uso solo existen en el modo estimado</string>
@@ -816,4 +817,23 @@
     <string name="devtools_error_auth">No se pudo confirmar tu identidad.</string>
     <string name="devtools_error_no_credential">Configura un bloqueo de pantalla en el teléfono para usar estas herramientas.</string>
     <string name="devtools_error_unexpected">Algo salió mal. Inténtalo de nuevo.</string>
+    <!-- Onboarding (S02–S05) -->
+    <string name="onboarding_welcome_title">Bienvenido</string>
+    <string name="onboarding_welcome_body">Registra tus cuentas, gastos e ingresos y mira cuánto tienes libre de verdad.</string>
+    <string name="onboarding_welcome_privacy">Tus datos no salen del teléfono: no hay cuenta, no hay servidor y la app ni siquiera tiene acceso a Internet.</string>
+    <string name="onboarding_continue">Continuar</string>
+    <string name="onboarding_restore">Restaurar respaldo</string>
+    <string name="onboarding_accounts_title">Crea tus cuentas</string>
+    <string name="onboarding_accounts_body">Pon cuánto tienes hoy en cada una. Puedes cambiar los nombres, quitar las que no uses o agregar otras.</string>
+    <string name="onboarding_account_name">Nombre</string>
+    <string name="onboarding_account_balance">Saldo inicial</string>
+    <string name="onboarding_account_remove">Quitar cuenta</string>
+    <string name="onboarding_account_add">Agregar cuenta</string>
+    <string name="onboarding_accounts_create">Crear cuentas</string>
+    <string name="onboarding_accounts_invalid_balance">Revisa los saldos: deben ser un monto válido, desde 0</string>
+    <string name="onboarding_security_title">Protege tus datos</string>
+    <string name="onboarding_security_body">El bloqueo pide tu huella, rostro o bloqueo de pantalla al abrir la app. Puedes cambiarlo después en Privacidad.</string>
+    <string name="onboarding_backup_title">Haz respaldos</string>
+    <string name="onboarding_backup_open">Hacer o restaurar un respaldo ahora</string>
+    <string name="onboarding_finish">Terminar</string>
 </resources>
