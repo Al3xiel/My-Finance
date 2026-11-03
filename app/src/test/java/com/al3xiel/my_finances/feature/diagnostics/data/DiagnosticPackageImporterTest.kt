@@ -1,7 +1,5 @@
 package com.al3xiel.my_finances.feature.diagnostics.data
 
-import com.al3xiel.my_finances.feature.diagnostics.domain.model.BuiltPackage
-
 import com.al3xiel.my_finances.core.money.CurrencyCode
 import com.al3xiel.my_finances.core.money.Money
 import com.al3xiel.my_finances.domain.model.AccountId
@@ -16,6 +14,7 @@ import com.al3xiel.my_finances.domain.model.event.NewEvent
 import com.al3xiel.my_finances.domain.model.event.PersonCreated
 import com.al3xiel.my_finances.domain.usecase.FakeEventStore
 import com.al3xiel.my_finances.feature.diagnostics.domain.anonymize.EventAnonymizer
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.BuiltPackage
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.DiagnosticPackageInput
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.ExportedLedgerLine
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.PackageProjections

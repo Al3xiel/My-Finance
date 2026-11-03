@@ -1,10 +1,9 @@
 package com.al3xiel.my_finances.feature.diagnostics.data.workspace
 
-import com.al3xiel.my_finances.feature.diagnostics.domain.repository.WorkspaceEventWriter
-
 import androidx.room.withTransaction
 import com.al3xiel.my_finances.data.eventstore.EventEntity
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.PackageEventLine
+import com.al3xiel.my_finances.feature.diagnostics.domain.repository.WorkspaceEventWriter
 import javax.inject.Inject
 
 /**

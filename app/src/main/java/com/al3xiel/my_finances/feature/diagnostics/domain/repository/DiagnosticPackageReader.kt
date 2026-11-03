@@ -1,7 +1,6 @@
 package com.al3xiel.my_finances.feature.diagnostics.domain.repository
 
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.DiagnosticPackageException
-
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.ParsedPackage
 import java.io.InputStream
 

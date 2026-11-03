@@ -6,6 +6,7 @@ import com.al3xiel.my_finances.domain.model.AccountId
 import com.al3xiel.my_finances.domain.model.BusinessError
 import com.al3xiel.my_finances.domain.model.CategoryId
 import com.al3xiel.my_finances.domain.model.IncomeSourceId
+import com.al3xiel.my_finances.domain.model.LoanId
 import com.al3xiel.my_finances.domain.model.MovementId
 import com.al3xiel.my_finances.domain.model.Outcome
 import com.al3xiel.my_finances.domain.model.PartId
@@ -22,6 +23,8 @@ import com.al3xiel.my_finances.domain.model.event.ExpensePartData
 import com.al3xiel.my_finances.domain.model.event.ExpenseRegistered
 import com.al3xiel.my_finances.domain.model.event.IncomeRegistered
 import com.al3xiel.my_finances.domain.model.event.IncomeSourceCreated
+import com.al3xiel.my_finances.domain.model.event.LoanGranted
+import com.al3xiel.my_finances.domain.model.event.MovementVoided
 import com.al3xiel.my_finances.domain.model.event.MovementLinkedToReconciliation
 import com.al3xiel.my_finances.domain.model.event.NewEvent
 import com.al3xiel.my_finances.domain.model.event.PersonCreated
@@ -111,6 +114,12 @@ class SelectDiagnosticEventsUseCaseTest {
             val selection = select(request)
             assertEquals(request.scope.name, selection.events.map { it.sequence }.toSet(), selection.cut.includedSequences)
         }
+        val account = select(DiagnosticSelectionRequest(DiagnosticScope.ACCOUNT_HISTORY, accountId = AccountId("a1"))).cut.includedSequences
+        assertTrue(seq.getValue("m8") in account)
+        assertTrue(seq.getValue("m4") !in account && seq.getValue("backup") !in account)
+        val full = select(DiagnosticSelectionRequest(DiagnosticScope.FULL)).cut.includedSequences
+        assertTrue(seq.getValue("m4") in full && seq.getValue("m6") in full)
+        assertTrue("audit events never travel", seq.getValue("backup") !in full)
     }
 
     @Test
@@ -118,6 +127,19 @@ class SelectDiagnosticEventsUseCaseTest {
         val cut = select(reconciliation).cut.includedSequences
         assertTrue(seq.getValue("m7") in cut)
         assertTrue(seq.getValue("m8") !in cut)
+    }
+
+    @Test
+    fun theVoidingOfALoanComesInEvenThoughItsEventDoesNotMentionTheAccount() {
+        val granted = append(20, LoanGranted(LoanId("l1"), MovementId("ml1"), PersonId("p1"), AccountId("a1"), Money(500, pen), null))
+        val voided = append(21, MovementVoided(MovementId("ml1"), "error", null))
+        val unrelated = append(22, MovementVoided(MovementId("m4"), "otra cuenta", null))
+
+        val sequences = select(DiagnosticSelectionRequest(DiagnosticScope.ACCOUNT_HISTORY, accountId = AccountId("a1"))).events.map { it.sequence }
+
+        assertTrue(granted in sequences)
+        assertTrue("the void of the loan movement must travel", voided in sequences)
+        assertTrue("the void of a movement of another account must not", unrelated !in sequences)
     }
 
     @Test

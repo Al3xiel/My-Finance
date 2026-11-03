@@ -149,6 +149,22 @@ class ExportDictionaryUseCaseTest {
     }
 
     @Test
+    fun ifTheEventsOfThePackageCannotBeSelectedAgainTheNotesAreRefusedInsteadOfSilentlyEmpty() = runTest {
+        val export = seedAndExport()
+        val income = store.events.first { it.event.type == "IncomeRegistered" }.eventId
+        val unreadable = object : EventStore by store {
+            override suspend fun readAll(): List<StoredEvent> = throw java.io.IOException("unreadable")
+        }
+        val useCase = ExportDictionaryUseCase(store, SelectDiagnosticEventsUseCase(unreadable), files, recorder, ids, ResolveAliasesUseCase(store), iterations = 1_000)
+
+        val result = useCase(code(export, emptyList(), listOf(income)), DictionaryScope.PARTIAL, "doc://key", password.copyOf())
+
+        assertEquals(ExportDictionaryResult.PackageMismatch, result)
+        assertNull(files.files["doc://key"])
+        assertTrue(exportedEvents().isEmpty())
+    }
+
+    @Test
     fun theFileIsEncryptedAndCarriesNoPlainName() = runTest {
         val export = seedAndExport()
         dictionary(code(export, listOf(pseudonymOf(export, EntityType.ACCOUNT))), DictionaryScope.PARTIAL, "doc://key", password.copyOf())

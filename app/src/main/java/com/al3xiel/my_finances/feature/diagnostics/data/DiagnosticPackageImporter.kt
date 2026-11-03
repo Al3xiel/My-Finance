@@ -1,20 +1,19 @@
 package com.al3xiel.my_finances.feature.diagnostics.data
 
-import com.al3xiel.my_finances.feature.diagnostics.domain.repository.DiagnosticPackageReader
-import com.al3xiel.my_finances.feature.diagnostics.domain.model.DiagnosticPackageException
-import com.al3xiel.my_finances.feature.diagnostics.domain.model.DiagnosticPackageFormat
-import com.al3xiel.my_finances.feature.diagnostics.domain.model.PackageEventLine
-import com.al3xiel.my_finances.feature.diagnostics.domain.model.PackageManifest
-import com.al3xiel.my_finances.feature.diagnostics.domain.model.ParsedPackage
-
 import com.al3xiel.my_finances.core.security.container.ContainerException
 import com.al3xiel.my_finances.core.security.container.ContainerLimits
 import com.al3xiel.my_finances.core.security.container.EncryptedContainerReader
 import com.al3xiel.my_finances.domain.model.event.AggregateType
 import com.al3xiel.my_finances.domain.model.event.DomainEvent
 import com.al3xiel.my_finances.domain.model.event.EventCodec
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.DiagnosticPackageException
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.DiagnosticPackageException.Reason
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.DiagnosticPackageFormat
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.PackageEventLine
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.PackageManifest
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.PackageProjections
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.ParsedPackage
+import com.al3xiel.my_finances.feature.diagnostics.domain.repository.DiagnosticPackageReader
 import java.io.ByteArrayInputStream
 import java.io.IOException
 import java.io.InputStream

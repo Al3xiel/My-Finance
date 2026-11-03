@@ -99,7 +99,12 @@ class SelectDiagnosticEventsUseCase @Inject constructor(private val eventStore: 
         val linkedMovements = candidates
             .filter { it.event.aggregateType == AggregateType.MOVEMENT && reconciliations.any { id -> id in mentions.of(it) } }
             .map { it.event.aggregateId }.toSet()
-        val movementIds = touching.filter { it.event.aggregateType == AggregateType.MOVEMENT }.map { it.event.aggregateId }.toSet() + linkedMovements
+        // Un préstamo o un cobro es de agregado LOAN pero trae el id de su movimiento: su anulación (MovementVoided) no menciona la
+        // cuenta y sin esto quedaría fuera, y el paquete mostraría activo lo que en la base está anulado.
+        val everyMovementId = candidates.filter { it.event.aggregateType == AggregateType.MOVEMENT }.map { it.event.aggregateId }.toSet()
+        val mentionedMovements = touching.flatMap { mentions.of(it) }.filter { it in everyMovementId }
+        val movementIds = touching.filter { it.event.aggregateType == AggregateType.MOVEMENT }.map { it.event.aggregateId }.toSet() +
+            mentionedMovements + linkedMovements
         val movementEvents = candidates.filter {
             it.event.aggregateType == AggregateType.MOVEMENT && it.event.aggregateId in movementIds &&
                 (inRange(it) || it.event.aggregateId in linkedMovements)

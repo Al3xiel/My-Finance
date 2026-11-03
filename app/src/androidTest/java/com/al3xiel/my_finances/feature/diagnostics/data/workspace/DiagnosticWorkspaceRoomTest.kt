@@ -1,8 +1,5 @@
 package com.al3xiel.my_finances.feature.diagnostics.data.workspace
 
-import com.al3xiel.my_finances.feature.diagnostics.domain.model.PackageManifest
-import com.al3xiel.my_finances.feature.diagnostics.domain.model.WorkspaceMeta
-
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
@@ -12,6 +9,8 @@ import com.al3xiel.my_finances.core.security.AndroidKeystoreKeyWrapper
 import com.al3xiel.my_finances.data.database.AppDatabase
 import com.al3xiel.my_finances.data.eventstore.EventTriggersCallback
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.PackageEventLine
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.PackageManifest
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.WorkspaceMeta
 import java.io.File
 import java.security.SecureRandom
 import kotlinx.coroutines.runBlocking

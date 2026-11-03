@@ -1,7 +1,5 @@
 package com.al3xiel.my_finances.feature.diagnostics.ui
 
-import com.al3xiel.my_finances.core.designsystem.PasswordField
-
 import android.content.res.Configuration
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -31,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.al3xiel.my_finances.R
+import com.al3xiel.my_finances.core.designsystem.PasswordField
 import com.al3xiel.my_finances.core.security.AuthPrompt
 import com.al3xiel.my_finances.domain.model.ReconciliationId
 import com.al3xiel.my_finances.domain.model.event.DictionaryScope

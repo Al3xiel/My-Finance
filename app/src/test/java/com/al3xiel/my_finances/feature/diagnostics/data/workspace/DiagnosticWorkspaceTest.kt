@@ -1,11 +1,10 @@
 package com.al3xiel.my_finances.feature.diagnostics.data.workspace
 
-import com.al3xiel.my_finances.feature.diagnostics.domain.model.WorkspaceMeta
-
 import com.al3xiel.my_finances.core.security.DatabaseKeyProvider
 import com.al3xiel.my_finances.core.security.KeyWrapper
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.PackageManifest
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.PackageProjections
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.WorkspaceMeta
 import com.al3xiel.my_finances.feature.privacy.domain.model.WipeStep
 import java.io.File
 import java.security.SecureRandom
