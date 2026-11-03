@@ -25,6 +25,7 @@ import com.al3xiel.my_finances.core.designsystem.PillStyle
 import com.al3xiel.my_finances.core.designsystem.ScreenScaffold
 import com.al3xiel.my_finances.core.designsystem.SectionCard
 import com.al3xiel.my_finances.core.designsystem.SectionRow
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -34,7 +35,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.al3xiel.my_finances.R
 import com.al3xiel.my_finances.core.designsystem.EmptyState
 import com.al3xiel.my_finances.core.designsystem.LocalHideAmounts
+import com.al3xiel.my_finances.core.designsystem.BadgeStatus
 import com.al3xiel.my_finances.core.designsystem.MoneyText
+import com.al3xiel.my_finances.core.designsystem.StatusBadge
 import com.al3xiel.my_finances.core.designsystem.NegativeBalanceDialog
 import com.al3xiel.my_finances.core.designsystem.NoticeDialog
 import com.al3xiel.my_finances.core.designsystem.ReasonDialog
@@ -56,6 +59,8 @@ import com.al3xiel.my_finances.feature.movements.domain.model.Movement
 import com.al3xiel.my_finances.feature.movements.domain.model.MovementDetail
 import com.al3xiel.my_finances.feature.movements.domain.model.MovementHistoryEntry
 import com.al3xiel.my_finances.feature.movements.domain.model.MovementPart
+import com.al3xiel.my_finances.feature.movements.domain.model.PartReimbursement
+import com.al3xiel.my_finances.feature.pools.domain.rules.ReimbursementStatus
 import com.al3xiel.my_finances.ui.theme.MyfinancesTheme
 import java.time.Instant
 import java.time.LocalDate
@@ -125,7 +130,7 @@ fun MovementDetailContent(
             }
             if (movement.parts.isNotEmpty()) {
                 SectionCard(title = stringResource(R.string.movement_detail_parts)) {
-                    movement.parts.forEach { part -> PartRow(part, movement.amount.currency, state.names) }
+                    movement.parts.forEach { part -> PartRow(part, movement.amount.currency, state.names, state.reimbursementOf(part.id)) }
                 }
             }
             SectionCard {
@@ -177,15 +182,32 @@ private fun Field(labelRes: Int, value: String) {
 }
 
 @Composable
-private fun PartRow(part: MovementPart, currency: CurrencyCode, names: CatalogNames) {
+private fun PartRow(part: MovementPart, currency: CurrencyCode, names: CatalogNames, reimbursement: PartReimbursement?) {
     val category = names.categories[part.categoryId.value].orEmpty()
     val title = if (part.kind == PartKind.FEE) stringResource(R.string.movement_detail_fee) else category
     val sub = if (part.kind == PartKind.FEE) category else part.tagIds.joinToString(", ") { names.tags[it.value].orEmpty() }
     SectionRow(
         headline = title,
-        supporting = sub.ifEmpty { null },
-        trailing = { MoneyText(Money(part.amount.amountMinor, currency)) },
+        supporting = listOfNotNull(sub.ifEmpty { null }, reimbursement?.poolName).joinToString(" · ").ifEmpty { null },
+        trailing = {
+            Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                MoneyText(Money(part.amount.amountMinor, currency))
+                reimbursement?.let { StatusBadge(it.status.badge(), label = stringResource(it.status.labelRes())) }
+            }
+        },
     )
+}
+
+/** Tabla de estados (§7): pendiente y parcial esperan; reembolsada ya está. */
+private fun ReimbursementStatus.badge() = when (this) {
+    ReimbursementStatus.PENDING, ReimbursementStatus.PARTIALLY_REIMBURSED -> BadgeStatus.PENDING
+    ReimbursementStatus.REIMBURSED -> BadgeStatus.RECONCILED
+}
+
+private fun ReimbursementStatus.labelRes() = when (this) {
+    ReimbursementStatus.PENDING -> R.string.status_pending
+    ReimbursementStatus.PARTIALLY_REIMBURSED -> R.string.status_partial
+    ReimbursementStatus.REIMBURSED -> R.string.status_reimbursed
 }
 
 @Composable

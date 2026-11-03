@@ -6,7 +6,10 @@ import com.al3xiel.my_finances.domain.model.CategoryId
 import com.al3xiel.my_finances.domain.model.MovementId
 import com.al3xiel.my_finances.domain.model.MovementStatus
 import com.al3xiel.my_finances.domain.model.MovementType
+import com.al3xiel.my_finances.domain.model.PartId
+import com.al3xiel.my_finances.domain.model.PoolId
 import com.al3xiel.my_finances.domain.model.TagId
+import com.al3xiel.my_finances.feature.pools.domain.rules.ReimbursementStatus
 import java.time.Instant
 import java.time.LocalDate
 
@@ -48,4 +51,24 @@ data class MovementHistoryEntry(
     val reason: String?,
 )
 
-data class MovementDetail(val movement: Movement, val history: List<MovementHistoryEntry>)
+/**
+ * Una parte de gasto que va a un cúmulo, con lo que ya se le reembolsó. Solo lectura de la proyección de partes: no hay
+ * evento ni tabla nuevos para esto.
+ */
+data class PartReimbursement(
+    val partId: PartId,
+    val poolId: PoolId,
+    val poolName: String,
+    val amount: Money,
+    val reimbursed: Money,
+    val status: ReimbursementStatus,
+) {
+    val pending: Money get() = amount - reimbursed
+}
+
+data class MovementDetail(
+    val movement: Movement,
+    val history: List<MovementHistoryEntry>,
+    /** Una entrada por cada parte con cúmulo, en el orden de las partes. */
+    val reimbursements: List<PartReimbursement> = emptyList(),
+)

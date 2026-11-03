@@ -11,6 +11,9 @@ import com.al3xiel.my_finances.data.eventstore.EventStoreImpl
 import com.al3xiel.my_finances.data.eventstore.EventTriggersCallback
 import com.al3xiel.my_finances.data.projection.catalog.CatalogProjector
 import com.al3xiel.my_finances.data.projection.movement.MovementProjector
+import com.al3xiel.my_finances.data.projection.pool.PoolEntity
+import com.al3xiel.my_finances.domain.model.event.PoolKind
+import com.al3xiel.my_finances.feature.pools.domain.rules.ReimbursementStatus
 import com.al3xiel.my_finances.domain.model.AccountId
 import com.al3xiel.my_finances.domain.model.CategoryId
 import com.al3xiel.my_finances.domain.model.IncomeSourceId
@@ -108,6 +111,32 @@ class MovementQueriesTest {
     fun tearDown() = database.close()
 
     private fun ids(filter: MovementFilter) = runBlocking { movements.observeMovements(filter).first().map { it.id.value } }
+
+    private fun linkToPool(partId: String, minor: Long, category: CategoryId) = runBlocking {
+        database.poolDao().upsertPool(PoolEntity("dogs", "Perros", "mom", PoolKind.PERMANENT, null, "", false))
+        database.movementDao().updatePartCore(partId, minor, category.value, "dogs", null)
+    }
+
+    @Test
+    fun aPartWithAPoolCarriesTheReimbursedAndPendingAmounts() = runBlocking {
+        linkToPool("p1", 2_000, food)
+        linkToPool("p2", 1_000, home)
+        linkToPool("p3", 400, food)
+        database.reimbursementDao().setPartReimbursement("p2", 400, ReimbursementStatus.PARTIALLY_REIMBURSED)
+        database.reimbursementDao().setPartReimbursement("p3", 400, ReimbursementStatus.REIMBURSED)
+
+        val m1 = movements.observeDetail(MovementId("m1")).first()!!.reimbursements
+        assertEquals(listOf("p1", "p2"), m1.map { it.partId.value })
+        assertEquals(listOf(ReimbursementStatus.PENDING, ReimbursementStatus.PARTIALLY_REIMBURSED), m1.map { it.status })
+        assertEquals(listOf(2_000L, 600L), m1.map { it.pending.amountMinor })
+        assertEquals("Perros", m1.first().poolName)
+        assertEquals(listOf(ReimbursementStatus.REIMBURSED), movements.observeDetail(MovementId("m4")).first()!!.reimbursements.map { it.status })
+    }
+
+    @Test
+    fun aMovementWithoutPoolPartsHasNoReimbursements() = runBlocking {
+        assertEquals(emptyList<Any>(), movements.observeDetail(MovementId("m2")).first()!!.reimbursements)
+    }
 
     @Test
     fun listsNewestFirst() {

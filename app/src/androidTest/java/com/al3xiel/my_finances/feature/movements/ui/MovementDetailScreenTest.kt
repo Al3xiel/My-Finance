@@ -1,6 +1,8 @@
 package com.al3xiel.my_finances.feature.movements.ui
 
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -15,6 +17,9 @@ import com.al3xiel.my_finances.domain.model.MovementStatus
 import com.al3xiel.my_finances.domain.model.MovementType
 import com.al3xiel.my_finances.domain.model.PartId
 import com.al3xiel.my_finances.domain.model.PartKind
+import com.al3xiel.my_finances.domain.model.PoolId
+import com.al3xiel.my_finances.feature.movements.domain.model.PartReimbursement
+import com.al3xiel.my_finances.feature.pools.domain.rules.ReimbursementStatus
 import com.al3xiel.my_finances.feature.movements.domain.model.HistoryKind
 import com.al3xiel.my_finances.feature.movements.domain.model.Movement
 import com.al3xiel.my_finances.feature.movements.domain.model.MovementDetail
@@ -61,6 +66,37 @@ class MovementDetailScreenTest {
 
     private fun show(onAction: (MovementDetailUiAction) -> Unit = {}, onCorrect: () -> Unit = {}) =
         rule.setContent { MyfinancesTheme { MovementDetailContent(state, onAction, onCorrect) } }
+
+    private fun withReimbursements(vararg statuses: Pair<Long, ReimbursementStatus>): MovementDetailUiState {
+        val parts = statuses.mapIndexed { i, _ ->
+            MovementPart(PartId("p$i"), Money(1_000, CurrencyCode.PEN), CategoryId("c1"), PartKind.NORMAL, emptyList(), PoolId("dogs"))
+        }
+        val reimbursements = statuses.mapIndexed { i, (reimbursed, status) ->
+            PartReimbursement(PartId("p$i"), PoolId("dogs"), "Perros", Money(1_000, CurrencyCode.PEN), Money(reimbursed, CurrencyCode.PEN), status)
+        }
+        return state.copy(detail = MovementDetail(movement.copy(parts = parts), emptyList(), reimbursements))
+    }
+
+    @Test
+    fun aPartInAPoolShowsItsPoolAndAReimbursementBadgeInText() {
+        val withPool = withReimbursements(
+            0L to ReimbursementStatus.PENDING,
+            400L to ReimbursementStatus.PARTIALLY_REIMBURSED,
+            1_000L to ReimbursementStatus.REIMBURSED,
+        )
+        rule.setContent { MyfinancesTheme { MovementDetailContent(withPool, {}, {}) } }
+        rule.onNodeWithText("Pendiente").assertIsDisplayed()
+        rule.onNodeWithText("Parcial").assertIsDisplayed()
+        rule.onNodeWithText("Reembolsada").assertIsDisplayed()
+        rule.onAllNodesWithText("Perros", substring = true).assertCountEquals(3)
+    }
+
+    @Test
+    fun aPartWithoutAPoolShowsNoReimbursementBadge() {
+        show()
+        rule.onNodeWithText("Pendiente").assertDoesNotExist()
+        rule.onNodeWithText("Reembolsada").assertDoesNotExist()
+    }
 
     @Test
     fun partsAndHistoryComeInTheirOwnSections() {
