@@ -25,6 +25,11 @@ class StatusBadgeTest {
         }
     }
 
+    @Test fun aBadgeCanCarryItsOwnLabelKeepingTheStatusIconAndColor() {
+        rule.setContent { MyfinancesTheme { Column { StatusBadge(BadgeStatus.RECONCILED, label = "Saldado") } } }
+        rule.onNodeWithText("Saldado").assertIsDisplayed()
+    }
+
     @Test fun everyStatusHasItsOwnIcon() {
         val icons = BadgeStatus.entries.map { it.icon() }
         assertEquals(BadgeStatus.entries.size, icons.toSet().size)
