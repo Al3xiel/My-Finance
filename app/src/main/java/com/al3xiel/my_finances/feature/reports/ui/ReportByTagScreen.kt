@@ -1,5 +1,7 @@
 package com.al3xiel.my_finances.feature.reports.ui
 
+import com.al3xiel.my_finances.ui.theme.MyfinancesTheme
+import com.al3xiel.my_finances.core.designsystem.SectionCard
 import android.content.res.Configuration
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -9,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -54,6 +55,7 @@ fun ReportByTagContent(
     modifier: Modifier = Modifier,
 ) {
     ReportList(
+        title = stringResource(R.string.report_by_tag_title),
         isEmpty = state.loaded && state.rows.isEmpty(),
         emptyTitle = stringResource(R.string.report_by_tag_empty_title),
         emptyBody = stringResource(R.string.report_by_tag_empty_body),
@@ -68,7 +70,7 @@ fun ReportByTagContent(
         }
         items(state.rows, key = { it.id }) { row ->
             val expanded = state.expandedId == row.id
-            Card(Modifier.fillMaxWidth()) {
+            SectionCard {
                 Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
                     Row(
                         Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(role = Role.Button) { onOpenMovements(row.id) },
@@ -97,14 +99,15 @@ fun ReportByTagContent(
 
 @Preview(showBackground = true)
 @Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(showBackground = true, fontScale = 2f)
 @Composable
 private fun ReportByTagContentPreview() {
-    ReportByTagContent(
+    MyfinancesTheme { ReportByTagContent(
         state = ReportByTagUiState(
             period = ReportPeriod.Month(YearMonth.of(2026, 10)),
             rows = listOf(TagRowUi("t1", "Viaje", 80_000, listOf("Comida" to 50_000L, "Transporte" to 30_000L)), TagRowUi("t2", "Trabajo", 20_000, emptyList())),
             expandedId = "t1", loaded = true,
         ),
         onAction = {}, onOpenMovements = {},
-    )
+    ) }
 }

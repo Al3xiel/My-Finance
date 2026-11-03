@@ -4,8 +4,10 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.platform.app.InstrumentationRegistry
 import com.al3xiel.my_finances.R
+import com.al3xiel.my_finances.core.text.formatBasisPoints
 import com.al3xiel.my_finances.feature.reports.domain.model.OthersSpend
 import com.al3xiel.my_finances.feature.reports.domain.model.ReportPeriod
 import com.al3xiel.my_finances.feature.reports.domain.model.ReportSummary
@@ -40,8 +42,8 @@ class ReportScreensContentTest {
         rule.onNodeWithText(string(R.string.report_summary_own_spend)).assertIsDisplayed()
         rule.onNodeWithText(string(R.string.report_summary_unidentified)).assertIsDisplayed()
         rule.onNodeWithText(string(R.string.report_summary_by_category)).performClick()
-        rule.onNodeWithText(string(R.string.report_summary_origin)).performClick()
-        rule.onNodeWithText(string(R.string.report_summary_export)).performClick()
+        rule.onNodeWithText(string(R.string.report_summary_origin)).performScrollTo().performClick()
+        rule.onNodeWithText(string(R.string.report_summary_export)).performScrollTo().performClick()
         assertEquals(listOf("category", "origin", "export"), opened)
     }
 
@@ -89,5 +91,55 @@ class ReportScreensContentTest {
             ReportExportContent(ReportExportUiState(period, format = ExportFormat.PDF), onAction = {})
         }
         rule.onNodeWithText(string(R.string.report_export_include_notes)).assertDoesNotExist()
+    }
+
+    @Test fun eachScreenShowsItsOwnTitleInTheHeader() {
+        rule.setContent {
+            ReportSummaryContent(
+                state = ReportSummaryUiState(period, today, ReportSummary(1, 1, OthersSpend(0, 0), 0)),
+                onAction = {}, onOpenByCategory = {}, onOpenByTag = {}, onOpenByAccount = {}, onOpenOrigin = {}, onExport = {},
+            )
+        }
+        rule.onNodeWithText(string(R.string.report_summary_title)).assertIsDisplayed()
+    }
+
+    @Test fun theCategoryReportHasItsTitleAndOpensMovementsFromTheChartLabel() {
+        var opened: String? = null
+        rule.setContent {
+            ReportByCategoryContent(
+                state = ReportByCategoryUiState(
+                    period,
+                    listOf(CategoryRowUi("food", "Comida", 60_000, 6_000), CategoryRowUi("home", "Hogar", 40_000, 4_000)),
+                    100_000,
+                    loaded = true,
+                ),
+                onAction = {}, onOpenMovements = { opened = it },
+            )
+        }
+        rule.onNodeWithText(string(R.string.report_by_category_title)).assertIsDisplayed()
+        rule.onNodeWithText("Hogar " + formatBasisPoints(4_000)).performClick()
+        assertEquals("home", opened)
+    }
+
+    @Test fun theTagReportHasItsTitle() {
+        rule.setContent {
+            ReportByTagContent(ReportByTagUiState(period, listOf(TagRowUi("t1", "Viaje", 80_000, emptyList())), loaded = true), onAction = {}, onOpenMovements = {})
+        }
+        rule.onNodeWithText(string(R.string.report_by_tag_title)).assertIsDisplayed()
+    }
+
+    @Test fun theAccountReportHasItsTitle() {
+        rule.setContent {
+            ReportByAccountContent(
+                ReportByAccountUiState(period, listOf(AccountFlowRowUi("bbva", "BBVA", 5, 1, 0)), loaded = true),
+                onOpenMovements = {},
+            )
+        }
+        rule.onNodeWithText(string(R.string.report_by_account_title)).assertIsDisplayed()
+    }
+
+    @Test fun exportHasItsTitle() {
+        rule.setContent { ReportExportContent(ReportExportUiState(period), onAction = {}) }
+        rule.onNodeWithText(string(R.string.report_export_title)).assertIsDisplayed()
     }
 }

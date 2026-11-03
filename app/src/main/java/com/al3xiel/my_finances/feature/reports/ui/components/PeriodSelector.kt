@@ -1,5 +1,9 @@
 package com.al3xiel.my_finances.feature.reports.ui.components
 
+import com.al3xiel.my_finances.ui.theme.MyfinancesTheme
+import androidx.compose.foundation.layout.padding
+import com.al3xiel.my_finances.ui.theme.LocalSpacing
+import com.al3xiel.my_finances.core.designsystem.SectionCard
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -58,7 +62,8 @@ fun PeriodSelector(
     var pickedFrom by remember { mutableStateOf<LocalDate?>(null) }
     val previous = period.previous()
     val next = period.next(today)
-    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    SectionCard(modifier = modifier) {
+    Column(Modifier.fillMaxWidth().padding(LocalSpacing.current.md), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             val previousDescription = stringResource(R.string.report_period_previous)
             TextButton(
@@ -66,7 +71,7 @@ fun PeriodSelector(
                 enabled = previous != null,
                 modifier = Modifier.heightIn(min = 48.dp).widthIn(min = 48.dp).semantics { contentDescription = previousDescription },
             ) { Text(stringResource(R.string.report_period_previous_glyph), style = MaterialTheme.typography.titleLarge) }
-            Text(periodLabel(period, Locale.getDefault()), style = MaterialTheme.typography.titleMedium)
+            Text(periodLabel(period, Locale.getDefault()), style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f, fill = false))
             val nextDescription = stringResource(R.string.report_period_next)
             TextButton(
                 onClick = { next?.let(onPeriodChange) },
@@ -95,6 +100,7 @@ fun PeriodSelector(
             )
         }
     }
+    }
     when (step) {
         PickingStep.NONE -> Unit
         PickingStep.FROM -> DateChooserDialog(
@@ -117,7 +123,8 @@ fun PeriodSelector(
 }
 
 @Preview(showBackground = true)
+@Preview(showBackground = true, fontScale = 2f)
 @Composable
 private fun PeriodSelectorPreview() {
-    PeriodSelector(ReportPeriod.Month(YearMonth.of(2026, 10)), LocalDate.of(2026, 11, 2), onPeriodChange = {})
+    MyfinancesTheme { PeriodSelector(ReportPeriod.Month(YearMonth.of(2026, 10)), LocalDate.of(2026, 11, 2), onPeriodChange = {}) }
 }

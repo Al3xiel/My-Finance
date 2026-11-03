@@ -1,5 +1,11 @@
 package com.al3xiel.my_finances.feature.reports.ui
 
+import com.al3xiel.my_finances.ui.theme.MyfinancesTheme
+import com.al3xiel.my_finances.ui.theme.LocalSpacing
+import com.al3xiel.my_finances.core.designsystem.SectionRow
+import com.al3xiel.my_finances.core.designsystem.SectionCard
+import com.al3xiel.my_finances.core.designsystem.ScreenScaffold
+import com.al3xiel.my_finances.core.designsystem.PillButton
 import android.content.res.Configuration
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -13,7 +19,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
@@ -98,49 +103,51 @@ fun ReportExportContent(
     onAction: (ReportExportUiAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        Text(periodLabel(state.period, Locale.getDefault()), style = MaterialTheme.typography.titleMedium)
-        Text(stringResource(R.string.report_export_format), style = MaterialTheme.typography.labelLarge)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FilterChip(
-                selected = state.format == ExportFormat.CSV,
-                onClick = { onAction(ReportExportUiAction.SetFormat(ExportFormat.CSV)) },
-                label = { Text(stringResource(R.string.report_export_csv)) },
-                modifier = Modifier.heightIn(min = 48.dp),
-            )
-            FilterChip(
-                selected = state.format == ExportFormat.PDF,
-                onClick = { onAction(ReportExportUiAction.SetFormat(ExportFormat.PDF)) },
-                label = { Text(stringResource(R.string.report_export_pdf)) },
-                modifier = Modifier.heightIn(min = 48.dp),
-            )
-        }
-        if (state.format == ExportFormat.CSV) {
-            Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text(stringResource(R.string.report_export_include_notes), style = MaterialTheme.typography.bodyLarge)
-                    Text(
-                        stringResource(R.string.report_export_include_notes_hint),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    val spacing = LocalSpacing.current
+    ScreenScaffold(title = stringResource(R.string.report_export_title), modifier = modifier) { padding ->
+        Column(
+            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(padding).padding(spacing.lg),
+            verticalArrangement = Arrangement.spacedBy(spacing.lg),
+        ) {
+            Text(periodLabel(state.period, Locale.getDefault()), style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.report_export_format), style = MaterialTheme.typography.labelLarge)
+            Row(horizontalArrangement = Arrangement.spacedBy(spacing.sm)) {
+                FilterChip(
+                    selected = state.format == ExportFormat.CSV,
+                    onClick = { onAction(ReportExportUiAction.SetFormat(ExportFormat.CSV)) },
+                    label = { Text(stringResource(R.string.report_export_csv)) },
+                    modifier = Modifier.heightIn(min = 48.dp),
+                )
+                FilterChip(
+                    selected = state.format == ExportFormat.PDF,
+                    onClick = { onAction(ReportExportUiAction.SetFormat(ExportFormat.PDF)) },
+                    label = { Text(stringResource(R.string.report_export_pdf)) },
+                    modifier = Modifier.heightIn(min = 48.dp),
+                )
+            }
+            if (state.format == ExportFormat.CSV) {
+                SectionCard {
+                    SectionRow(
+                        headline = stringResource(R.string.report_export_include_notes),
+                        supporting = stringResource(R.string.report_export_include_notes_hint),
+                        trailing = {
+                            Switch(checked = state.includeNotes, onCheckedChange = { onAction(ReportExportUiAction.SetIncludeNotes(it)) })
+                        },
                     )
                 }
-                Switch(checked = state.includeNotes, onCheckedChange = { onAction(ReportExportUiAction.SetIncludeNotes(it)) })
             }
-        }
-        Button(
-            onClick = { onAction(ReportExportUiAction.Export) },
-            enabled = state.phase == ExportPhase.IDLE || state.phase == ExportPhase.DONE || state.phase == ExportPhase.FAILED,
-            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-        ) { Text(stringResource(R.string.report_export_action)) }
-        when (state.phase) {
-            ExportPhase.WRITING -> Text(stringResource(R.string.report_export_writing))
-            ExportPhase.DONE -> Text(stringResource(R.string.report_export_done), color = MaterialTheme.colorScheme.primary)
-            ExportPhase.FAILED -> Text(stringResource(R.string.report_export_failed), color = MaterialTheme.colorScheme.error)
-            else -> Unit
+            PillButton(
+                stringResource(R.string.report_export_action),
+                { onAction(ReportExportUiAction.Export) },
+                Modifier.fillMaxWidth(),
+                enabled = state.phase == ExportPhase.IDLE || state.phase == ExportPhase.DONE || state.phase == ExportPhase.FAILED,
+            )
+            when (state.phase) {
+                ExportPhase.WRITING -> Text(stringResource(R.string.report_export_writing))
+                ExportPhase.DONE -> Text(stringResource(R.string.report_export_done), color = MaterialTheme.colorScheme.primary)
+                ExportPhase.FAILED -> Text(stringResource(R.string.report_export_failed), color = MaterialTheme.colorScheme.error)
+                else -> Unit
+            }
         }
     }
     if (state.phase == ExportPhase.NOTICE) {
@@ -164,7 +171,8 @@ fun ReportExportContent(
 
 @Preview(showBackground = true)
 @Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(showBackground = true, fontScale = 2f)
 @Composable
 private fun ReportExportContentPreview() {
-    ReportExportContent(ReportExportUiState(ReportPeriod.Month(YearMonth.of(2026, 10))), onAction = {})
+    MyfinancesTheme { ReportExportContent(ReportExportUiState(ReportPeriod.Month(YearMonth.of(2026, 10))), onAction = {}) }
 }

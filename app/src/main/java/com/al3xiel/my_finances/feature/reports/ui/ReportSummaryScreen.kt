@@ -1,5 +1,12 @@
 package com.al3xiel.my_finances.feature.reports.ui
 
+import com.al3xiel.my_finances.ui.theme.MyfinancesTheme
+import com.al3xiel.my_finances.ui.theme.LocalSpacing
+import com.al3xiel.my_finances.core.designsystem.SectionRow
+import com.al3xiel.my_finances.core.designsystem.SectionDivider
+import com.al3xiel.my_finances.core.designsystem.SectionCard
+import com.al3xiel.my_finances.core.designsystem.ScreenScaffold
+import com.al3xiel.my_finances.core.designsystem.PillButton
 import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -10,10 +17,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -66,43 +70,52 @@ fun ReportSummaryContent(
     onExport: (ReportPeriod) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        PeriodSelector(state.period, state.today, onPeriodChange = { onAction(ReportSummaryUiAction.SetPeriod(it)) })
-        val summary = state.summary
-        if (summary == null) {
-            Text(stringResource(R.string.report_summary_loading), style = MaterialTheme.typography.bodyMedium)
-            return@Column
-        }
-        FigureCard(stringResource(R.string.report_summary_income), summary.income, null, sign = MoneySign.NONE)
-        FigureCard(stringResource(R.string.report_summary_own_spend), summary.ownSpend, stringResource(R.string.report_summary_own_spend_hint))
-        OthersCard(summary.others)
-        if (summary.unidentified != 0L) {
-            FigureCard(
-                stringResource(R.string.report_summary_unidentified),
-                summary.unidentified,
-                stringResource(R.string.report_summary_unidentified_hint),
-                sign = if (summary.unidentified > 0) MoneySign.PLUS else MoneySign.NONE,
-            )
-        }
-        NavButton(R.string.report_summary_by_category) { onOpenByCategory(state.period) }
-        NavButton(R.string.report_summary_by_tag) { onOpenByTag(state.period) }
-        NavButton(R.string.report_summary_by_account) { onOpenByAccount(state.period) }
-        NavButton(R.string.report_summary_origin) { onOpenOrigin(state.period) }
-        Button(onClick = { onExport(state.period) }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
-            Text(stringResource(R.string.report_summary_export))
+    val spacing = LocalSpacing.current
+    ScreenScaffold(title = stringResource(R.string.report_summary_title), showBack = false, modifier = modifier) { padding ->
+        Column(
+            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(padding).padding(spacing.lg),
+            verticalArrangement = Arrangement.spacedBy(spacing.lg),
+        ) {
+            PeriodSelector(state.period, state.today, onPeriodChange = { onAction(ReportSummaryUiAction.SetPeriod(it)) })
+            val summary = state.summary
+            if (summary == null) {
+                Text(stringResource(R.string.report_summary_loading), style = MaterialTheme.typography.bodyMedium)
+                return@Column
+            }
+            FigureCard(stringResource(R.string.report_summary_income), summary.income, null, sign = MoneySign.NONE)
+            FigureCard(stringResource(R.string.report_summary_own_spend), summary.ownSpend, stringResource(R.string.report_summary_own_spend_hint))
+            OthersCard(summary.others)
+            if (summary.unidentified != 0L) {
+                FigureCard(
+                    stringResource(R.string.report_summary_unidentified),
+                    summary.unidentified,
+                    stringResource(R.string.report_summary_unidentified_hint),
+                    sign = if (summary.unidentified > 0) MoneySign.PLUS else MoneySign.NONE,
+                )
+            }
+            SectionCard {
+                val entries = listOf(
+                    R.string.report_summary_by_category to onOpenByCategory,
+                    R.string.report_summary_by_tag to onOpenByTag,
+                    R.string.report_summary_by_account to onOpenByAccount,
+                    R.string.report_summary_origin to onOpenOrigin,
+                )
+                entries.forEachIndexed { index, (label, open) ->
+                    if (index > 0) SectionDivider()
+                    SectionRow(headline = stringResource(label), onClick = { open(state.period) })
+                }
+            }
+            PillButton(stringResource(R.string.report_summary_export), { onExport(state.period) }, Modifier.fillMaxWidth())
         }
     }
 }
 
 @Composable
 private fun FigureCard(label: String, minor: Long, hint: String?, sign: MoneySign = MoneySign.NONE) {
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    SectionCard {
+        Column(Modifier.padding(LocalSpacing.current.lg), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            MoneyText(reportMoney(minor), style = MaterialTheme.typography.headlineSmall, sign = sign)
+            MoneyText(reportMoney(minor), style = MaterialTheme.typography.headlineMedium, sign = sign)
             if (hint != null) Text(hint, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
@@ -110,8 +123,8 @@ private fun FigureCard(label: String, minor: Long, hint: String?, sign: MoneySig
 
 @Composable
 private fun OthersCard(others: OthersSpend) {
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    SectionCard {
+        Column(Modifier.padding(LocalSpacing.current.lg), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
                 stringResource(R.string.report_summary_others),
                 style = MaterialTheme.typography.labelLarge,
@@ -132,21 +145,17 @@ private fun OthersLine(label: Int, minor: Long) {
     }
 }
 
-@Composable
-private fun NavButton(label: Int, onClick: () -> Unit) {
-    OutlinedButton(onClick = onClick, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(stringResource(label)) }
-}
-
 @Preview(showBackground = true)
 @Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(showBackground = true, fontScale = 2f)
 @Composable
 private fun ReportSummaryContentPreview() {
-    ReportSummaryContent(
+    MyfinancesTheme { ReportSummaryContent(
         state = ReportSummaryUiState(
             period = ReportPeriod.Month(YearMonth.of(2026, 10)),
             today = LocalDate.of(2026, 11, 2),
             summary = ReportSummary(500_000, 320_000, OthersSpend(120_000, 20_000), -3_000),
         ),
         onAction = {}, onOpenByCategory = {}, onOpenByTag = {}, onOpenByAccount = {}, onOpenOrigin = {}, onExport = {},
-    )
+    ) }
 }
