@@ -40,6 +40,9 @@
     <string name="theme_system">Sistema</string>
     <string name="theme_light">Claro</string>
     <string name="theme_dark">Oscuro</string>
+    <string name="theme_amoled">Oscuro puro</string>
+    <string name="settings_dynamic_color">Color del sistema</string>
+    <string name="settings_dynamic_color_hint">Usa los colores de tu teléfono en lugar del turquesa.</string>
     <string name="settings_currency">Moneda</string>
     <string name="settings_currency_value">Soles (PEN)</string>
     <string name="settings_format">Formato</string>

@@ -57,7 +57,8 @@ class MainActivity : FragmentActivity() {
             )
             val themeMode by themeRepository.themeMode.collectAsStateWithLifecycle(initialValue = ThemeMode.SYSTEM)
             LaunchedEffect(settings.secureScreen) { applySecureScreen(settings.secureScreen) }
-            MyfinancesTheme(themeMode = themeMode) {
+            val dynamicColor by themeRepository.dynamicColor.collectAsStateWithLifecycle(initialValue = false)
+            MyfinancesTheme(themeMode = themeMode, dynamicColor = dynamicColor) {
                 CompositionLocalProvider(LocalHideAmounts provides settings.hideAmounts) {
                     AppLockGate {
                         // Primer uso (S02–S05) entre el bloqueo y la app; la app solo se compone ya completado.
