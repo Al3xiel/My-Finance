@@ -34,11 +34,10 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.al3xiel.my_finances.R
+import com.al3xiel.my_finances.core.designsystem.AccountTile
 import com.al3xiel.my_finances.core.designsystem.AppIcons
 import com.al3xiel.my_finances.core.designsystem.LocalHideAmounts
 import com.al3xiel.my_finances.core.designsystem.MoneyText
-import com.al3xiel.my_finances.core.designsystem.MoneyTone
-import com.al3xiel.my_finances.core.designsystem.MoneyVariant
 import com.al3xiel.my_finances.core.money.CurrencyCode
 import com.al3xiel.my_finances.core.money.Money
 import com.al3xiel.my_finances.domain.model.AccountId
@@ -166,20 +165,13 @@ private fun EmptyLine(res: Int) {
     Text(stringResource(res), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
 }
 
-/** Ficha del carrusel: el saldo va debajo del nombre para que ninguno se parta con la fuente grande. */
 @Composable
 private fun AccountRow(line: AccountWithBalance, onOpenAccount: (AccountId) -> Unit) {
-    Card(
+    AccountTile(
+        name = line.account.name,
+        balance = Money(line.balanceMinor, line.account.currency),
         onClick = { onOpenAccount(line.account.id) },
-        modifier = Modifier.width(200.dp),
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
-    ) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(line.account.name, style = MaterialTheme.typography.titleMedium)
-            MoneyText(Money(line.balanceMinor, line.account.currency), variant = MoneyVariant.NORMAL, tone = MoneyTone.AUTO)
-        }
-    }
+    )
 }
 
 /** La barra muestra lo consumido; «estimado» solo aparece en los modos estimados. */
