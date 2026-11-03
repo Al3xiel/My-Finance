@@ -12,6 +12,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -20,6 +21,8 @@ import androidx.compose.ui.unit.dp
 import com.al3xiel.my_finances.R
 import com.al3xiel.my_finances.core.money.CurrencyCode
 import com.al3xiel.my_finances.core.money.Money
+import com.al3xiel.my_finances.ui.theme.LocalFinanceColors
+import com.al3xiel.my_finances.ui.theme.LocalSpacing
 
 /**
  * Tarjeta de un fondo: barra de lo gastado sobre lo asignado y las tres cifras. El restante siempre se rotula
@@ -36,39 +39,53 @@ fun FundProgressCard(
     modifier: Modifier = Modifier,
 ) {
     val fraction = if (allocated.amountMinor <= 0) 0f else (spent.amountMinor.toFloat() / allocated.amountMinor).coerceIn(0f, 1f)
+    val overspent = remaining.amountMinor < 0
+    val spacing = LocalSpacing.current
     Card(
         onClick = onClick,
         modifier = modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
     ) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                Text(name, style = MaterialTheme.typography.titleMedium)
-                if (isClosed) {
-                    Text(
-                        stringResource(R.string.fund_closed_badge),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
+        Column(modifier = Modifier.padding(spacing.lg), verticalArrangement = Arrangement.spacedBy(spacing.sm)) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(spacing.sm),
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                if (isClosed) StatusBadge(BadgeStatus.PENDING, label = stringResource(R.string.fund_closed_badge))
             }
             // La barra es decorativa: las cifras de abajo ya dicen lo mismo, así que no entra al foco de accesibilidad.
-            LinearProgressIndicator(progress = { fraction }, modifier = Modifier.fillMaxWidth().clearAndSetSemantics {})
+            LinearProgressIndicator(
+                progress = { fraction },
+                color = if (overspent) LocalFinanceColors.current.expense else MaterialTheme.colorScheme.primary,
+                modifier = Modifier.fillMaxWidth().clearAndSetSemantics {},
+            )
             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                 Figure(stringResource(R.string.fund_progress_allocated), allocated)
                 Figure(stringResource(R.string.fund_progress_spent), spent)
-                Figure(stringResource(R.string.fund_progress_remaining_estimated), remaining)
+                Figure(stringResource(R.string.fund_progress_remaining_estimated), remaining, tone = MoneyTone.AUTO)
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(spacing.sm), verticalAlignment = Alignment.CenterVertically) {
+                EstimatedBadge()
+                if (overspent) {
+                    Text(
+                        stringResource(R.string.fund_overspent_warning),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = LocalFinanceColors.current.expense,
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-private fun Figure(label: String, money: Money) {
+private fun Figure(label: String, money: Money, tone: MoneyTone = MoneyTone.NONE) {
     Column {
         Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        MoneyText(money, style = MaterialTheme.typography.bodyMedium)
+        MoneyText(money, style = MaterialTheme.typography.bodyMedium, tone = tone)
     }
 }
 

@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -35,6 +34,9 @@ import com.al3xiel.my_finances.core.designsystem.EntityOption
 import com.al3xiel.my_finances.core.designsystem.LocalHideAmounts
 import com.al3xiel.my_finances.core.designsystem.MoneyText
 import com.al3xiel.my_finances.core.designsystem.NoticeDialog
+import com.al3xiel.my_finances.core.designsystem.ScreenScaffold
+import com.al3xiel.my_finances.core.designsystem.SectionCard
+import com.al3xiel.my_finances.core.designsystem.SectionDivider
 import com.al3xiel.my_finances.core.designsystem.dayText
 import com.al3xiel.my_finances.core.money.CurrencyCode
 import com.al3xiel.my_finances.core.money.Money
@@ -50,6 +52,8 @@ import com.al3xiel.my_finances.feature.funds.ui.components.FundActions
 import com.al3xiel.my_finances.feature.funds.ui.components.FundHeader
 import com.al3xiel.my_finances.feature.funds.ui.components.TopUpDialog
 import com.al3xiel.my_finances.feature.funds.ui.components.UsageDayRow
+import com.al3xiel.my_finances.ui.theme.LocalSpacing
+import com.al3xiel.my_finances.ui.theme.MyfinancesTheme
 import java.time.LocalDate
 
 /** S52 (detalle): cifras del fondo, días de uso, arqueos y acciones. */
@@ -82,31 +86,40 @@ fun FundDetailContent(
 ) {
     val overview = state.overview
     if (overview == null) {
-        if (state.notFound) EmptyState(title = stringResource(R.string.error_not_found), body = "", modifier = modifier)
+        ScreenScaffold(title = "", modifier = modifier) { padding ->
+            if (state.notFound) EmptyState(title = stringResource(R.string.error_not_found), body = "", modifier = Modifier.padding(padding))
+        }
         return
     }
     val fund = overview.fund
     var dialog by rememberSaveable { mutableStateOf<FundDialog?>(null) }
     var day by rememberSaveable { mutableStateOf(state.today) }
-    LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        item { FundHeader(overview) }
-        if (fund.status == FundStatus.ACTIVE) {
-            item { FundActions(fund.id, onCount, onEdit, onAddExpense, onTopUp = { dialog = FundDialog.TOP_UP }, onClose = { dialog = FundDialog.CLOSE }) }
-            if (fund.mode == ConsumptionMode.DAILY_ESTIMATE) {
-                item {
-                    UsageDayRow(day, state.today, marked = day in state.usageDays, onDay = { day = it }, onToggle = { onAction(FundDetailUiAction.ToggleDay(day)) })
+    val spacing = LocalSpacing.current
+    ScreenScaffold(title = fund.name, modifier = modifier) { padding ->
+        LazyColumn(
+            modifier = Modifier.fillMaxSize().padding(padding),
+            contentPadding = PaddingValues(spacing.lg),
+            verticalArrangement = Arrangement.spacedBy(spacing.lg),
+        ) {
+            item { FundHeader(overview) }
+            if (fund.status == FundStatus.ACTIVE) {
+                item { FundActions(fund.id, onCount, onEdit, onAddExpense, onTopUp = { dialog = FundDialog.TOP_UP }, onClose = { dialog = FundDialog.CLOSE }) }
+                if (fund.mode == ConsumptionMode.DAILY_ESTIMATE) {
+                    item {
+                        UsageDayRow(day, state.today, marked = day in state.usageDays, onDay = { day = it }, onToggle = { onAction(FundDetailUiAction.ToggleDay(day)) })
+                    }
                 }
             }
-        }
-        if (state.counts.isNotEmpty()) {
-            item {
-                Text(stringResource(R.string.fund_counts_history), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 8.dp))
+            if (state.counts.isNotEmpty()) {
+                item {
+                    SectionCard(title = stringResource(R.string.fund_counts_history)) {
+                        state.counts.forEachIndexed { index, count ->
+                            if (index > 0) SectionDivider()
+                            CountRow(count)
+                        }
+                    }
+                }
             }
-            items(state.counts) { CountRow(it) }
         }
     }
     when (dialog) {
@@ -141,7 +154,8 @@ private val previewState = run {
 
 @Preview(showBackground = true)
 @Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(showBackground = true, fontScale = 2f)
 @Composable
 private fun FundDetailContentPreview() {
-    CompositionLocalProvider(LocalHideAmounts provides false) { FundDetailContent(previewState, {}, {}, {}, {}) }
+    MyfinancesTheme { CompositionLocalProvider(LocalHideAmounts provides false) { FundDetailContent(previewState, {}, {}, {}, {}) } }
 }
