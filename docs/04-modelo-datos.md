@@ -623,3 +623,4 @@ Resultado: BBVA 780 · BCP 170 · Efectivo 95 · Apartado Pasajes 45 · Por cobr
 | D71 | Marco de pantalla | Las pantallas adoptan `ScreenScaffold` por fases; el título sale del encabezado y no de un `Text` suelto; el volver usa `LocalNavigator` (2026-11-03) |
 | D72 | Monto | El campo de monto mantiene el teclado numérico del sistema (accesibilidad, IME, sin lógica nueva); no hay teclado propio. Convención, vetable (2026-11-03) |
 | D73 | Estados | Un solo `StatusBadge` con icono y texto para todos los estados; el color solo refuerza (2026-11-03) |
+| D74 | Héroe de Inicio | El saldo en cuentas es el único número grande de Inicio; los otros indicadores van en tarjetas pequeñas. No cambia ninguna fórmula de 5.5 (2026-11-03) |
