@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -25,6 +24,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import com.al3xiel.my_finances.R
+import com.al3xiel.my_finances.core.designsystem.PillButton
 import com.al3xiel.my_finances.core.security.AuthPrompt
 import com.al3xiel.my_finances.ui.theme.MyfinancesTheme
 
@@ -84,9 +84,7 @@ fun AppLockContent(
         ) {
             Text(text = stringResource(R.string.app_lock_title), style = MaterialTheme.typography.headlineMedium)
             state.message?.let { Text(text = stringResource(it.textRes())) }
-            Button(onClick = { onAction(AppLockUiAction.Unlock(prompt)) }) {
-                Text(stringResource(R.string.app_lock_unlock))
-            }
+            PillButton(text = stringResource(R.string.app_lock_unlock), onClick = { onAction(AppLockUiAction.Unlock(prompt)) })
         }
     }
 }

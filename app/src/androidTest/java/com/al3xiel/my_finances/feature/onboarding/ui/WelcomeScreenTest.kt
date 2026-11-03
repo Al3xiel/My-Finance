@@ -1,8 +1,10 @@
 package com.al3xiel.my_finances.feature.onboarding.ui
 
+import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.unit.dp
 import androidx.test.platform.app.InstrumentationRegistry
 import com.al3xiel.my_finances.R
 import org.junit.Assert.assertEquals
@@ -37,5 +39,12 @@ class WelcomeScreenTest {
         rule.setContent { WelcomeContent(WelcomeUiState(canRestore = true), onContinue = {}, onRestore = { restored++ }) }
         rule.onNodeWithText(string(R.string.onboarding_restore)).performClick()
         assertEquals(1, restored)
+    }
+
+    @Test
+    fun theButtonsArePillsOfAtLeast48dp() {
+        rule.setContent { WelcomeContent(WelcomeUiState(canRestore = true), onContinue = {}, onRestore = {}) }
+        rule.onNodeWithText(string(R.string.onboarding_continue)).assertHeightIsAtLeast(48.dp)
+        rule.onNodeWithText(string(R.string.onboarding_restore)).assertHeightIsAtLeast(48.dp)
     }
 }

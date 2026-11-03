@@ -1,6 +1,7 @@
 package com.al3xiel.my_finances.feature.onboarding.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.Surface
@@ -16,6 +17,8 @@ import androidx.navigation3.ui.NavDisplay
 import com.al3xiel.my_finances.core.navigation.Backup
 import com.al3xiel.my_finances.core.navigation.Onboarding
 import com.al3xiel.my_finances.core.navigation.Route
+import com.al3xiel.my_finances.feature.onboarding.ui.components.OnboardingProgress
+import com.al3xiel.my_finances.feature.onboarding.ui.components.onboardingStepNumber
 import com.al3xiel.my_finances.core.navigation.TabPlaceholderScreen
 import com.al3xiel.my_finances.feature.backup.ui.BackupScreen
 import com.al3xiel.my_finances.feature.onboarding.domain.model.OnboardingStep
@@ -33,12 +36,15 @@ fun OnboardingFlow(
 
     BackHandler(enabled = state.canGoBack) { viewModel.onAction(OnboardingFlowUiAction.Back) }
     Surface(modifier = modifier.fillMaxSize()) {
-        NavDisplay(
-            backStack = state.stack,
-            onBack = { viewModel.onAction(OnboardingFlowUiAction.Back) },
-            entryProvider = onboardingEntries(viewModel::onAction),
-            modifier = Modifier.safeDrawingPadding(),
-        )
+        Column(modifier = Modifier.safeDrawingPadding()) {
+            onboardingStepNumber(state.stack.last())?.let { OnboardingProgress(step = it) }
+            NavDisplay(
+                backStack = state.stack,
+                onBack = { viewModel.onAction(OnboardingFlowUiAction.Back) },
+                entryProvider = onboardingEntries(viewModel::onAction),
+                modifier = Modifier.weight(1f),
+            )
+        }
     }
 }
 

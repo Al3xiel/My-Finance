@@ -1,6 +1,8 @@
 package com.al3xiel.my_finances.feature.privacy.ui
 
+import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -29,5 +31,11 @@ class AppLockContentTest {
     fun showsTheMessageForAFailedAttempt() {
         rule.setContent { AppLockContent(AppLockUiState(message = AppLockMessage.LOCKED_OUT), onAction = {}) }
         rule.onNodeWithText(string(R.string.app_lock_message_locked_out)).assertIsDisplayed()
+    }
+
+    @Test
+    fun theUnlockButtonIsAPillOfAtLeast48dp() {
+        rule.setContent { AppLockContent(AppLockUiState(), onAction = {}) }
+        rule.onNodeWithText(string(R.string.app_lock_unlock)).assertHeightIsAtLeast(48.dp)
     }
 }
