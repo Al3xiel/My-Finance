@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.al3xiel.my_finances.R
+import com.al3xiel.my_finances.core.designsystem.AppIcons
 import com.al3xiel.my_finances.core.designsystem.AccountCard
 import com.al3xiel.my_finances.core.designsystem.LocalHideAmounts
 import com.al3xiel.my_finances.core.designsystem.MoneyText
@@ -97,7 +98,7 @@ private fun HomeHeader(hidden: Boolean, onToggle: () -> Unit) {
         IconButton(onClick = onToggle) {
             val label = stringResource(if (hidden) R.string.home_show_amounts else R.string.home_hide_amounts)
             androidx.compose.material3.Icon(
-                painter = painterResource(if (hidden) R.drawable.ic_visibility_off else R.drawable.ic_visibility),
+                painter = painterResource(if (hidden) AppIcons.VisibilityOff else AppIcons.Visibility),
                 contentDescription = label,
             )
         }
