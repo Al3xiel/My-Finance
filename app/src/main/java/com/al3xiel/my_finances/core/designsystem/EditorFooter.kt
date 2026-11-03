@@ -18,7 +18,7 @@ import com.al3xiel.my_finances.domain.model.BusinessError
 
 /** Cierre común de los editores: el error de negocio que rechazó el guardado, si lo hay, y el botón Guardar. */
 @Composable
-fun EditorFooter(error: BusinessError?, onSave: () -> Unit, modifier: Modifier = Modifier) {
+fun EditorFooter(error: BusinessError?, onSave: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         error?.let {
             Text(
@@ -27,7 +27,7 @@ fun EditorFooter(error: BusinessError?, onSave: () -> Unit, modifier: Modifier =
                 modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
             )
         }
-        PillButton(text = stringResource(R.string.editor_save), onClick = onSave, modifier = Modifier.fillMaxWidth())
+        PillButton(text = stringResource(R.string.editor_save), onClick = onSave, enabled = enabled, modifier = Modifier.fillMaxWidth())
     }
 }
 
