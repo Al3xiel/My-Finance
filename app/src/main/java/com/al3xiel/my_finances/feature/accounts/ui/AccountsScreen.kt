@@ -3,19 +3,12 @@ package com.al3xiel.my_finances.feature.accounts.ui
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -24,7 +17,9 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.al3xiel.my_finances.R
 import com.al3xiel.my_finances.core.designsystem.AccountCard
-import com.al3xiel.my_finances.core.designsystem.EmptyState
+import com.al3xiel.my_finances.core.designsystem.CatalogScaffold
+import com.al3xiel.my_finances.core.designsystem.PillButton
+import com.al3xiel.my_finances.core.designsystem.PillStyle
 import com.al3xiel.my_finances.core.designsystem.LocalHideAmounts
 import com.al3xiel.my_finances.core.designsystem.MoneyInput
 import com.al3xiel.my_finances.core.designsystem.NameDialog
@@ -55,43 +50,34 @@ fun AccountsContent(
     onOpenAccount: (AccountId) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier.fillMaxSize()) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Text(stringResource(R.string.accounts_title), style = MaterialTheme.typography.titleLarge)
-            TextButton(onClick = { onAction(AccountsUiAction.ShowCreate) }) { Text(stringResource(R.string.catalog_add)) }
-        }
-        if (state.accounts.isEmpty()) {
-            EmptyState(
-                title = stringResource(R.string.catalog_empty_title),
-                body = stringResource(R.string.catalog_empty_body),
-            )
-        } else {
-            LazyColumn(
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                items(state.accounts, key = { it.account.id.value }) { item ->
-                    Column {
-                        AccountCard(
-                            name = item.account.name,
-                            balance = Money(item.balanceMinor, item.account.currency),
-                            typeLabel = stringResource(item.account.type.labelRes()),
-                            isArchived = item.account.isArchived,
-                            onClick = { onOpenAccount(item.account.id) },
-                        )
-                        if (!item.account.isArchived) {
-                            Row {
-                                TextButton(onClick = { onAction(AccountsUiAction.ShowRename(item.account.id, item.account.name)) }) {
-                                    Text(stringResource(R.string.catalog_rename))
-                                }
-                                TextButton(onClick = { onAction(AccountsUiAction.Archive(item.account.id)) }) {
-                                    Text(stringResource(R.string.catalog_archive))
-                                }
-                            }
+    CatalogScaffold(
+        title = stringResource(R.string.accounts_title),
+        onAdd = { onAction(AccountsUiAction.ShowCreate) },
+        isEmpty = state.accounts.isEmpty(),
+        modifier = modifier,
+    ) {
+        state.accounts.forEach { item ->
+            key(item.account.id.value) {
+                Column {
+                    AccountCard(
+                        name = item.account.name,
+                        balance = Money(item.balanceMinor, item.account.currency),
+                        typeLabel = stringResource(item.account.type.labelRes()),
+                        isArchived = item.account.isArchived,
+                        onClick = { onOpenAccount(item.account.id) },
+                    )
+                    if (!item.account.isArchived) {
+                        Row {
+                            PillButton(
+                                text = stringResource(R.string.catalog_rename),
+                                onClick = { onAction(AccountsUiAction.ShowRename(item.account.id, item.account.name)) },
+                                style = PillStyle.TEXT,
+                            )
+                            PillButton(
+                                text = stringResource(R.string.catalog_archive),
+                                onClick = { onAction(AccountsUiAction.Archive(item.account.id)) },
+                                style = PillStyle.TEXT,
+                            )
                         }
                     }
                 }

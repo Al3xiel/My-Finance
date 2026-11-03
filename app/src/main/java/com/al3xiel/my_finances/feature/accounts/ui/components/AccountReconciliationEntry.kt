@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -15,6 +14,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.al3xiel.my_finances.R
+import com.al3xiel.my_finances.core.designsystem.BadgeStatus
+import com.al3xiel.my_finances.core.designsystem.PillButton
+import com.al3xiel.my_finances.core.designsystem.PillStyle
+import com.al3xiel.my_finances.core.designsystem.StatusBadge
 import com.al3xiel.my_finances.core.designsystem.dayText
 import com.al3xiel.my_finances.core.money.CurrencyCode
 import com.al3xiel.my_finances.core.money.Money
@@ -36,13 +39,14 @@ internal fun ReconciliationEntry(
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxWidth().padding(top = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        OutlinedButton(onClick = onReconcile, modifier = Modifier.fillMaxWidth()) {
-            Text(
-                stringResource(
-                    if (state.hasOpenReconciliation) R.string.account_detail_reconcile_continue else R.string.account_detail_reconcile,
-                ),
-            )
-        }
+        PillButton(
+            text = stringResource(
+                if (state.hasOpenReconciliation) R.string.account_detail_reconcile_continue else R.string.account_detail_reconcile,
+            ),
+            onClick = onReconcile,
+            style = PillStyle.TONAL,
+            modifier = Modifier.fillMaxWidth(),
+        )
         val latest = state.latestReconciliation ?: return@Column
         Column(
             modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable { onOpenReconciliation(latest.id) },
@@ -52,6 +56,7 @@ internal fun ReconciliationEntry(
             val date = state.latestReconciledOn?.let { dayText(it) }.orEmpty()
             Text(stringResource(R.string.account_detail_last_line, stringResource(latest.status.labelRes()), date), style = MaterialTheme.typography.bodyMedium)
             if (latest.needsReview) {
+                StatusBadge(BadgeStatus.NEEDS_REVIEW)
                 Text(stringResource(R.string.reconciliation_needs_review), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
             }
         }
