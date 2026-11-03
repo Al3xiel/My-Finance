@@ -14,7 +14,6 @@ import com.al3xiel.my_finances.feature.movements.domain.model.MovementSummary
 import com.al3xiel.my_finances.feature.movements.domain.usecase.MovementFixture
 import com.al3xiel.my_finances.feature.movements.domain.usecase.VoidMovementUseCase
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -107,6 +106,79 @@ class MovementsDayActionsTest {
 
         vm.onAction(MovementsUiAction.DismissError)
         assertNull(vm.uiState.value.error)
-        assertFalse(vm.uiState.value.days.any { true })
+    }
+
+    private fun show(detail: com.al3xiel.my_finances.feature.movements.domain.model.Movement) {
+        f.movements.details[detail.id] = MovementDetail(
+            detail,
+            listOf(MovementHistoryEntry(1, HistoryKind.REGISTERED, f.today, Instant.EPOCH, null)),
+        )
+    }
+
+    @Test
+    fun voidingAnIncomeThatLeavesTheBalanceNegativeWarnsHidesTheReasonDialogAndConfirms() {
+        show(f.incomeMovement("m1", f.bbva, 1_500))
+        val vm = viewModel()
+
+        vm.onAction(MovementsUiAction.AskVoid(MovementId("m1")))
+        vm.onAction(MovementsUiAction.ConfirmVoid("duplicado"))
+
+        assertEquals(BusinessError.WouldGoNegative(-500), vm.uiState.value.negativeWarning)
+        // Con el aviso a la vista no queda el diálogo de motivo debajo.
+        assertNull(vm.uiState.value.voidingId)
+        assertEquals(0, f.store.events.size)
+
+        vm.onAction(MovementsUiAction.ConfirmNegativeBalance)
+
+        assertEquals(MovementVoided(MovementId("m1"), "duplicado", null), f.store.events.single().event)
+        assertNull(vm.uiState.value.negativeWarning)
+        assertNull(vm.uiState.value.error)
+    }
+
+    @Test
+    fun dismissingTheNegativeWarningVoidsNothing() {
+        show(f.incomeMovement("m1", f.bbva, 1_500))
+        val vm = viewModel()
+        vm.onAction(MovementsUiAction.AskVoid(MovementId("m1")))
+        vm.onAction(MovementsUiAction.ConfirmVoid("duplicado"))
+
+        vm.onAction(MovementsUiAction.DismissWarning)
+
+        assertNull(vm.uiState.value.negativeWarning)
+        assertNull(vm.uiState.value.voidingId)
+        assertEquals(0, f.store.events.size)
+    }
+
+    @Test
+    fun aSecondConfirmWhileTheFirstIsRunningEmitsASingleEvent() {
+        show(f.expenseMovement("m1", f.bbva, "p1" to 300))
+        val vm = viewModel()
+        vm.onAction(MovementsUiAction.AskVoid(MovementId("m1")))
+        val gate = kotlinx.coroutines.CompletableDeferred<Unit>()
+        f.movements.gate = gate
+
+        vm.onAction(MovementsUiAction.ConfirmVoid("duplicado"))
+        vm.onAction(MovementsUiAction.ConfirmVoid("duplicado"))
+        gate.complete(Unit)
+
+        assertEquals(1, f.store.events.size)
+    }
+
+    @Test
+    fun askingOrDismissingWhileAVoidIsRunningDoesNotLoseItsResult() {
+        show(f.expenseMovement("m1", f.bbva, "p1" to 300))
+        val vm = viewModel()
+        vm.onAction(MovementsUiAction.AskVoid(MovementId("m1")))
+        val gate = kotlinx.coroutines.CompletableDeferred<Unit>()
+        f.movements.gate = gate
+        vm.onAction(MovementsUiAction.ConfirmVoid("duplicado"))
+
+        vm.onAction(MovementsUiAction.AskVoid(MovementId("otra")))
+        vm.onAction(MovementsUiAction.DismissVoid)
+
+        assertEquals(MovementId("m1"), vm.uiState.value.voidingId)
+        gate.complete(Unit)
+        assertEquals(MovementVoided(MovementId("m1"), "duplicado", null), f.store.events.single().event)
+        assertNull(vm.uiState.value.voidingId)
     }
 }

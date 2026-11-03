@@ -51,7 +51,10 @@ data class MovementRowUi(
     val canVoid: Boolean = false,
 )
 
-/** Un día con su subtotal: ingresos menos gastos de lo activo; las transferencias y lo anulado no cuentan. */
+/**
+ * Un día con su subtotal: ingresos menos gastos de lo activo. Las transferencias, los ajustes y lo anulado no cuentan,
+ * y con filtros activos suma solo las filas que se ven.
+ */
 data class DaySection(val day: LocalDate, val rows: List<MovementRowUi>, val subtotal: Money)
 
 data class FilterOptions(
@@ -177,7 +180,8 @@ class MovementsViewModel @AssistedInject constructor(
     }
 
     val uiState: StateFlow<MovementsUiState> = combine(listState, voidState) { list, voiding ->
-        list.copy(voidingId = voiding.voidingId, negativeWarning = voiding.negativeWarning, error = voiding.error)
+        // Con el aviso de saldo negativo a la vista el diálogo de motivo se cierra (el id se conserva para confirmar).
+        list.copy(voidingId = voiding.voidingId.takeIf { voiding.negativeWarning == null }, negativeWarning = voiding.negativeWarning, error = voiding.error)
     }.stateIn(viewModelScope, SharingStarted.Eagerly, MovementsUiState())
 
     fun onAction(action: MovementsUiAction) {
@@ -192,10 +196,12 @@ class MovementsViewModel @AssistedInject constructor(
                 Query(searchText = action.text, filter = it.filter.copy(text = action.text.trim().ifEmpty { null }))
             }
             MovementsUiAction.ClearFilters -> query.value = Query()
-            is MovementsUiAction.AskVoid -> voidState.update { it.copy(voidingId = action.id, error = null) }
-            MovementsUiAction.DismissVoid -> voidState.update { it.copy(voidingId = null) }
+            // Mientras una anulación corre no se cambia de fila ni se cierra: su resultado llegaría a otro destino.
+            is MovementsUiAction.AskVoid -> voidState.update { if (it.submitting) it else it.copy(voidingId = action.id, error = null) }
+            MovementsUiAction.DismissVoid -> voidState.update { if (it.submitting) it else it.copy(voidingId = null) }
             is MovementsUiAction.ConfirmVoid -> submitVoid(action.reason, confirmNegative = false)
             MovementsUiAction.ConfirmNegativeBalance -> {
+                if (voidState.value.submitting) return
                 val reason = voidState.value.pendingReason ?: return
                 voidState.update { it.copy(negativeWarning = null) }
                 submitVoid(reason, confirmNegative = true)
