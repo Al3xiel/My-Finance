@@ -3,6 +3,7 @@ package com.al3xiel.my_finances.feature.diagnostics.domain.usecase
 import com.al3xiel.my_finances.core.id.IdGenerator
 import com.al3xiel.my_finances.core.security.container.BackupPassword
 import com.al3xiel.my_finances.core.security.container.ContainerHeader
+import com.al3xiel.my_finances.domain.model.Outcome
 import com.al3xiel.my_finances.domain.model.ReconciliationId
 import com.al3xiel.my_finances.domain.model.event.DiagnosticDictionaryExported
 import com.al3xiel.my_finances.domain.model.event.DiagnosticExportCreated
@@ -10,16 +11,20 @@ import com.al3xiel.my_finances.domain.model.event.DictionaryScope
 import com.al3xiel.my_finances.domain.model.event.EventStore
 import com.al3xiel.my_finances.domain.usecase.EventRecorder
 import com.al3xiel.my_finances.feature.backup.domain.repository.BackupFilePort
-import com.al3xiel.my_finances.feature.diagnostics.data.DictionaryFile
-import com.al3xiel.my_finances.feature.diagnostics.data.DictionaryFormat
-import com.al3xiel.my_finances.feature.diagnostics.data.DictionaryFormatException
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.DictionaryFile
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.DictionaryFormat
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.DictionaryFormatException
 import com.al3xiel.my_finances.feature.diagnostics.domain.anonymize.FieldClassification
 import com.al3xiel.my_finances.feature.diagnostics.domain.anonymize.PayloadTexts
 import com.al3xiel.my_finances.feature.diagnostics.domain.anonymize.PlainStringFields
 import com.al3xiel.my_finances.feature.diagnostics.domain.anonymize.Treatment
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.DictionaryRequest
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.DictionaryRequestCodec
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.DiagnosticSelectionRequest
 import java.io.IOException
+import kotlin.coroutines.cancellation.CancellationException
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 sealed interface DictionaryPreviewResult {
@@ -47,6 +52,7 @@ sealed interface ExportDictionaryResult {
  */
 class ExportDictionaryUseCase internal constructor(
     private val eventStore: EventStore,
+    private val select: SelectDiagnosticEventsUseCase,
     private val files: BackupFilePort,
     private val recorder: EventRecorder,
     private val ids: IdGenerator,
@@ -56,11 +62,12 @@ class ExportDictionaryUseCase internal constructor(
     @Inject
     constructor(
         eventStore: EventStore,
+        select: SelectDiagnosticEventsUseCase,
         files: BackupFilePort,
         recorder: EventRecorder,
         ids: IdGenerator,
         aliases: ResolveAliasesUseCase,
-    ) : this(eventStore, files, recorder, ids, aliases, ContainerHeader.DEFAULT_ITERATIONS)
+    ) : this(eventStore, select, files, recorder, ids, aliases, ContainerHeader.DEFAULT_ITERATIONS)
 
     private sealed interface Resolution {
         class Found(val request: DictionaryRequest, val export: DiagnosticExportCreated, val pseudonyms: List<String>, val unknown: Int) : Resolution
@@ -95,11 +102,11 @@ class ExportDictionaryUseCase internal constructor(
         val export = resolved.export
         val reconciliationId = checkNotNull(export.reconciliationId)
         val resolvedAliases = aliases(export.pseudonymMap.filterKeys { it in resolved.pseudonyms }, export.exportedUpToSequence)
-        val notes = notesOf(resolved.request.eventIds, export.exportedUpToSequence)
+        val notes = notesOf(resolved.request.eventIds, export)
         val file = DictionaryFile(
             DictionaryFormat.FORMAT_VERSION, ids.newId(), export.exportId, export.packageHash, scope, resolvedAliases, notes,
         )
-        val bytes = DictionaryFormat.write(file, password.copyOf(), iterations)
+        val bytes = DictionaryFormat.write(file, password, iterations)
 
         try {
             val output = files.openOutput(uri) ?: return ExportDictionaryResult.WriteFailed(documentDeleted = true)
@@ -109,16 +116,23 @@ class ExportDictionaryUseCase internal constructor(
         }
         if (!verify(uri, bytes, password, file)) return ExportDictionaryResult.VerificationFailed(files.delete(uri))
 
-        recorder.record(
-            DiagnosticDictionaryExported(
-                dictionaryId = file.dictionaryId,
-                exportId = export.exportId,
-                reconciliationId = reconciliationId,
-                scope = scope,
-                revealedPseudonyms = resolvedAliases.keys.sorted(),
-                revealedNoteEventIds = notes.keys.sorted(),
-            ),
-        )
+        try {
+            recorder.record(
+                DiagnosticDictionaryExported(
+                    dictionaryId = file.dictionaryId,
+                    exportId = export.exportId,
+                    reconciliationId = reconciliationId,
+                    scope = scope,
+                    revealedPseudonyms = resolvedAliases.keys.sorted(),
+                    revealedNoteEventIds = notes.keys.sorted(),
+                ),
+            )
+        } catch (e: CancellationException) {
+            withContext(NonCancellable) { files.delete(uri) }
+            throw e
+        } catch (_: Exception) {
+            return ExportDictionaryResult.WriteFailed(files.delete(uri))
+        }
         return ExportDictionaryResult.Created(resolvedAliases.size, notes.size)
     }
 
@@ -135,13 +149,18 @@ class ExportDictionaryUseCase internal constructor(
         return Resolution.Found(request, export, chosen, unknown)
     }
 
-    /** Notas o motivos (los campos que el anonimizador elimina) de cada evento pedido, solo hasta el corte de la exportación. */
-    private suspend fun notesOf(eventIds: List<String>, upToSequence: Long): Map<String, List<String>> {
+    /**
+     * Notas o motivos (los campos que el anonimizador elimina) de cada evento pedido, solo de los que viajaron en el paquete:
+     * la solicitud es texto de fuera y no puede servir para leer notas de eventos que nunca salieron.
+     */
+    private suspend fun notesOf(eventIds: List<String>, export: DiagnosticExportCreated): Map<String, List<String>> {
         if (eventIds.isEmpty()) return emptyMap()
-        val wanted = eventIds.toSet()
+        val traveled = (select(DiagnosticSelectionRequest(export.scope, export.reconciliationId)) as? Outcome.Ok)?.value?.events.orEmpty()
+            .filter { it.sequence <= export.exportedUpToSequence }.map { it.eventId }.toSet()
+        val wanted = eventIds.filter { it in traveled }.toSet()
         val found = LinkedHashMap<String, List<String>>()
         for (stored in eventStore.readAll()) {
-            if (stored.sequence > upToSequence || stored.eventId !in wanted) continue
+            if (stored.sequence > export.exportedUpToSequence || stored.eventId !in wanted) continue
             val texts = PlainStringFields.of(stored.event.type)
                 .filter { FieldClassification.rules[it.key]?.treatment == Treatment.REMOVE }
                 .flatMap { PayloadTexts.read(stored.payload, it.path) }
@@ -156,7 +175,7 @@ class ExportDictionaryUseCase internal constructor(
             false
         } else {
             val bytes = input.use { it.readNBytes(expected.size + 1) }
-            bytes.contentEquals(expected) && DictionaryFormat.read(bytes, password.copyOf()) == file
+            bytes.contentEquals(expected) && DictionaryFormat.read(bytes, password) == file
         }
     } catch (_: IOException) {
         false

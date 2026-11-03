@@ -86,3 +86,7 @@ app/src/main/java/com/al3xiel/my_finances/feature/diagnostics/domain/repository/
 app/src/main/java/com/al3xiel/my_finances/feature/diagnostics/data/RoomTableFingerprintSource.kt  # huellas de las tablas de proyeccion de la base real: plan diagnostics (T13)
 app/src/main/java/com/al3xiel/my_finances/feature/privacy/ui/AboutSection.kt  # seccion Acerca de que Ajustes recibe por SettingsSectionContributor: plan diagnostics (T13)
 app/src/main/java/com/al3xiel/my_finances/feature/privacy/ui/AboutViewModel.kt  # logica de los 7 toques de la seccion Acerca de: plan diagnostics (T13)
+app/src/main/java/com/al3xiel/my_finances/feature/diagnostics/domain/repository/DiagnosticPackageWriter.kt  # puerto del paquete y del espacio de diagnostico, no es un repositorio CRUD: plan diagnostics (auditoria)
+app/src/main/java/com/al3xiel/my_finances/feature/diagnostics/domain/repository/DiagnosticPackageReader.kt  # puerto del paquete y del espacio de diagnostico, no es un repositorio CRUD: plan diagnostics (auditoria)
+app/src/main/java/com/al3xiel/my_finances/feature/diagnostics/domain/repository/DiagnosticWorkspaceStore.kt  # puerto del paquete y del espacio de diagnostico, no es un repositorio CRUD: plan diagnostics (auditoria)
+app/src/main/java/com/al3xiel/my_finances/feature/diagnostics/domain/repository/WorkspaceEventWriter.kt  # puerto del paquete y del espacio de diagnostico, no es un repositorio CRUD: plan diagnostics (auditoria)

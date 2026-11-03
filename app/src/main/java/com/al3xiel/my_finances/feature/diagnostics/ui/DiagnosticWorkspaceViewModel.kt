@@ -9,7 +9,7 @@ import com.al3xiel.my_finances.core.security.AuthResult
 import com.al3xiel.my_finances.core.security.Authenticator
 import com.al3xiel.my_finances.core.security.ExternalFlowGuard
 import com.al3xiel.my_finances.core.security.container.BackupPassword
-import com.al3xiel.my_finances.feature.diagnostics.data.DiagnosticPackageException.Reason
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.DiagnosticPackageException.Reason
 import com.al3xiel.my_finances.feature.diagnostics.domain.usecase.ApplyDictionaryResult
 import com.al3xiel.my_finances.feature.diagnostics.domain.usecase.ApplyDictionaryUseCase
 import com.al3xiel.my_finances.feature.diagnostics.domain.usecase.BuildDivergenceReportUseCase
@@ -56,6 +56,8 @@ class DiagnosticWorkspaceViewModel @Inject constructor(
     private var authenticating = false
 
     fun onAction(action: DiagnosticWorkspaceUiAction) {
+        // El selector del sistema ya devolvió su resultado: la guardia se cierra pase lo que pase con la pantalla.
+        if (action is DiagnosticWorkspaceUiAction.PackagePicked || action is DiagnosticWorkspaceUiAction.DictionaryPicked) externalFlow.end()
         if (action is DiagnosticWorkspaceUiAction.Authenticate) return authenticate(action.prompt)
         if (state.value.stage == WorkspaceStage.LOCKED) {
             if (action is DiagnosticWorkspaceUiAction.SubmitPassword) BackupPassword.wipe(action.password)

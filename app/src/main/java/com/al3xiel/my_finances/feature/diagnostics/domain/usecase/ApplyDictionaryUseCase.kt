@@ -2,11 +2,11 @@ package com.al3xiel.my_finances.feature.diagnostics.domain.usecase
 
 import com.al3xiel.my_finances.core.security.container.BackupPassword
 import com.al3xiel.my_finances.feature.backup.domain.repository.BackupFilePort
-import com.al3xiel.my_finances.feature.diagnostics.data.DiagnosticPackageFormat
-import com.al3xiel.my_finances.feature.diagnostics.data.DictionaryFile
-import com.al3xiel.my_finances.feature.diagnostics.data.DictionaryFormat
-import com.al3xiel.my_finances.feature.diagnostics.data.DictionaryFormatException
-import com.al3xiel.my_finances.feature.diagnostics.data.workspace.DiagnosticWorkspace
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.DiagnosticPackageFormat
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.DictionaryFile
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.DictionaryFormat
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.DictionaryFormatException
+import com.al3xiel.my_finances.feature.diagnostics.domain.repository.DiagnosticWorkspaceStore
 import java.io.IOException
 import javax.inject.Inject
 
@@ -28,7 +28,7 @@ sealed interface ApplyDictionaryResult {
  */
 class ApplyDictionaryUseCase @Inject constructor(
     private val files: BackupFilePort,
-    private val workspace: DiagnosticWorkspace,
+    private val workspace: DiagnosticWorkspaceStore,
 ) {
     suspend operator fun invoke(uri: String?, password: CharArray): ApplyDictionaryResult {
         if (uri == null) return ApplyDictionaryResult.Cancelled
@@ -41,7 +41,7 @@ class ApplyDictionaryUseCase @Inject constructor(
         }
         if (bytes.size > MAX_BYTES) return ApplyDictionaryResult.NotADictionary
         val file = try {
-            DictionaryFormat.read(bytes, password.copyOf())
+            DictionaryFormat.read(bytes, password)
         } catch (e: DictionaryFormatException) {
             return when (e.reason) {
                 DictionaryFormatException.Reason.WRONG_PASSWORD -> ApplyDictionaryResult.WrongPassword

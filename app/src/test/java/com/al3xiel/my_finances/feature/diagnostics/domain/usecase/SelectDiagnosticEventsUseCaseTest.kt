@@ -101,6 +101,21 @@ class SelectDiagnosticEventsUseCaseTest {
     }
 
     @Test
+    fun theReconciliationCutIsTheCheckPlusTheLinkedMovements() {
+        val selection = select(reconciliation)
+        assertEquals(seq.getValue("check"), selection.cut.upToSequence)
+        assertEquals(setOf("m7"), selection.cut.alsoIncludedMovements)
+    }
+
+    @Test
+    fun theOtherScopesCutAtTheEndOfTheLog() {
+        val last = store.events.last().sequence
+        assertEquals(last, select(DiagnosticSelectionRequest(DiagnosticScope.FULL)).cut.upToSequence)
+        assertEquals(last, select(DiagnosticSelectionRequest(DiagnosticScope.ACCOUNT_HISTORY, accountId = AccountId("a1"))).cut.upToSequence)
+        assertTrue(select(DiagnosticSelectionRequest(DiagnosticScope.FULL)).cut.alsoIncludedMovements.isEmpty())
+    }
+
+    @Test
     fun aMovementOfTheAccountAfterTheCheckThatIsNotLinkedStaysOut() {
         assertTrue(select(reconciliation).lacks("m8"))
     }

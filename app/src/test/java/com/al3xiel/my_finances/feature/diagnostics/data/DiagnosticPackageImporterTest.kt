@@ -1,4 +1,5 @@
 package com.al3xiel.my_finances.feature.diagnostics.data
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.BuiltPackage
 
 import com.al3xiel.my_finances.core.money.CurrencyCode
 import com.al3xiel.my_finances.core.money.Money
@@ -15,7 +16,7 @@ import com.al3xiel.my_finances.domain.model.event.PersonCreated
 import com.al3xiel.my_finances.domain.usecase.FakeEventStore
 import com.al3xiel.my_finances.feature.diagnostics.domain.anonymize.EventAnonymizer
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.DiagnosticPackageInput
-import com.al3xiel.my_finances.feature.diagnostics.domain.model.LedgerLine
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.ExportedLedgerLine
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.PackageProjections
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
@@ -57,7 +58,7 @@ internal object PackageFixtures {
             alteredEvents = anonymized.altered,
             projections = PackageProjections(
                 mapOf("a1" to 1_000L),
-                listOf(LedgerLine(3, "m1", "a1", 1_000, "INCOME", "2026-10-25", false, null, 1_000)),
+                listOf(ExportedLedgerLine(3, "m1", "a1", 1_000, "INCOME", "2026-10-25", false, null, 1_000)),
                 null,
                 mapOf("ledger" to 1),
                 null,

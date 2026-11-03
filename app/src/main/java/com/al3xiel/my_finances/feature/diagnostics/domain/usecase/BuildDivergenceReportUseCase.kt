@@ -3,13 +3,14 @@ package com.al3xiel.my_finances.feature.diagnostics.domain.usecase
 import com.al3xiel.my_finances.domain.model.AccountId
 import com.al3xiel.my_finances.domain.model.ReconciliationId
 import com.al3xiel.my_finances.domain.model.event.DiagnosticScope
-import com.al3xiel.my_finances.feature.diagnostics.data.workspace.DiagnosticWorkspace
+import com.al3xiel.my_finances.feature.diagnostics.domain.repository.DiagnosticWorkspaceStore
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.BalanceComparison
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.DivergenceReport
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.LedgerComparison
-import com.al3xiel.my_finances.feature.diagnostics.domain.model.LedgerLine
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.ExportedLedgerLine
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.OriginDifference
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.ReconciliationComparison
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.ReconciliationState
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.VersionDifference
 import com.al3xiel.my_finances.feature.diagnostics.domain.repository.WorkspaceReplayer
 import javax.inject.Inject
@@ -21,7 +22,7 @@ sealed interface ReportOutcome {
 
 /** Re-proyecta el espacio y compara con `projections.json`: saldo, asientos, primer `sequence` que difiere y versiones. */
 class BuildDivergenceReportUseCase @Inject constructor(
-    private val workspace: DiagnosticWorkspace,
+    private val workspace: DiagnosticWorkspaceStore,
     private val replayer: WorkspaceReplayer,
 ) {
     suspend operator fun invoke(): ReportOutcome {
@@ -45,15 +46,29 @@ class BuildDivergenceReportUseCase @Inject constructor(
                     .filter { exported.projectorVersions[it] != now.projectorVersions[it] }
                     .map { VersionDifference(it, exported.projectorVersions[it], now.projectorVersions[it]) },
                 reconciliation = exported.reconciliation?.let {
-                    ReconciliationComparison(it.reconciliationId, it.realMinor, it.snapshotComputedMinor, now.reconciliation?.snapshotComputedMinor)
+                    ReconciliationComparison(it.reconciliationId, it.realMinor, it.snapshotComputedMinor, now.reconciliation?.snapshotComputedMinor, differingFields(it, now.reconciliation))
                 },
                 originDifferences = exported.originBalances?.let { origin(it, now.originBalances.orEmpty()) },
             ),
         )
     }
 
+    /** Los campos del estado de la conciliación que difieren; vacío = coinciden. Si falta del lado recalculado, difiere todo. */
+    private fun differingFields(exported: ReconciliationState, now: ReconciliationState?): List<String> {
+        if (now == null) return listOf("missing")
+        return buildList {
+            if (exported.realMinor != now.realMinor) add("realMinor")
+            if (exported.snapshotComputedMinor != now.snapshotComputedMinor) add("snapshotComputedMinor")
+            if (exported.checkedSequence != now.checkedSequence) add("checkedSequence")
+            if (exported.status != now.status) add("status")
+            if (exported.cause != now.cause) add("cause")
+            if (exported.adjustmentMinor != now.adjustmentMinor) add("adjustmentMinor")
+            if (exported.currency != now.currency) add("currency")
+        }
+    }
+
     /** Agrupa por (sequence, cuenta) y compara en orden; lo que falta de un lado queda como `null`. */
-    private fun compareLedgers(exported: List<LedgerLine>, now: List<LedgerLine>): List<LedgerComparison> {
+    private fun compareLedgers(exported: List<ExportedLedgerLine>, now: List<ExportedLedgerLine>): List<LedgerComparison> {
         val before = exported.groupBy { it.sequence to it.accountId }
         val after = now.groupBy { it.sequence to it.accountId }
         return (before.keys + after.keys).sortedWith(compareBy({ it.first }, { it.second })).flatMap { key ->

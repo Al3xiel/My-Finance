@@ -1,14 +1,14 @@
 package com.al3xiel.my_finances.feature.diagnostics.domain.usecase
 
 import com.al3xiel.my_finances.core.security.KeyWrapper
-import com.al3xiel.my_finances.feature.diagnostics.data.DiagnosticPackageException.Reason
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.DiagnosticPackageException.Reason
 import com.al3xiel.my_finances.feature.diagnostics.data.DiagnosticPackageImporter
-import com.al3xiel.my_finances.feature.diagnostics.data.PackageEventLine
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.PackageEventLine
 import com.al3xiel.my_finances.feature.diagnostics.data.PackageFixtures
 import com.al3xiel.my_finances.feature.diagnostics.data.workspace.DiagnosticWorkspace
 import com.al3xiel.my_finances.feature.diagnostics.data.workspace.WorkspaceFiles
 import com.al3xiel.my_finances.feature.diagnostics.data.workspace.WorkspaceKeys
-import com.al3xiel.my_finances.feature.diagnostics.data.workspace.WorkspaceEventWriter
+import com.al3xiel.my_finances.feature.diagnostics.domain.repository.WorkspaceEventWriter
 import java.io.File
 import java.security.SecureRandom
 import kotlinx.coroutines.test.runTest
@@ -29,9 +29,10 @@ class OpenDiagnosticPackageUseCaseTest {
         override fun deleteKey() = Unit
     }
 
-    private class RecordingWriter(var fail: Boolean = false) : WorkspaceEventWriter {
+    private class RecordingWriter(var fail: Boolean = false, var cancel: Boolean = false) : WorkspaceEventWriter {
         val written = mutableListOf<PackageEventLine>()
         override suspend fun write(events: List<PackageEventLine>) {
+            if (cancel) throw kotlin.coroutines.cancellation.CancellationException("cancelled")
             if (fail) throw java.io.IOException("disk full")
             written += events
         }
@@ -40,11 +41,13 @@ class OpenDiagnosticPackageUseCaseTest {
     private val files = FakeDiagnosticFiles()
     private val writer = RecordingWriter()
     private lateinit var workspace: DiagnosticWorkspace
+    private lateinit var wsFiles: WorkspaceFiles
     private lateinit var open: OpenDiagnosticPackageUseCase
 
     private fun setUp() {
         val directory = folder.newFolder("databases")
-        workspace = DiagnosticWorkspace(WorkspaceFiles(directory), WorkspaceKeys(XorWrapper(), File(folder.root, "diagnostic.key"), SecureRandom())) {
+        wsFiles = WorkspaceFiles(directory)
+        workspace = DiagnosticWorkspace(wsFiles, WorkspaceKeys(XorWrapper(), File(folder.root, "diagnostic.key"), SecureRandom())) {
             error("not opened")
         }
         open = OpenDiagnosticPackageUseCase(files, DiagnosticPackageImporter(), workspace, writer)
@@ -113,6 +116,28 @@ class OpenDiagnosticPackageUseCaseTest {
     fun aMissingDocumentIsAReadFailure() = runTest {
         setUp()
         assertEquals(OpenPackageResult.ReadFailed, open("doc://nope", null))
+    }
+
+    @Test
+    fun anOrphanWorkspaceWithoutReadableMetadataIsDiscardedInsteadOfBlockingForever() = runTest {
+        setUp()
+        wsFiles.database.writeText("leftover")
+        assertTrue(workspace.hasPackage())
+        assertEquals(null, workspace.meta())
+        files.files["doc://1"] = PackageFixtures.valid().file
+
+        assertTrue(open("doc://1", null) is OpenPackageResult.Opened)
+        assertEquals("x1", workspace.meta()?.manifest?.exportId)
+    }
+
+    @Test
+    fun cancellingWhileWritingRethrowsAndStillLeavesNoWorkspaceBehind() = runTest {
+        setUp()
+        files.files["doc://1"] = PackageFixtures.valid().file
+        writer.cancel = true
+        val thrown = runCatching { open("doc://1", null) }.exceptionOrNull()
+        assertTrue(thrown is kotlin.coroutines.cancellation.CancellationException)
+        assertFalse(workspace.hasPackage())
     }
 
     @Test

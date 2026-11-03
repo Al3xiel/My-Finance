@@ -1,6 +1,8 @@
 package com.al3xiel.my_finances.feature.diagnostics.data
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.DiagnosticPackageException
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.DiagnosticPackageFormat
 
-import com.al3xiel.my_finances.feature.diagnostics.data.DiagnosticPackageException.Reason
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.DiagnosticPackageException.Reason
 import java.io.ByteArrayInputStream
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue

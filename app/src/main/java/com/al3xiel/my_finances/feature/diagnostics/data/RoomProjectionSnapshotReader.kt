@@ -3,10 +3,12 @@ package com.al3xiel.my_finances.feature.diagnostics.data
 import com.al3xiel.my_finances.data.database.AppDatabase
 import com.al3xiel.my_finances.domain.model.AccountId
 import com.al3xiel.my_finances.domain.model.ReconciliationId
-import com.al3xiel.my_finances.feature.diagnostics.domain.model.LedgerLine
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.ExportedLedgerLine
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.LedgerSnapshot
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.OriginBalanceLine
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.PackageProjections
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.ReconciliationState
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.SnapshotCut
 import com.al3xiel.my_finances.feature.diagnostics.domain.repository.ProjectionSnapshotReader
 import javax.inject.Inject
 
@@ -15,18 +17,12 @@ import javax.inject.Inject
  * instancia con su propia base (para comparar). El saldo acumulado de cada asiento suma solo los asientos no anulados.
  */
 class RoomProjectionSnapshotReader @Inject constructor(private val database: AppDatabase) : ProjectionSnapshotReader {
-    override suspend fun read(accountId: AccountId?, reconciliationId: ReconciliationId?, includeOrigin: Boolean): PackageProjections {
+    override suspend fun read(accountId: AccountId?, reconciliationId: ReconciliationId?, includeOrigin: Boolean, cut: SnapshotCut?): PackageProjections {
         val ledgerDao = database.ledgerQueryDao()
-        val balances = ledgerDao.balances()
-            .filter { accountId == null || it.accountId == accountId.value }
-            .associate { it.accountId to it.balanceMinor }
-        val running = HashMap<String, Long>()
-        val ledger = ledgerDao.entriesInOrder()
+        val raw = ledgerDao.entriesInOrder()
             .filter { accountId == null || it.accountId == accountId.value }
             .map { entry ->
-                val balance = (running[entry.accountId] ?: 0L) + if (entry.isVoided) 0L else entry.deltaMinor
-                running[entry.accountId] = balance
-                LedgerLine(
+                ExportedLedgerLine(
                     sequence = entry.sequence,
                     movementId = entry.movementId,
                     accountId = entry.accountId,
@@ -35,9 +31,15 @@ class RoomProjectionSnapshotReader @Inject constructor(private val database: App
                     occurredOn = entry.occurredOn,
                     isVoided = entry.isVoided,
                     voidedSequence = entry.voidedSequence,
-                    balanceMinor = balance,
+                    balanceMinor = 0L,
                 )
             }
+        val ledger = LedgerSnapshot.apply(raw, cut ?: SnapshotCut(Long.MAX_VALUE))
+        val balances = if (cut == null) {
+            ledgerDao.balances().filter { accountId == null || it.accountId == accountId.value }.associate { it.accountId to it.balanceMinor }
+        } else {
+            LedgerSnapshot.balances(ledger)
+        }
         val reconciliation = reconciliationId?.let { database.reconciliationQueryDao().reconciliation(it.value) }?.let {
             ReconciliationState(
                 reconciliationId = it.id,

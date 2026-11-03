@@ -10,12 +10,12 @@ import com.al3xiel.my_finances.domain.model.AccountId
 import com.al3xiel.my_finances.domain.model.ReconciliationId
 import com.al3xiel.my_finances.domain.model.event.DictionaryScope
 import com.al3xiel.my_finances.feature.diagnostics.data.DiagnosticPackageImporter
-import com.al3xiel.my_finances.feature.diagnostics.data.DictionaryFile
-import com.al3xiel.my_finances.feature.diagnostics.data.DictionaryFormat
-import com.al3xiel.my_finances.feature.diagnostics.data.PackageEventLine
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.DictionaryFile
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.DictionaryFormat
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.PackageEventLine
 import com.al3xiel.my_finances.feature.diagnostics.data.PackageFixtures
 import com.al3xiel.my_finances.feature.diagnostics.data.workspace.DiagnosticWorkspace
-import com.al3xiel.my_finances.feature.diagnostics.data.workspace.WorkspaceEventWriter
+import com.al3xiel.my_finances.feature.diagnostics.domain.repository.WorkspaceEventWriter
 import com.al3xiel.my_finances.feature.diagnostics.data.workspace.WorkspaceFiles
 import com.al3xiel.my_finances.feature.diagnostics.data.workspace.WorkspaceKeys
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.DictionaryRequestCodec
@@ -125,6 +125,22 @@ class DiagnosticWorkspaceViewModelTest {
         assertEquals(WorkspaceStage.LOCKED, vm.uiState.value.stage)
         assertNull(vm.uiState.value.summary)
         assertFalse(workspace.hasPackage())
+    }
+
+    @Test
+    fun aPickerResultArrivingWhileLockedStillClosesTheExternalFlowGuard() {
+        security.state.value = SecuritySettings(lockEnabled = true)
+        authenticator.result = AuthResult.Failed
+        val vm = viewModel()
+        vm.enter()
+        guard.begin()
+        assertTrue(guard.isActive())
+
+        vm.onAction(DiagnosticWorkspaceUiAction.PackagePicked(null))
+        assertFalse(guard.isActive())
+        guard.begin()
+        vm.onAction(DiagnosticWorkspaceUiAction.DictionaryPicked(null))
+        assertFalse(guard.isActive())
     }
 
     @Test

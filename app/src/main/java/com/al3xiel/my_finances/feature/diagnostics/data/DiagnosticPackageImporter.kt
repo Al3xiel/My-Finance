@@ -1,4 +1,10 @@
 package com.al3xiel.my_finances.feature.diagnostics.data
+import com.al3xiel.my_finances.feature.diagnostics.domain.repository.DiagnosticPackageReader
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.DiagnosticPackageException
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.DiagnosticPackageFormat
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.PackageEventLine
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.PackageManifest
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.ParsedPackage
 
 import com.al3xiel.my_finances.core.security.container.ContainerException
 import com.al3xiel.my_finances.core.security.container.ContainerLimits
@@ -6,7 +12,7 @@ import com.al3xiel.my_finances.core.security.container.EncryptedContainerReader
 import com.al3xiel.my_finances.domain.model.event.AggregateType
 import com.al3xiel.my_finances.domain.model.event.DomainEvent
 import com.al3xiel.my_finances.domain.model.event.EventCodec
-import com.al3xiel.my_finances.feature.diagnostics.data.DiagnosticPackageException.Reason
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.DiagnosticPackageException.Reason
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.PackageProjections
 import java.io.ByteArrayInputStream
 import java.io.IOException
@@ -24,24 +30,16 @@ data class PackageLimits(
     val container: ContainerLimits = ContainerLimits(),
 )
 
-/** Un paquete ya validado. `packageHash` es el SHA-256 del ZIP en claro, igual que el del evento de exportación. */
-class ParsedPackage(
-    val manifest: PackageManifest,
-    val projections: PackageProjections,
-    val events: List<PackageEventLine>,
-    val packageHash: String,
-)
-
 /**
  * Lee un `.fdiag` que llegó de otra persona: todo en memoria, con topes duros, sin extraer a disco y sin usar nunca el nombre
  * de una entrada como ruta. Rechaza con un [Reason] y nada más; no verifica la cadena de hashes (D54: viene anonimizada).
  */
-class DiagnosticPackageImporter(private val limits: PackageLimits) {
+class DiagnosticPackageImporter(private val limits: PackageLimits) : DiagnosticPackageReader {
     @Inject
     constructor() : this(PackageLimits())
 
     /** `password` lo borra quien llama. */
-    fun read(input: InputStream, sizeBytes: Long, password: CharArray?): ParsedPackage {
+    override fun read(input: InputStream, sizeBytes: Long, password: CharArray?): ParsedPackage {
         if (sizeBytes > limits.maxFileBytes) throw DiagnosticPackageException(Reason.TOO_LARGE)
         val file = readBounded(input, limits.maxFileBytes, Reason.TOO_LARGE)
         val zip = if (file.startsWithBytes(DiagnosticPackageFormat.MAGIC)) decrypt(file, password) else file

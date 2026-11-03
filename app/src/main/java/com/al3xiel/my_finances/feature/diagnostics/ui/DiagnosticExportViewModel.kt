@@ -125,14 +125,18 @@ class DiagnosticExportViewModel @AssistedInject constructor(
         if (!current.usePassword) BackupPassword.wipe(action.password)
         authenticating = true
         viewModelScope.launch {
-            val authenticated = try {
-                reauthenticate(action.prompt)
+            var handedOver = false
+            try {
+                val authenticated = try {
+                    reauthenticate(action.prompt)
+                } finally {
+                    authenticating = false
+                }
+                if (!authenticated) return@launch
+                handedOver = true
             } finally {
-                authenticating = false
-            }
-            if (!authenticated) {
-                BackupPassword.wipe(action.password)
-                return@launch
+                // La contraseña solo sigue viva si pasó a `password`; en cualquier otra salida (también al cancelarse) se borra.
+                if (!handedOver) BackupPassword.wipe(action.password)
             }
             password = if (current.usePassword) action.password else null
             state.update { it.copy(stage = ExportStage.PICKING, message = null) }

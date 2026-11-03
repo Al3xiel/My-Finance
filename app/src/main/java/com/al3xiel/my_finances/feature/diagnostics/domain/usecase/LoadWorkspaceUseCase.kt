@@ -1,6 +1,6 @@
 package com.al3xiel.my_finances.feature.diagnostics.domain.usecase
 
-import com.al3xiel.my_finances.feature.diagnostics.data.workspace.DiagnosticWorkspace
+import com.al3xiel.my_finances.feature.diagnostics.domain.repository.DiagnosticWorkspaceStore
 import com.al3xiel.my_finances.feature.diagnostics.domain.repository.WorkspacePseudonymSource
 import javax.inject.Inject
 
@@ -19,12 +19,17 @@ data class WorkspaceSummary(
 )
 
 class LoadWorkspaceUseCase @Inject constructor(
-    private val workspace: DiagnosticWorkspace,
+    private val workspace: DiagnosticWorkspaceStore,
     private val pseudonyms: WorkspacePseudonymSource,
 ) {
     /** `null` si no hay paquete abierto o su metadato no se puede leer. */
     suspend operator fun invoke(): WorkspaceSummary? {
-        val meta = workspace.meta() ?: return null
+        val meta = workspace.meta()
+        if (meta == null) {
+            // Ocupado pero ilegible: un resto sin dueño. Se borra aquí para que nunca quede sin forma de verlo ni de borrarlo.
+            if (workspace.hasPackage()) workspace.delete()
+            return null
+        }
         val manifest = meta.manifest
         return WorkspaceSummary(
             exportId = manifest.exportId,
@@ -42,6 +47,6 @@ class LoadWorkspaceUseCase @Inject constructor(
 }
 
 /** Borra el espacio de diagnóstico completo: base, auxiliares, clave, alias y archivos sellados. */
-class DeleteDiagnosticWorkspaceUseCase @Inject constructor(private val workspace: DiagnosticWorkspace) {
+class DeleteDiagnosticWorkspaceUseCase @Inject constructor(private val workspace: DiagnosticWorkspaceStore) {
     operator fun invoke() = workspace.delete()
 }

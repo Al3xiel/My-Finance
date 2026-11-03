@@ -1,12 +1,18 @@
 package com.al3xiel.my_finances.feature.diagnostics.data
+import com.al3xiel.my_finances.feature.diagnostics.domain.repository.DiagnosticPackageWriter
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.BuiltPackage
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.DiagnosticPackageFormat
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.PackageAlteredEvent
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.PackageEventLine
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.PackageManifest
 
 import com.al3xiel.my_finances.core.security.container.BackupPassword
 import com.al3xiel.my_finances.core.security.container.ContainerHeader
 import com.al3xiel.my_finances.core.security.container.EncryptedContainerWriter
 import com.al3xiel.my_finances.domain.model.event.DiagnosticScope
-import com.al3xiel.my_finances.feature.diagnostics.data.DiagnosticPackageFormat.json
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.DiagnosticPackageFormat.json
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.DiagnosticPackageInput
-import com.al3xiel.my_finances.feature.diagnostics.domain.model.LedgerLine
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.ExportedLedgerLine
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.PackageProjections
 import com.al3xiel.my_finances.feature.reports.data.CsvReportWriter
 import java.io.ByteArrayOutputStream
@@ -17,19 +23,18 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import javax.inject.Inject
 
-/** `file` es lo que se guarda (el ZIP, o el ZIP dentro del contenedor cifrado); `zip` y `packageHash` son siempre los del ZIP en claro. */
-class BuiltPackage(val file: ByteArray, val zip: ByteArray, val packageHash: String, val contentHash: String)
-
 /**
  * Arma el `.fdiag` (04 §3.3.1, D54): cinco entradas en orden fijo y con fecha fija, de modo que el mismo contenido da los mismos
  * bytes. No lee la base ni dibuja el PDF; recibe todo en [DiagnosticPackageInput]. Nada se escribe a disco.
  */
-class DiagnosticPackageBuilder(private val iterations: Int) {
+class DiagnosticPackageBuilder(private val iterations: Int) : DiagnosticPackageWriter {
     @Inject
     constructor() : this(ContainerHeader.DEFAULT_ITERATIONS)
 
+    override fun build(input: DiagnosticPackageInput, password: CharArray?): BuiltPackage = build(input, password, SecureRandom())
+
     /** Borra `password` al terminar, haya o no contraseña que usar. */
-    fun build(input: DiagnosticPackageInput, password: CharArray?, random: SecureRandom = SecureRandom()): BuiltPackage {
+    fun build(input: DiagnosticPackageInput, password: CharArray?, random: SecureRandom): BuiltPackage {
         try {
             val contents = LinkedHashMap<String, ByteArray>()
             contents[DiagnosticPackageFormat.SUMMARY] = input.summaryPdf
@@ -69,7 +74,7 @@ class DiagnosticPackageBuilder(private val iterations: Int) {
         return out.toByteArray()
     }
 
-    private fun ledgerCsv(ledger: List<LedgerLine>): String {
+    private fun ledgerCsv(ledger: List<ExportedLedgerLine>): String {
         val text = StringBuilder(HEADER).append(EOL)
         for (line in ledger) {
             val cells = listOf(

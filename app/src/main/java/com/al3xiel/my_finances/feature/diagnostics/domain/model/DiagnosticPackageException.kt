@@ -1,4 +1,4 @@
-package com.al3xiel.my_finances.feature.diagnostics.data
+package com.al3xiel.my_finances.feature.diagnostics.domain.model
 
 import java.io.IOException
 

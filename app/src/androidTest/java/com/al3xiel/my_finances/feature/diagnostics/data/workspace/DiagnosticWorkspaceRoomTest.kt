@@ -1,4 +1,6 @@
 package com.al3xiel.my_finances.feature.diagnostics.data.workspace
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.PackageManifest
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.WorkspaceMeta
 
 import android.content.Context
 import androidx.room.Room
@@ -8,7 +10,7 @@ import com.al3xiel.my_finances.core.di.DATABASE_NAME
 import com.al3xiel.my_finances.core.security.AndroidKeystoreKeyWrapper
 import com.al3xiel.my_finances.data.database.AppDatabase
 import com.al3xiel.my_finances.data.eventstore.EventTriggersCallback
-import com.al3xiel.my_finances.feature.diagnostics.data.PackageEventLine
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.PackageEventLine
 import java.io.File
 import java.security.SecureRandom
 import kotlinx.coroutines.runBlocking
@@ -92,7 +94,7 @@ class DiagnosticWorkspaceRoomTest {
         assertEquals(realBefore, real.takeIf { it.exists() }?.lastModified())
     }
 
-    private fun sampleManifest() = com.al3xiel.my_finances.feature.diagnostics.data.PackageManifest(
+    private fun sampleManifest() = com.al3xiel.my_finances.feature.diagnostics.domain.model.PackageManifest(
         1, "x", "1.0", "14", "2026-11-02T00:00:00Z", "FULL", null, true, 1, 1, emptyMap(), emptyList(), "c",
     )
 

@@ -1,4 +1,5 @@
 package com.al3xiel.my_finances
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.DiagnosticPackageException
 
 import android.content.Context
 import androidx.room.Room
@@ -32,7 +33,7 @@ import com.al3xiel.my_finances.domain.model.event.PersonCreated
 import com.al3xiel.my_finances.domain.usecase.EventRecorder
 import com.al3xiel.my_finances.feature.backup.domain.repository.BackupFilePort
 import com.al3xiel.my_finances.feature.diagnostics.data.DiagnosticPackageBuilder
-import com.al3xiel.my_finances.feature.diagnostics.data.DiagnosticPackageFormat
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.DiagnosticPackageFormat
 import com.al3xiel.my_finances.feature.diagnostics.data.DiagnosticPackageImporter
 import com.al3xiel.my_finances.feature.diagnostics.data.PdfDiagnosticSummaryRenderer
 import com.al3xiel.my_finances.feature.diagnostics.data.RoomProjectionSnapshotReader
@@ -198,13 +199,33 @@ class DiagnosticRoundTripTest {
         assertEquals(realBefore, realFile.takeIf { it.exists() }?.lastModified())
     }
 
+    /** Lo que pasa de verdad: se exporta con la conciliación abierta y después (o antes) hubo otros movimientos de la cuenta. */
+    @Test
+    fun aMovementAfterTheCheckThatIsNotLinkedDoesNotCauseAFalseDivergence() = runBlocking {
+        store.append(
+            "later",
+            listOf(
+                IncomeRegistered(MovementId("m2"), AccountId("a1"), Money(400, pen), IncomeSourceId("s1"), null, "otra nota"),
+            ).map { NewEvent(it, LocalDate.of(2026, 10, 26)) },
+        )
+        assertEquals(1_900L, live.ledgerQueryDao().balance("a1"))
+
+        assertTrue(exportReconciliation(null) is ExportDiagnosticResult.Created)
+        assertTrue(open("doc://pkg", null) is OpenPackageResult.Opened)
+
+        val result = (report() as ReportOutcome.Ready).report
+        assertFalse("the later movement is not in the package and must not look like a divergence: $result", result.diverges)
+        assertEquals(1_500L, result.balances.single().exportedMinor)
+        assertEquals(1_500L, result.balances.single().recalculatedMinor)
+    }
+
     @Test
     fun exportOpenAndCompareWithPassword() = runBlocking {
         assertTrue(exportReconciliation(password) is ExportDiagnosticResult.Created)
         val file = files.files.getValue("doc://pkg")
         assertFalse(file[0] == 'P'.code.toByte() && file[1] == 'K'.code.toByte())
 
-        assertEquals(OpenPackageResult.Rejected(com.al3xiel.my_finances.feature.diagnostics.data.DiagnosticPackageException.Reason.PASSWORD_REQUIRED), open("doc://pkg", null))
+        assertEquals(OpenPackageResult.Rejected(com.al3xiel.my_finances.feature.diagnostics.domain.model.DiagnosticPackageException.Reason.PASSWORD_REQUIRED), open("doc://pkg", null))
         assertFalse(workspace.hasPackage())
         assertTrue(open("doc://pkg", password.copyOf()) is OpenPackageResult.Opened)
         assertFalse((report() as ReportOutcome.Ready).report.diverges)
@@ -220,7 +241,7 @@ class DiagnosticRoundTripTest {
         assertTrue("$accountPseudonym not in $pseudonyms; map=${export.pseudonymMap}", accountPseudonym in pseudonyms)
 
         val code = (CreateDictionaryRequestUseCase(workspace)(listOf(accountPseudonym), emptyList()) as CreateRequestResult.Ready).code
-        val dictionary = ExportDictionaryUseCase(store, files, recorder, ids, ResolveAliasesUseCase(store))
+        val dictionary = ExportDictionaryUseCase(store, SelectDiagnosticEventsUseCase(store), files, recorder, ids, ResolveAliasesUseCase(store))
         val created = dictionary(code, DictionaryScope.PARTIAL, "doc://key", password.copyOf(), ReconciliationId("r1"))
         assertEquals(ExportDictionaryResult.Created(revealedPseudonyms = 1, revealedNotes = 0), created)
 

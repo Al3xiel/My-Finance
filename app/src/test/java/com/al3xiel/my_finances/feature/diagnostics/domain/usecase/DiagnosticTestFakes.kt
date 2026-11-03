@@ -4,6 +4,7 @@ import com.al3xiel.my_finances.domain.model.AccountId
 import com.al3xiel.my_finances.domain.model.ReconciliationId
 import com.al3xiel.my_finances.feature.backup.domain.repository.BackupFilePort
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.PackageProjections
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.SnapshotCut
 import com.al3xiel.my_finances.feature.diagnostics.domain.repository.ProjectionSnapshotReader
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
@@ -46,8 +47,10 @@ internal class FakeDiagnosticFiles : BackupFilePort {
 
 internal class FakeSnapshots : ProjectionSnapshotReader {
     var includeOriginAsked: Boolean? = null
-    override suspend fun read(accountId: AccountId?, reconciliationId: ReconciliationId?, includeOrigin: Boolean): PackageProjections {
+    var cutAsked: SnapshotCut? = null
+    override suspend fun read(accountId: AccountId?, reconciliationId: ReconciliationId?, includeOrigin: Boolean, cut: SnapshotCut?): PackageProjections {
         includeOriginAsked = includeOrigin
+        cutAsked = cut
         return PackageProjections(mapOf("a1" to 1_000L), emptyList(), null, mapOf("ledger" to 1), null)
     }
 }

@@ -1,4 +1,5 @@
 package com.al3xiel.my_finances.feature.backup.ui
+import com.al3xiel.my_finances.core.designsystem.PasswordField
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -94,18 +95,6 @@ private fun RestorePasswordDialog(message: BackupMessage?, onAction: (BackupUiAc
             }) { Text(stringResource(R.string.backup_password_ok)) }
         },
         dismissButton = { CancelButton { onAction(BackupUiAction.Cancel) } },
-    )
-}
-
-@Composable
-private fun PasswordField(value: String, label: Int, onChange: (String) -> Unit) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onChange,
-        label = { Text(stringResource(label)) },
-        singleLine = true,
-        visualTransformation = PasswordVisualTransformation(),
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
     )
 }
 

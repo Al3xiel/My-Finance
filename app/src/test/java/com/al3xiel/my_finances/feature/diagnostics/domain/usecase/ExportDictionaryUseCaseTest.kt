@@ -16,6 +16,8 @@ import com.al3xiel.my_finances.domain.model.event.DiagnosticExportCreated
 import com.al3xiel.my_finances.domain.model.event.DiagnosticScope
 import com.al3xiel.my_finances.domain.model.event.DictionaryScope
 import com.al3xiel.my_finances.domain.model.event.EntityType
+import com.al3xiel.my_finances.domain.model.event.EventStore
+import com.al3xiel.my_finances.domain.model.event.StoredEvent
 import com.al3xiel.my_finances.domain.model.event.IncomeRegistered
 import com.al3xiel.my_finances.domain.model.event.IncomeSourceCreated
 import com.al3xiel.my_finances.domain.model.event.NewEvent
@@ -24,7 +26,7 @@ import com.al3xiel.my_finances.domain.usecase.EventRecorder
 import com.al3xiel.my_finances.domain.usecase.FakeEventStore
 import com.al3xiel.my_finances.domain.usecase.SequentialIdGenerator
 import com.al3xiel.my_finances.feature.diagnostics.data.DiagnosticPackageBuilder
-import com.al3xiel.my_finances.feature.diagnostics.data.DictionaryFormat
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.DictionaryFormat
 import com.al3xiel.my_finances.feature.diagnostics.domain.anonymize.EventAnonymizer
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.DictionaryRequest
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.DictionaryRequestCodec
@@ -49,7 +51,7 @@ class ExportDictionaryUseCaseTest {
     private val ids = SequentialIdGenerator()
     private val password = "correct horse battery".toCharArray()
     private val recorder = EventRecorder(store, ids, clock)
-    private val dictionary = ExportDictionaryUseCase(store, files, recorder, ids, ResolveAliasesUseCase(store), iterations = 1_000)
+    private val dictionary = ExportDictionaryUseCase(store, SelectDiagnosticEventsUseCase(store), files, recorder, ids, ResolveAliasesUseCase(store), iterations = 1_000)
 
     private suspend fun seedAndExport(scope: DiagnosticScope = DiagnosticScope.RECONCILIATION): DiagnosticExportCreated {
         val day = LocalDate.of(2026, 10, 25)
@@ -116,6 +118,34 @@ class ExportDictionaryUseCaseTest {
         assertEquals(1, (result as ExportDictionaryResult.Created).revealedNotes)
         assertEquals(listOf("nota privada"), DictionaryFormat.read(files.files.getValue("doc://key"), password.copyOf()).notes.getValue(income))
         assertEquals(listOf(income), (exportedEvents().single().event as DiagnosticDictionaryExported).revealedNoteEventIds)
+    }
+
+    @Test
+    fun aNoteOfAnEventThatNeverTraveledInThePackageIsNotRevealed() = runTest {
+        val day = LocalDate.of(2026, 10, 26)
+        store.append("other", listOf(NewEvent(IncomeRegistered(MovementId("m9"), AccountId("a9"), Money(5, pen), IncomeSourceId("s9"), null, "nota ajena"), day)))
+        val outside = store.events.first { it.event.type == "IncomeRegistered" }.eventId
+        val export = seedAndExport()
+
+        val result = dictionary(code(export, emptyList(), listOf(outside)), DictionaryScope.PARTIAL, "doc://key", password.copyOf())
+
+        assertEquals(ExportDictionaryResult.Created(revealedPseudonyms = 0, revealedNotes = 0), result)
+        assertTrue(DictionaryFormat.read(files.files.getValue("doc://key"), password).notes.isEmpty())
+    }
+
+    @Test
+    fun ifTheAuditEventCannotBeSavedTheDictionaryFileIsDeleted() = runTest {
+        val export = seedAndExport()
+        val failing = object : EventStore by store {
+            override suspend fun append(correlationId: String, events: List<NewEvent>): List<StoredEvent> = throw java.io.IOException("disk full")
+        }
+        val useCase = ExportDictionaryUseCase(store, SelectDiagnosticEventsUseCase(store), files, EventRecorder(failing, ids, clock), ids, ResolveAliasesUseCase(store), iterations = 1_000)
+
+        val result = useCase(code(export, emptyList()), DictionaryScope.FULL, "doc://key", password.copyOf())
+
+        assertEquals(ExportDictionaryResult.WriteFailed(documentDeleted = true), result)
+        assertNull(files.files["doc://key"])
+        assertTrue(exportedEvents().isEmpty())
     }
 
     @Test

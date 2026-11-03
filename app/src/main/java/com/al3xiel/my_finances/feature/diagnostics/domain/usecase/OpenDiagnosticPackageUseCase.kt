@@ -1,12 +1,15 @@
 package com.al3xiel.my_finances.feature.diagnostics.domain.usecase
 
 import com.al3xiel.my_finances.feature.backup.domain.repository.BackupFilePort
-import com.al3xiel.my_finances.feature.diagnostics.data.DiagnosticPackageException
-import com.al3xiel.my_finances.feature.diagnostics.data.DiagnosticPackageImporter
-import com.al3xiel.my_finances.feature.diagnostics.data.workspace.DiagnosticWorkspace
-import com.al3xiel.my_finances.feature.diagnostics.data.workspace.WorkspaceEventWriter
-import com.al3xiel.my_finances.feature.diagnostics.data.workspace.WorkspaceMeta
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.DiagnosticPackageException
+import com.al3xiel.my_finances.feature.diagnostics.domain.repository.DiagnosticPackageReader
+import com.al3xiel.my_finances.feature.diagnostics.domain.repository.DiagnosticWorkspaceStore
+import com.al3xiel.my_finances.feature.diagnostics.domain.repository.WorkspaceEventWriter
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.WorkspaceMeta
 import java.io.IOException
+import kotlin.coroutines.cancellation.CancellationException
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 sealed interface OpenPackageResult {
@@ -30,13 +33,16 @@ sealed interface OpenPackageResult {
  */
 class OpenDiagnosticPackageUseCase @Inject constructor(
     private val files: BackupFilePort,
-    private val importer: DiagnosticPackageImporter,
-    private val workspace: DiagnosticWorkspace,
+    private val importer: DiagnosticPackageReader,
+    private val workspace: DiagnosticWorkspaceStore,
     private val writer: WorkspaceEventWriter,
 ) {
     /** `uri` nulo = el usuario canceló el selector. La contraseña la borra quien llama. */
     suspend operator fun invoke(uri: String?, password: CharArray?): OpenPackageResult {
         if (uri == null) return OpenPackageResult.Cancelled
+        // Un espacio ocupado cuyo metadato no se puede abrir (se cortó una apertura, o se perdió la clave) no sirve para nada:
+        // se descarta para que no quede un paquete de un tercero imposible de ver y de borrar.
+        if (workspace.hasPackage() && workspace.meta() == null) workspace.delete()
         if (workspace.hasPackage()) return OpenPackageResult.AlreadyOpen
         val parsed = try {
             val input = files.openInput(uri) ?: return OpenPackageResult.ReadFailed
@@ -49,6 +55,9 @@ class OpenDiagnosticPackageUseCase @Inject constructor(
         try {
             writer.write(parsed.events)
             workspace.save(WorkspaceMeta(parsed.manifest, parsed.projections, parsed.packageHash))
+        } catch (e: CancellationException) {
+            withContext(NonCancellable) { workspace.delete() }
+            throw e
         } catch (_: Exception) {
             workspace.delete()
             return OpenPackageResult.ReadFailed

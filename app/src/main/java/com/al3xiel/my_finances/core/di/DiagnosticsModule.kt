@@ -6,6 +6,8 @@ import androidx.room.Room
 import com.al3xiel.my_finances.core.security.AndroidKeystoreKeyWrapper
 import com.al3xiel.my_finances.data.database.AppDatabase
 import com.al3xiel.my_finances.data.eventstore.EventTriggersCallback
+import com.al3xiel.my_finances.feature.diagnostics.data.DiagnosticPackageBuilder
+import com.al3xiel.my_finances.feature.diagnostics.data.DiagnosticPackageImporter
 import com.al3xiel.my_finances.feature.diagnostics.data.PdfDiagnosticSummaryRenderer
 import com.al3xiel.my_finances.feature.diagnostics.data.RoomProjectionSnapshotReader
 import com.al3xiel.my_finances.feature.diagnostics.data.RoomTableFingerprintSource
@@ -13,10 +15,13 @@ import com.al3xiel.my_finances.feature.diagnostics.data.RoomWorkspaceReplayer
 import com.al3xiel.my_finances.feature.diagnostics.data.workspace.DiagnosticWorkspace
 import com.al3xiel.my_finances.feature.diagnostics.data.workspace.DiagnosticWorkspaceWipeStep
 import com.al3xiel.my_finances.feature.diagnostics.data.workspace.WorkspaceEventSink
-import com.al3xiel.my_finances.feature.diagnostics.data.workspace.WorkspaceEventWriter
+import com.al3xiel.my_finances.feature.diagnostics.domain.repository.WorkspaceEventWriter
 import com.al3xiel.my_finances.feature.diagnostics.data.workspace.WorkspaceFiles
 import com.al3xiel.my_finances.feature.diagnostics.data.workspace.WorkspaceKeys
+import com.al3xiel.my_finances.feature.diagnostics.domain.repository.DiagnosticPackageReader
+import com.al3xiel.my_finances.feature.diagnostics.domain.repository.DiagnosticPackageWriter
 import com.al3xiel.my_finances.feature.diagnostics.domain.repository.DiagnosticSummaryRenderer
+import com.al3xiel.my_finances.feature.diagnostics.domain.repository.DiagnosticWorkspaceStore
 import com.al3xiel.my_finances.feature.diagnostics.domain.repository.ProjectionSnapshotReader
 import com.al3xiel.my_finances.feature.diagnostics.domain.repository.TableFingerprintSource
 import com.al3xiel.my_finances.feature.diagnostics.domain.repository.WorkspacePseudonymSource
@@ -52,6 +57,12 @@ interface DiagnosticsBindingsModule {
     fun tableFingerprintSource(impl: RoomTableFingerprintSource): TableFingerprintSource
 
     @Binds
+    fun packageWriter(impl: DiagnosticPackageBuilder): DiagnosticPackageWriter
+
+    @Binds
+    fun packageReader(impl: DiagnosticPackageImporter): DiagnosticPackageReader
+
+    @Binds
     fun workspaceReplayer(impl: RoomWorkspaceReplayer): WorkspaceReplayer
 
     @Binds
@@ -80,6 +91,9 @@ object DiagnosticsProvidesModule {
     @Singleton
     fun workspaceKeys(@ApplicationContext context: Context): WorkspaceKeys =
         WorkspaceKeys(AndroidKeystoreKeyWrapper(WORKSPACE_KEY_ALIAS), File(context.noBackupFilesDir, WORKSPACE_KEY_FILE), SecureRandom())
+
+    @Provides
+    fun workspaceStore(workspace: DiagnosticWorkspace): DiagnosticWorkspaceStore = workspace
 
     @Provides
     fun pseudonymSource(workspace: DiagnosticWorkspace): WorkspacePseudonymSource = workspace

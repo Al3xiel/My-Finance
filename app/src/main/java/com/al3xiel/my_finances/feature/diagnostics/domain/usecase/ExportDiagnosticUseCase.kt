@@ -7,9 +7,9 @@ import com.al3xiel.my_finances.domain.model.event.DiagnosticExportCreated
 import com.al3xiel.my_finances.domain.model.event.DiagnosticScope
 import com.al3xiel.my_finances.domain.usecase.EventRecorder
 import com.al3xiel.my_finances.feature.backup.domain.repository.BackupFilePort
-import com.al3xiel.my_finances.feature.diagnostics.data.BuiltPackage
-import com.al3xiel.my_finances.feature.diagnostics.data.DiagnosticPackageBuilder
-import com.al3xiel.my_finances.feature.diagnostics.data.DiagnosticPackageFormat
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.BuiltPackage
+import com.al3xiel.my_finances.feature.diagnostics.domain.repository.DiagnosticPackageWriter
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.DiagnosticPackageFormat
 import com.al3xiel.my_finances.feature.diagnostics.domain.anonymize.AnonymizationResult
 import com.al3xiel.my_finances.feature.diagnostics.domain.anonymize.AnonymizedEvent
 import com.al3xiel.my_finances.feature.diagnostics.domain.anonymize.EventAnonymizer
@@ -20,6 +20,9 @@ import com.al3xiel.my_finances.feature.diagnostics.domain.repository.DiagnosticS
 import com.al3xiel.my_finances.feature.diagnostics.domain.repository.ProjectionSnapshotReader
 import java.io.ByteArrayInputStream
 import java.io.IOException
+import kotlin.coroutines.cancellation.CancellationException
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import java.time.Clock
 import java.time.Instant
 import javax.inject.Inject
@@ -48,7 +51,7 @@ class ExportDiagnosticUseCase @Inject constructor(
     private val anonymizer: EventAnonymizer,
     private val snapshots: ProjectionSnapshotReader,
     private val renderer: DiagnosticSummaryRenderer,
-    private val builder: DiagnosticPackageBuilder,
+    private val builder: DiagnosticPackageWriter,
     private val files: BackupFilePort,
     private val recorder: EventRecorder,
     private val clock: Clock,
@@ -73,7 +76,7 @@ class ExportDiagnosticUseCase @Inject constructor(
         } else {
             AnonymizationResult(selection.events.map { AnonymizedEvent(it, it.payload) }, emptyMap(), emptyList())
         }
-        val projections = snapshots.read(selection.accountId, selection.reconciliationId, includeOrigin = request.scope == DiagnosticScope.FULL)
+        val projections = snapshots.read(selection.accountId, selection.reconciliationId, includeOrigin = request.scope == DiagnosticScope.FULL, cut = selection.cut)
         val exportedAt = Instant.now(clock)
         val summary = renderer.render(
             DiagnosticSummary(
@@ -115,18 +118,25 @@ class ExportDiagnosticUseCase @Inject constructor(
         }
         if (!verifyWritten(uri, built, password)) return ExportDiagnosticResult.VerificationFailed(files.delete(uri))
 
-        recorder.record(
-            DiagnosticExportCreated(
-                exportId = exportId,
-                reconciliationId = selection.reconciliationId,
-                scope = request.scope,
-                anonymized = anonymize,
-                exportedUpToSequence = selection.exportedUpToSequence,
-                pseudonymMap = result.pseudonymMap,
-                eventCount = selection.eventCount.toLong(),
-                packageHash = built.packageHash,
-            ),
-        )
+        try {
+            recorder.record(
+                DiagnosticExportCreated(
+                    exportId = exportId,
+                    reconciliationId = selection.reconciliationId,
+                    scope = request.scope,
+                    anonymized = anonymize,
+                    exportedUpToSequence = selection.exportedUpToSequence,
+                    pseudonymMap = result.pseudonymMap,
+                    eventCount = selection.eventCount.toLong(),
+                    packageHash = built.packageHash,
+                ),
+            )
+        } catch (e: CancellationException) {
+            withContext(NonCancellable) { files.delete(uri) }
+            throw e
+        } catch (_: Exception) {
+            return ExportDiagnosticResult.WriteFailed(files.delete(uri))
+        }
         return ExportDiagnosticResult.Created(selection.eventCount.toLong(), built.packageHash, passwordProtected = password != null)
     }
 
@@ -146,6 +156,6 @@ class ExportDiagnosticUseCase @Inject constructor(
     }
 
     private fun opensToExpectedZip(bytes: ByteArray, built: BuiltPackage, password: CharArray): Boolean =
-        EncryptedContainerReader(ByteArrayInputStream(bytes), DiagnosticPackageFormat.MAGIC, password.copyOf())
+        EncryptedContainerReader(ByteArrayInputStream(bytes), DiagnosticPackageFormat.MAGIC, password)
             .use { DiagnosticPackageFormat.sha256(it.readBytes()) == built.packageHash }
 }

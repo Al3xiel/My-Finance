@@ -1,5 +1,6 @@
 package com.al3xiel.my_finances.feature.diagnostics.ui
 
+import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,9 +20,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.al3xiel.my_finances.R
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.BalanceComparison
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.DivergenceReport
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.ExportedLedgerLine
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.LedgerComparison
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.VersionDifference
 
 private const val MAX_ROWS = 20
 
@@ -138,4 +144,33 @@ private fun PasswordDialog(onAction: (DiagnosticWorkspaceUiAction) -> Unit) {
             }
         },
     )
+}
+
+private val previewReport = DivergenceReport(
+    exportId = "x1",
+    balances = listOf(BalanceComparison("a1", 900, 1_000)),
+    firstDivergentSequence = 4,
+    divergentLedger = listOf(
+        LedgerComparison(
+            4, "a1",
+            ExportedLedgerLine(4, "m1", "a1", -300, "EXPENSE", "2026-10-25", false, null, 700),
+            ExportedLedgerLine(4, "m1", "a1", -350, "EXPENSE", "2026-10-25", false, null, 650),
+        ),
+    ),
+    versionDifferences = listOf(VersionDifference("movement", 2, 3)),
+    reconciliation = null,
+    originDifferences = null,
+)
+
+@Preview(showBackground = true)
+@Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun ReportSectionPreview() {
+    ReportSection(previewReport)
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ReportSectionWithoutDivergencePreview() {
+    ReportSection(previewReport.copy(balances = emptyList(), firstDivergentSequence = null, divergentLedger = emptyList(), versionDifferences = emptyList()))
 }

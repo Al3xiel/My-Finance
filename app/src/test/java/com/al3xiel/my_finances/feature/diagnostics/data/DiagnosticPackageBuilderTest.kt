@@ -1,4 +1,5 @@
 package com.al3xiel.my_finances.feature.diagnostics.data
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.DiagnosticPackageFormat
 
 import com.al3xiel.my_finances.core.money.CurrencyCode
 import com.al3xiel.my_finances.core.money.Money
@@ -18,7 +19,7 @@ import com.al3xiel.my_finances.domain.model.event.PersonCreated
 import com.al3xiel.my_finances.domain.usecase.FakeEventStore
 import com.al3xiel.my_finances.feature.diagnostics.domain.anonymize.EventAnonymizer
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.DiagnosticPackageInput
-import com.al3xiel.my_finances.feature.diagnostics.domain.model.LedgerLine
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.ExportedLedgerLine
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.OriginBalanceLine
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.PackageProjections
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.ReconciliationState
@@ -63,7 +64,7 @@ class DiagnosticPackageBuilderTest {
 
     private val projections = PackageProjections(
         accountBalances = mapOf("a1" to 5_000L),
-        ledger = listOf(LedgerLine(3, "m1", "a1", 5_000, "INCOME", "2026-10-02", false, null, 5_000)),
+        ledger = listOf(ExportedLedgerLine(3, "m1", "a1", 5_000, "INCOME", "2026-10-02", false, null, 5_000)),
         reconciliation = ReconciliationState("r1", "a1", pen, 9_999, 9_000, 3, "OPEN", null, null, false),
         projectorVersions = mapOf("movement" to 1, "catalog" to 1),
         originBalances = listOf(OriginBalanceLine("a1", "s1", 5_000)),
@@ -71,7 +72,7 @@ class DiagnosticPackageBuilderTest {
 
     private fun input(
         scope: DiagnosticScope = DiagnosticScope.RECONCILIATION,
-        ledger: List<LedgerLine> = projections.ledger,
+        ledger: List<ExportedLedgerLine> = projections.ledger,
         pdf: ByteArray = "%PDF-fixed".toByteArray(),
         events: List<com.al3xiel.my_finances.feature.diagnostics.domain.anonymize.AnonymizedEvent> = anonymized.events,
     ) = DiagnosticPackageInput(
@@ -187,7 +188,7 @@ class DiagnosticPackageBuilderTest {
 
     @Test
     fun ledgerCsvHasAHeaderRunningBalanceAndNumbersWithoutPrefix() {
-        val ledger = projections.ledger + LedgerLine(4, "m2", "a1", -250, "EXPENSE", "2026-10-03", false, null, 4_750)
+        val ledger = projections.ledger + ExportedLedgerLine(4, "m2", "a1", -250, "EXPENSE", "2026-10-03", false, null, 4_750)
         val csv = text(unzip(builder.build(input(ledger = ledger), null).zip), "ledger.csv")
         val lines = csv.trimStart('﻿').trimEnd().split("\r\n")
 

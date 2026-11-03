@@ -16,6 +16,13 @@ data class DiagnosticSelectionRequest(
     val accountId: AccountId? = null,
 )
 
+/**
+ * Hasta dónde llegan las proyecciones que viajan con el paquete: los asientos con `sequence` hasta `upToSequence` más los de
+ * los movimientos de `alsoIncludedMovements` (los vinculados a la conciliación, aunque sean posteriores). Así el saldo y los
+ * asientos exportados son los de reproducir exactamente los eventos elegidos, y no los de la base de hoy.
+ */
+data class SnapshotCut(val upToSequence: Long, val alsoIncludedMovements: Set<String> = emptySet())
+
 /** Los eventos elegidos y la vista previa que ve quien exporta: cuántos, de qué fechas y qué campos se anonimizarían. */
 data class DiagnosticSelection(
     val scope: DiagnosticScope,
@@ -27,6 +34,7 @@ data class DiagnosticSelection(
     val firstOccurredOn: LocalDate?,
     val lastOccurredOn: LocalDate?,
     val anonymizedFields: List<String>,
+    val cut: SnapshotCut,
 ) {
     val eventCount: Int get() = events.size
 }

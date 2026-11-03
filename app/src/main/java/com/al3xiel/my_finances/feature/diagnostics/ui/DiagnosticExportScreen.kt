@@ -1,4 +1,5 @@
 package com.al3xiel.my_finances.feature.diagnostics.ui
+import com.al3xiel.my_finances.core.designsystem.PasswordField
 
 import android.content.res.Configuration
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -143,19 +144,6 @@ private fun ToggleRow(label: Int, checked: Boolean, enabled: Boolean, onChange: 
         Text(stringResource(label), modifier = Modifier.weight(1f))
         Switch(checked = checked, onCheckedChange = onChange, enabled = enabled)
     }
-}
-
-@Composable
-private fun PasswordField(value: String, label: Int, onChange: (String) -> Unit) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onChange,
-        label = { Text(stringResource(label)) },
-        singleLine = true,
-        visualTransformation = PasswordVisualTransformation(),
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-        modifier = Modifier.fillMaxWidth(),
-    )
 }
 
 private fun DiagnosticScope.labelRes() = when (this) {

@@ -1,14 +1,10 @@
 package com.al3xiel.my_finances.feature.diagnostics.data.workspace
+import com.al3xiel.my_finances.feature.diagnostics.domain.repository.WorkspaceEventWriter
 
 import androidx.room.withTransaction
 import com.al3xiel.my_finances.data.eventstore.EventEntity
-import com.al3xiel.my_finances.feature.diagnostics.data.PackageEventLine
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.PackageEventLine
 import javax.inject.Inject
-
-/** Escribe los eventos de un paquete ya validado en el espacio. */
-fun interface WorkspaceEventWriter {
-    suspend fun write(events: List<PackageEventLine>)
-}
 
 /**
  * Inserta las filas con su `sequence`, hashes y `recorded_at` originales, en una transacción y sin encadenar de nuevo ni

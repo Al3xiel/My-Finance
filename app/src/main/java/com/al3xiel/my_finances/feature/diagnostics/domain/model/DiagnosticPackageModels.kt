@@ -10,7 +10,7 @@ import kotlinx.serialization.Serializable
 
 /** Un asiento del libro contable de la cuenta tal como lo calculó la app al exportar, con el saldo acumulado. */
 @Serializable
-data class LedgerLine(
+data class ExportedLedgerLine(
     val sequence: Long,
     val movementId: String?,
     val accountId: String,
@@ -44,7 +44,7 @@ data class OriginBalanceLine(val accountId: String, val sourceId: String, val am
 @Serializable
 data class PackageProjections(
     val accountBalances: Map<String, Long>,
-    val ledger: List<LedgerLine>,
+    val ledger: List<ExportedLedgerLine>,
     val reconciliation: ReconciliationState?,
     val projectorVersions: Map<String, Int>,
     val originBalances: List<OriginBalanceLine>?,

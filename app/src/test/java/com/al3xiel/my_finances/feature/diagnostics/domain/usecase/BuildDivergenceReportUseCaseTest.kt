@@ -4,12 +4,12 @@ import com.al3xiel.my_finances.core.money.CurrencyCode
 import com.al3xiel.my_finances.core.security.KeyWrapper
 import com.al3xiel.my_finances.domain.model.AccountId
 import com.al3xiel.my_finances.domain.model.ReconciliationId
-import com.al3xiel.my_finances.feature.diagnostics.data.PackageManifest
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.PackageManifest
 import com.al3xiel.my_finances.feature.diagnostics.data.workspace.DiagnosticWorkspace
 import com.al3xiel.my_finances.feature.diagnostics.data.workspace.WorkspaceFiles
 import com.al3xiel.my_finances.feature.diagnostics.data.workspace.WorkspaceKeys
-import com.al3xiel.my_finances.feature.diagnostics.data.workspace.WorkspaceMeta
-import com.al3xiel.my_finances.feature.diagnostics.domain.model.LedgerLine
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.WorkspaceMeta
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.ExportedLedgerLine
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.OriginBalanceLine
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.PackageProjections
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.ReconciliationState
@@ -44,19 +44,22 @@ class BuildDivergenceReportUseCaseTest {
     }
 
     private fun line(sequence: Long, delta: Long, balance: Long, account: String = "a1") =
-        LedgerLine(sequence, "m$sequence", account, delta, "INCOME", "2026-10-25", false, null, balance)
+        ExportedLedgerLine(sequence, "m$sequence", account, delta, "INCOME", "2026-10-25", false, null, balance)
 
     private val exportedLedger = listOf(line(3, 1_000, 1_000), line(4, -300, 700), line(5, 200, 900))
 
     private fun projections(
-        ledger: List<LedgerLine> = exportedLedger,
+        ledger: List<ExportedLedgerLine> = exportedLedger,
         balance: Long = 900,
         computed: Long = 900,
+        status: String = "OPEN",
+        needsReview: Boolean = false,
+        adjustment: Long? = null,
         versions: Map<String, Int> = mapOf("movement" to 2, "origin" to 1),
         origin: List<OriginBalanceLine>? = null,
     ) = PackageProjections(
         mapOf("a1" to balance), ledger,
-        ReconciliationState("r1", "a1", CurrencyCode.PEN, 1_100, computed, 5, "OPEN", null, null, false),
+        ReconciliationState("r1", "a1", CurrencyCode.PEN, 1_100, computed, 5, status, null, adjustment, needsReview),
         versions, origin,
     )
 
@@ -127,6 +130,22 @@ class BuildDivergenceReportUseCaseTest {
         val reconciliation = (report() as ReportOutcome.Ready).report.reconciliation
         assertEquals(900L to 800L, reconciliation?.exportedComputedMinor to reconciliation?.recalculatedComputedMinor)
         assertTrue(reconciliation?.diverges == true)
+    }
+
+    @Test
+    fun aDifferentStatusOrAdjustmentOfTheReconciliationIsADivergenceToo() = runTest {
+        val (report, _) = setUp(projections(), recalculated = projections(status = "RESOLVED", adjustment = 200))
+        val comparison = (report() as ReportOutcome.Ready).report.reconciliation
+        assertTrue(comparison?.diverges == true)
+        assertEquals(listOf("status", "adjustmentMinor"), comparison?.differingFields)
+    }
+
+    @Test
+    fun needsReviewAloneIsNotADivergenceBecauseOnlyAReplayByVersionSetsIt() = runTest {
+        val (report, _) = setUp(projections(needsReview = true), recalculated = projections(needsReview = false))
+        val result = (report() as ReportOutcome.Ready).report
+        assertFalse(result.diverges)
+        assertTrue(result.reconciliation?.differingFields.orEmpty().isEmpty())
     }
 
     @Test

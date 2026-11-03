@@ -5,17 +5,19 @@ data class BalanceComparison(val accountId: String, val exportedMinor: Long?, va
 }
 
 /** Un asiento (o ninguno) de cada lado para un `sequence` donde difieren. */
-data class LedgerComparison(val sequence: Long, val accountId: String, val exported: LedgerLine?, val recalculated: LedgerLine?)
+data class LedgerComparison(val sequence: Long, val accountId: String, val exported: ExportedLedgerLine?, val recalculated: ExportedLedgerLine?)
 
 data class VersionDifference(val projector: String, val exported: Int?, val current: Int?)
 
+/** El estado de la conciliación exportado contra el recalculado; `needsReview` no se compara: solo un replay por versión lo marca. */
 data class ReconciliationComparison(
     val reconciliationId: String,
     val realMinor: Long,
     val exportedComputedMinor: Long,
     val recalculatedComputedMinor: Long?,
+    val differingFields: List<String>,
 ) {
-    val diverges: Boolean get() = exportedComputedMinor != recalculatedComputedMinor
+    val diverges: Boolean get() = differingFields.isNotEmpty()
 }
 
 data class OriginDifference(val accountId: String, val sourceId: String, val exportedMinor: Long?, val recalculatedMinor: Long?)

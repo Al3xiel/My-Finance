@@ -71,6 +71,9 @@
 | Referencia de entidad | `EntityRef` | `entityType` + `entityId` | Entidad a la que apunta un seudónimo; se guarda en `DiagnosticExportCreated`. |
 | Tipo de entidad | `EntityType` | enum: `ACCOUNT`, `PERSON`, `TAG`, `CATEGORY`, `INCOME_SOURCE`, `POOL`, `FUND` | Qué clase de entidad reemplaza un seudónimo. |
 | Espacio de diagnóstico | `DiagnosticWorkspace` | BD separada | Donde se abre un paquete recibido; solo lo escriben el importador, el aplicador de diccionario y el borrado. |
+| Resumen del diagnóstico | `DiagnosticSummary` | modelo | Lo que dice `summary.pdf`: alcance, conteos, fechas y estado de la conciliación; nunca nombres ni notas. |
+| Huella de tabla | `TableFingerprint` | `table` + filas + hash | Resumen del contenido de una tabla de proyección; S73 las compara antes y después de re-proyectar. |
+| Corte de proyecciones | `SnapshotCut` | `upToSequence` + movimientos incluidos | Hasta dónde llegan los saldos y asientos que viajan en un paquete: los de reproducir solo los eventos elegidos. |
 | Reporte de diferencias | `DivergenceReport` | resultado | Primer `sequence` donde el saldo exportado y el recalculado divergen. |
 | Diccionario de seudónimos | `PseudonymDictionary` (`.fkey`) | archivo | Revela qué nombre real corresponde a cada seudónimo de un paquete. Separado del paquete. |
 | Alcance del diccionario | `DictionaryScope` | enum: `PARTIAL`, `FULL` | |

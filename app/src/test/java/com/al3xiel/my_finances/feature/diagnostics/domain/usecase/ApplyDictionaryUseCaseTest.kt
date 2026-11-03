@@ -2,13 +2,13 @@ package com.al3xiel.my_finances.feature.diagnostics.domain.usecase
 
 import com.al3xiel.my_finances.core.security.KeyWrapper
 import com.al3xiel.my_finances.domain.model.event.DictionaryScope
-import com.al3xiel.my_finances.feature.diagnostics.data.DictionaryFile
-import com.al3xiel.my_finances.feature.diagnostics.data.DictionaryFormat
-import com.al3xiel.my_finances.feature.diagnostics.data.PackageManifest
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.DictionaryFile
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.DictionaryFormat
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.PackageManifest
 import com.al3xiel.my_finances.feature.diagnostics.data.workspace.DiagnosticWorkspace
 import com.al3xiel.my_finances.feature.diagnostics.data.workspace.WorkspaceFiles
 import com.al3xiel.my_finances.feature.diagnostics.data.workspace.WorkspaceKeys
-import com.al3xiel.my_finances.feature.diagnostics.data.workspace.WorkspaceMeta
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.WorkspaceMeta
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.PackageProjections
 import java.io.File
 import java.security.SecureRandom

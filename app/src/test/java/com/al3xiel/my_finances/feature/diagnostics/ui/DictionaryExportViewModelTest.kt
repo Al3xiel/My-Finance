@@ -20,7 +20,7 @@ import com.al3xiel.my_finances.domain.usecase.EventRecorder
 import com.al3xiel.my_finances.domain.usecase.FakeEventStore
 import com.al3xiel.my_finances.domain.usecase.SequentialIdGenerator
 import com.al3xiel.my_finances.feature.diagnostics.data.DiagnosticPackageBuilder
-import com.al3xiel.my_finances.feature.diagnostics.data.DictionaryFormat
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.DictionaryFormat
 import com.al3xiel.my_finances.feature.diagnostics.domain.anonymize.EventAnonymizer
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.DictionaryRequest
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.DictionaryRequestCodec
@@ -92,7 +92,7 @@ class DictionaryExportViewModelTest {
 
     private fun viewModel(reconciliation: String = "r1") = DictionaryExportViewModel(
         reconciliation,
-        ExportDictionaryUseCase(store, files, recorder, ids, ResolveAliasesUseCase(store), iterations = 1_000),
+        ExportDictionaryUseCase(store, SelectDiagnosticEventsUseCase(store), files, recorder, ids, ResolveAliasesUseCase(store), iterations = 1_000),
         security, authenticator, guard, dispatcher,
     )
 

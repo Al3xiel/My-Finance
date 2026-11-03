@@ -17,14 +17,16 @@ import com.al3xiel.my_finances.domain.model.event.DiagnosticExportCreated
 import com.al3xiel.my_finances.domain.model.event.DiagnosticScope
 import com.al3xiel.my_finances.domain.model.event.IncomeRegistered
 import com.al3xiel.my_finances.domain.model.event.IncomeSourceCreated
+import com.al3xiel.my_finances.domain.model.event.EventStore
 import com.al3xiel.my_finances.domain.model.event.NewEvent
+import com.al3xiel.my_finances.domain.model.event.StoredEvent
 import com.al3xiel.my_finances.domain.model.event.PersonCreated
 import com.al3xiel.my_finances.domain.usecase.EventRecorder
 import com.al3xiel.my_finances.domain.usecase.FakeEventStore
 import com.al3xiel.my_finances.domain.usecase.SequentialIdGenerator
 import com.al3xiel.my_finances.feature.backup.domain.repository.BackupFilePort
 import com.al3xiel.my_finances.feature.diagnostics.data.DiagnosticPackageBuilder
-import com.al3xiel.my_finances.feature.diagnostics.data.DiagnosticPackageFormat
+import com.al3xiel.my_finances.feature.diagnostics.domain.model.DiagnosticPackageFormat
 import com.al3xiel.my_finances.feature.diagnostics.domain.anonymize.EventAnonymizer
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.DiagnosticSelectionRequest
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.PackageProjections
@@ -160,6 +162,28 @@ class ExportDiagnosticUseCaseTest {
         seed()
         files.corruptOnRead = true
         assertEquals(ExportDiagnosticResult.VerificationFailed(documentDeleted = true), export(reconciliation, "doc://1", null))
+        assertNull(files.files["doc://1"])
+        assertTrue(exports().isEmpty())
+    }
+
+    @Test
+    fun theProjectionsTravelCutAtTheSelectionNotAtToday() = runTest {
+        seed()
+        export(reconciliation, "doc://1", null)
+        assertEquals(5L, snapshots.cutAsked?.upToSequence)
+    }
+
+    @Test
+    fun ifTheAuditEventCannotBeSavedTheFileIsDeleted() = runTest {
+        seed()
+        val failing = object : EventStore by store {
+            override suspend fun append(correlationId: String, events: List<NewEvent>): List<StoredEvent> = throw IOException("disk full")
+        }
+        val useCase = ExportDiagnosticUseCase(
+            SelectDiagnosticEventsUseCase(store), EventAnonymizer(), snapshots, DiagnosticSummaryRenderer { ByteArray(8) },
+            DiagnosticPackageBuilder(1_000), files, EventRecorder(failing, ids, clock), clock, ids, "test", "14",
+        )
+        assertEquals(ExportDiagnosticResult.WriteFailed(documentDeleted = true), useCase(reconciliation, "doc://1", null))
         assertNull(files.files["doc://1"])
         assertTrue(exports().isEmpty())
     }
