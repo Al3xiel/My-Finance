@@ -8,6 +8,12 @@ import kotlinx.coroutines.flow.Flow
 interface LedgerQueryDao {
     @Query("SELECT * FROM account_balances") fun observeBalances(): Flow<List<AccountBalanceEntity>>
 
+    /** Para el paquete de diagnóstico: lectura única de todos los saldos. */
+    @Query("SELECT * FROM account_balances") suspend fun balances(): List<AccountBalanceEntity>
+
+    /** Para el paquete de diagnóstico: todos los asientos en el orden en que se aplicaron. */
+    @Query("SELECT * FROM ledger_entries ORDER BY sequence, id") suspend fun entriesInOrder(): List<LedgerEntryEntity>
+
     @Query("SELECT balance_minor FROM account_balances WHERE account_id = :accountId")
     fun observeBalance(accountId: String): Flow<Long?>
 

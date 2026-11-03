@@ -66,8 +66,17 @@
 | Requiere revisión | `needsReview` | Boolean | La diferencia cambió tras re-proyectar: posible error de código. |
 | Paquete de diagnóstico | `DiagnosticPackage` (`.fdiag`) | archivo | Exportación de una conciliación para rastrear errores en otro equipo. |
 | Alcance del diagnóstico | `DiagnosticScope` | enum: `RECONCILIATION`, `ACCOUNT_HISTORY`, `FULL` | |
-| Anonimización | `anonymize` / `Pseudonymizer` | función | Reemplaza alias por seudónimos estables y elimina notas. |
-| Espacio de diagnóstico | `DiagnosticWorkspace` | BD separada | Donde se abre un paquete recibido; solo lectura. |
+| Anonimización | `EventAnonymizer` | función | Reemplaza alias por seudónimos estables y elimina notas, con una lista permitida de campos (D52). |
+| Seudónimo | `Pseudonym` | `String` (`Person-1`, `Account-A`) | Nombre estable que reemplaza un alias dentro de un paquete. |
+| Referencia de entidad | `EntityRef` | `entityType` + `entityId` | Entidad a la que apunta un seudónimo; se guarda en `DiagnosticExportCreated`. |
+| Tipo de entidad | `EntityType` | enum: `ACCOUNT`, `PERSON`, `TAG`, `CATEGORY`, `INCOME_SOURCE`, `POOL`, `FUND` | Qué clase de entidad reemplaza un seudónimo. |
+| Espacio de diagnóstico | `DiagnosticWorkspace` | BD separada | Donde se abre un paquete recibido; solo lo escriben el importador, el aplicador de diccionario y el borrado. |
+| Resumen del diagnóstico | `DiagnosticSummary` | modelo | Lo que dice `summary.pdf`: alcance, conteos, fechas y estado de la conciliación; nunca nombres ni notas. |
+| Huella de tabla | `TableFingerprint` | `table` + filas + hash | Resumen del contenido de una tabla de proyección; S73 las compara antes y después de re-proyectar. |
+| Corte de proyecciones | `SnapshotCut` | conjunto de `sequence` | Qué parte de saldos y asientos viaja en un paquete: la que produce reproducir exactamente los eventos elegidos. |
+| Asiento exportado | `ExportedLedgerLine` | modelo | Un asiento del libro tal como viaja en `projections.json` y `ledger.csv`, con su saldo acumulado. |
+| Libro recortado | `LedgerSnapshot` | regla | Aplica un corte a los asientos y recalcula el saldo acumulado de cada cuenta. |
+| Almacén del espacio | `DiagnosticWorkspaceStore` | puerto | Guarda, lee y borra el paquete abierto y el diccionario aplicado del espacio de diagnóstico. |
 | Reporte de diferencias | `DivergenceReport` | resultado | Primer `sequence` donde el saldo exportado y el recalculado divergen. |
 | Diccionario de seudónimos | `PseudonymDictionary` (`.fkey`) | archivo | Revela qué nombre real corresponde a cada seudónimo de un paquete. Separado del paquete. |
 | Alcance del diccionario | `DictionaryScope` | enum: `PARTIAL`, `FULL` | |

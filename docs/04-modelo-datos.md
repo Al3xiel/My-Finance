@@ -209,18 +209,28 @@ Sirve para que **otra persona que usa la app en su propio teléfono** (por ejemp
 |---|---|---|
 | `RECONCILIATION` | Eventos de la cuenta hasta `checkedAt` + movimientos vinculados + transferencias que la tocan + catálogos referenciados | Por defecto, el paquete más pequeño |
 | `ACCOUNT_HISTORY` | Toda la historia de la cuenta | Si el error parece antiguo |
-| `FULL` | Todo el registro de eventos | Errores en trazabilidad de origen (dependen de todas las cuentas) |
+| `FULL` | Todo el registro de eventos, salvo los de auditoría de respaldos y diagnósticos | Errores en trazabilidad de origen (dependen de todas las cuentas) |
 
-**Anonimización** (opciones, activadas por defecto):
-- Alias de personas, cuentas, conceptos y fuentes → seudónimos estables (`Person-1`, `Account-A`). El mismo alias siempre da el mismo seudónimo dentro del paquete.
-- Notas libres → eliminadas.
+**Corte de proyecciones.** `projections.json` y `ledger.csv` no son los de la base de hoy sino los de **reproducir exactamente los eventos elegidos** (`SnapshotCut`, el conjunto de sus `sequence`): un asiento entra si el evento que lo creó viaja (también el ajuste de una resolución, que nace de un evento de conciliación), y queda anulado solo si el evento que lo anuló también viaja; uno anulado sin `voided_sequence` (anterior a la columna) se mantiene anulado. Los saldos son los de esos asientos, con 0 para una cuenta sin ninguno. Sin esto, un movimiento posterior al chequeo aparecería como una divergencia que no existe.
+
+**Anonimización** (opciones, activadas por defecto), por **lista permitida** (D52):
+- Viajan tal cual los IDs, montos, fechas, tipos y enums. Todo texto libre (un `String` plano en el payload) se clasifica en una tabla explícita como `PSEUDONYM` o `REMOVE`; un test falla si aparece un `String` sin clasificar. Un tercer valor, `KEEP`, solo cubre textos que no son de la persona (códigos como la razón de un replay, colores e íconos, hashes e identificadores de la auditoría).
+- `PSEUDONYM`: alias de personas, cuentas, categorías, conceptos, fuentes, cúmulos y fondos → seudónimos estables (`Person-1`, `Account-A`). El seudónimo es de la **entidad**, no del texto: renombrar una cuenta conserva su seudónimo y dos entidades con el mismo alias reciben seudónimos distintos. Las cuentas llevan letras (`Account-A`) y el resto números por clase (`Person-1`, `Category-1`, `Tag-1`, `Source-1`, `Pool-1`, `Fund-1`), en orden de aparición.
+- `REMOVE`: notas y motivos libres (`note`, `reason`). Un campo obligatorio de texto que se elimina queda como `"[removed]"`; los opcionales quedan `null`.
 - **Montos, fechas, IDs y orden no se alteran**: sin ellos no se puede reproducir el error.
-- Si se anonimiza, la cadena de hashes no puede verificarse contra el original. El manifiesto guarda los hashes originales y marca los campos alterados, y el paquete lleva su propio hash de integridad.
+- Si se anonimiza, la cadena de hashes no puede verificarse contra el original. El manifiesto guarda los hashes originales y marca los campos alterados.
+
+**Integridad y determinismo** (D54):
+- El ZIP lleva exactamente cinco entradas, en este orden: `summary.pdf`, `ledger.csv`, `events.jsonl`, `projections.json`, `manifest.json`; marcas de tiempo fijas (1980-01-01) para que el mismo contenido dé el mismo ZIP.
+- `manifest.json` lleva `contentHash` = SHA-256 de las otras cuatro entradas en ese orden (cada una entra con su nombre, un 0 y su largo en 8 bytes, para que no se confundan). `packageHash` (el del evento `DiagnosticExportCreated`) = SHA-256 del ZIP en claro.
+- Con contraseña, el ZIP completo va dentro del contenedor cifrado (`EncryptedContainer`); el `packageHash` sigue siendo el del ZIP en claro.
+- `projections.json` guarda lo que la app calculaba al exportar: saldos por cuenta, asientos de la cuenta, estado de la conciliación y la versión de cada proyector; `origin_balances` solo con alcance `FULL` y como dato secundario.
+- `ledger.csv` aplica las mismas defensas de inyección de fórmulas que la exportación de reportes (RX3).
 
 **Del lado de quien recibe (modo diagnóstico)**:
 - "Abrir paquete de diagnóstico" importa los eventos en una **base de datos aparte** (espacio de diagnóstico), **nunca** en tus datos reales.
-- Re-proyecta con el código actual y muestra un **reporte de diferencias**: saldo exportado vs. saldo recalculado, asiento por asiento, indicando el primer `sequence` donde divergen.
-- El espacio de diagnóstico es de solo lectura y se puede borrar en cualquier momento.
+- Re-proyecta con el código actual y muestra un **reporte de diferencias** (`DivergenceReport`): saldo exportado vs. saldo recalculado, asiento por asiento, indicando el primer `sequence` donde divergen. Re-proyectar no agrega eventos.
+- El espacio de diagnóstico es una segunda base con el mismo esquema, cifrada con clave propia (D51). Ningún caso de uso de la app real escribe en él salvo el importador, el aplicador de diccionario y el borrado; se puede borrar en cualquier momento. Hay un solo paquete abierto a la vez.
 
 #### 3.3.2 Diccionario de seudónimos (paso posterior a la auditoría)
 
@@ -257,16 +267,18 @@ Quien exporta (p. ej. tu pareja)            Quien audita (tú)
 - `PARTIAL` (por defecto): solo los seudónimos y notas de la **solicitud** generada por el reporte de diferencias. Revela lo mínimo necesario.
 - `FULL`: todos los seudónimos del paquete.
 
-**Solicitud de diccionario**: el reporte de diferencias genera una lista corta (o un código para copiar y enviar por chat) con los seudónimos y `eventId` involucrados. Quien exporta la carga en su conciliación, ve exactamente qué se revelará y lo confirma.
+**Solicitud de diccionario** (`DictionaryRequest`, D55): el reporte de diferencias genera una lista corta o un código de texto para copiar y enviar por chat. El código es base64url de un JSON con `exportId`, un prefijo de `packageHash`, los seudónimos y los `eventId` involucrados, más una suma de verificación; no lleva nombres. Quien exporta la carga en su conciliación, ve exactamente qué se revelará y lo confirma.
 
 **Aplicación**: el diccionario se guarda **solo dentro del espacio de diagnóstico**. Al borrar el espacio, se borra el diccionario.
 
 | Evento (en el registro de quien exporta) | Payload |
 |---|---|
-| `DiagnosticExportCreated` | `exportId, reconciliationId?, scope, anonymized: Boolean, exportedUpToSequence, pseudonymMap: Map<String, EntityRef>, eventCount, packageHash` |
-| `DiagnosticDictionaryExported` | `dictionaryId, exportId, scope (PARTIAL/FULL), revealedPseudonyms: List<String>, revealedNoteEventIds: List<String>` |
+| `DiagnosticExportCreated` | `exportId, reconciliationId?, scope, anonymized: Boolean, exportedUpToSequence, pseudonymMap: Map<String, EntityRef>, eventCount, packageHash` · `aggregate_type = RECONCILIATION`, `aggregate_id = reconciliationId` si hay conciliación; `SYSTEM` y `aggregate_id = exportId` si el origen es S73 (D53) |
+| `DiagnosticDictionaryExported` | `dictionaryId, exportId, reconciliationId, scope (PARTIAL/FULL), revealedPseudonyms: List<String>, revealedNoteEventIds: List<String>` · `aggregate_type = RECONCILIATION`, `aggregate_id = reconciliationId` (la que generó el paquete) |
 
 `EntityRef = entityType (ACCOUNT/PERSON/TAG/CATEGORY/INCOME_SOURCE/POOL/FUND), entityId`.
+
+Ambos eventos se emiten **después** de escribir el archivo con `CreateDocument` y de releerlo y verificarlo (D53): cancelar el selector no deja evento, y reexportar crea otro `exportId`.
 
 ### 3.4 Cúmulos y reembolsos
 
@@ -585,3 +597,9 @@ Resultado: BBVA 780 · BCP 170 · Efectivo 95 · Apartado Pasajes 45 · Por cobr
 | D47 | Recordatorio de respaldo | Worker `backup_reminder`, apagado por defecto, N = 15, repite cada 7 días; el último respaldo se deriva de los eventos; la alerta del Inicio usa `BackupStatus` aunque las notificaciones estén apagadas (2026-11-02) |
 | D48 | Bloqueo y respaldo | Crear un respaldo pide re-autenticación si el bloqueo está activo; `ExternalFlowGuard` evita que el selector SAF cuente como segundo plano (también en S45) (2026-11-02) |
 | D49 | Entrada no confiable | Límites duros antes de descifrar; toda verificación termina antes de tocar la base real; un fallo en el intercambio de archivos se revierte al reabrir (2026-11-02) |
+| D50 | Proyectores sobre otra base | `ProjectorSetFactory` arma el conjunto completo de proyectores con los DAO de una base dada; la base real y el espacio de diagnóstico lo usan, y un test de cobertura evita proyectores olvidados (2026-11-02) |
+| D51 | Clave del espacio de diagnóstico | Alias de Keystore y archivo de clave propios; borrar el espacio nunca toca la clave de la base real; `DiagnosticWorkspaceWipeStep` lo incluye en «Borrar todos mis datos» (2026-11-02) |
+| D52 | Anonimización por lista permitida | Un `String` plano del payload es texto libre y se clasifica `PSEUDONYM` o `REMOVE` en una tabla explícita; un test falla si hay uno sin clasificar; obligatorio eliminado = `"[removed]"`, opcional = `null` (2026-11-02) |
+| D53 | Guardar y auditar | `.fdiag` y `.fkey` se guardan con `CreateDocument`, sin archivo temporal; el evento de auditoría se emite tras escribir y verificar; cancelar no deja evento; reexportar crea otro `exportId` (2026-11-02) |
+| D54 | Paquete determinista | ZIP con cinco entradas en orden fijo y marcas de tiempo fijas; `contentHash` en `manifest.json`; `packageHash` = SHA-256 del ZIP en claro (2026-11-02) |
+| D55 | Solicitud de diccionario | Código base64url de un JSON con `exportId`, prefijo de `packageHash`, seudónimos y `eventId`, más suma de verificación; sin nombres (2026-11-02) |

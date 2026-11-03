@@ -1,6 +1,8 @@
 package com.al3xiel.my_finances.feature.reconciliation.di
 
 import androidx.navigation3.runtime.EntryProviderScope
+import com.al3xiel.my_finances.core.navigation.DiagnosticExport
+import com.al3xiel.my_finances.core.navigation.DictionaryExport
 import com.al3xiel.my_finances.core.navigation.ExpenseEditor
 import com.al3xiel.my_finances.core.navigation.IncomeEditor
 import com.al3xiel.my_finances.core.navigation.LocalNavigator
@@ -63,6 +65,8 @@ object ReconciliationNavigationModule {
                     },
                     onResolve = { navigator.push(ReconciliationResolve(id)) },
                     onFinished = navigator::back,
+                    onExportDiagnostic = { navigator.push(DiagnosticExport(id)) },
+                    onExportDictionary = { navigator.push(DictionaryExport(id)) },
                 )
             }
             entry<ReconciliationResolve> { key ->

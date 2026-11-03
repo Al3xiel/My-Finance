@@ -128,7 +128,7 @@ Formato: **ID · Nombre (UI)** · `RouteKey` · propósito · acciones principal
 | S72 | Ajustes | `Settings` | Tema (sistema/claro/oscuro); moneda PEN y formato `es-PE` solo informativos · secciones aportadas por cada feature (`SettingsSectionContributor`), p. ej. **Recordatorios** de ingresos esperados: interruptor que pide `POST_NOTIFICATIONS` en contexto | — |
 | S73 | Herramientas de desarrollador | `DevTools` | Verificar cadena de hashes, re-proyectar, comparar proyecciones, ver eventos crudos, conciliaciones `needsReview` · **Abrir paquete de diagnóstico** → S64 | `ProjectionsRebuilt` |
 
-> S73 se habilita tocando 7 veces la versión de la app en "Acerca de" (patrón de Android).
+> S73 se habilita tocando 7 veces la versión de la app en la sección «Acerca de» de S72 (patrón de Android); el estado «herramientas activadas» va en DataStore. Cada vez que se entra pide biometría o credencial. «Abrir paquete de diagnóstico» usa el selector `OpenDocument`.
 
 ### 3.7 Conciliación y diagnóstico
 
@@ -137,9 +137,9 @@ Formato: **ID · Nombre (UI)** · `RouteKey` · propósito · acciones principal
 | S60 | Nueva conciliación | `ReconciliationStart(accountId)` | "¿Cuánto dice tu banco?" · saldo de la app · diferencia | Registrar → `BalanceCheckRecorded` (**no ajusta**); el saldo real puede ser 0 o negativo; si ya hay una `OPEN` en la cuenta abre S61 |
 | S61 | Conciliación abierta | `ReconciliationDetail(id)` | Saldo real, saldo de la app al momento, **diferencia restante en vivo** · movimientos vinculados · sugerencias (movimientos recientes sin conciliar) | Registrar movimiento olvidado (abre S22/S23/S24 vinculado) · Vincular existente → `MovementLinkedToReconciliation` · **Resolver** → S62 · Cancelar (motivo obligatorio) → `ReconciliationCancelled` · **Exportar diagnóstico** → S63 · **Exportar diccionario** → S65 |
 | S62 | Resolver conciliación | `ReconciliationResolve(id)` | Causa (Saldado / Faltó registrar / Registro erróneo / Posible error de la app / Desconocida) · solo admite las causas que permite la diferencia (0: Saldado / Faltó registrar / Registro erróneo; ≠ 0: Posible error de la app / Desconocida) · si diferencia ≠ 0: vista del ingreso/egreso no identificado · nota opcional | Confirmar → `ReconciliationResolved` |
-| S63 | Exportar diagnóstico | `DiagnosticExport(reconciliationId)` | Alcance, anonimización (activada), contraseña opcional, **vista previa del contenido** | Exportar → `DiagnosticExportCreated` + Intent |
+| S63 | Exportar diagnóstico | `DiagnosticExport(reconciliationId)` | Alcance, anonimización (activada), contraseña opcional, **vista previa del contenido** | Exportar → selector `CreateDocument` → relee y verifica → `DiagnosticExportCreated` (cancelar no deja evento); pide re-autenticación si el bloqueo está activo |
 | S64 | Espacio de diagnóstico | `DiagnosticWorkspace(packageId)` | Resumen del paquete · **reporte de diferencias** (primer `sequence` divergente, asientos lado a lado) · generar solicitud de diccionario · aplicar diccionario · borrar espacio | — (BD separada) |
-| S65 | Exportar diccionario | `DictionaryExport(exportId)` | Cargar solicitud (código o lista) · alcance parcial/completo · **lista exacta de lo que se revelará** · contraseña obligatoria | Exportar → `DiagnosticDictionaryExported` + Intent |
+| S65 | Exportar diccionario | `DictionaryExport(exportId)` | Cargar solicitud (código o lista) · alcance parcial/completo · **lista exacta de lo que se revelará** · contraseña obligatoria | Exportar → selector `CreateDocument` → relee y verifica → `DiagnosticDictionaryExported` |
 
 **Total MVP: 45 pantallas (49 rutas)**, incluidos editores y detalles.
 

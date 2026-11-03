@@ -22,4 +22,7 @@ interface ProjectionStateDao {
 
     @Query("SELECT * FROM projection_state WHERE projector_name = :name")
     suspend fun state(name: String): ProjectionStateEntity?
+
+    @Query("SELECT * FROM projection_state")
+    suspend fun all(): List<ProjectionStateEntity>
 }

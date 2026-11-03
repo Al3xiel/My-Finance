@@ -60,6 +60,8 @@ fun ReconciliationDetailScreen(
     onResolve: () -> Unit,
     onFinished: () -> Unit,
     modifier: Modifier = Modifier,
+    onExportDiagnostic: () -> Unit = {},
+    onExportDictionary: () -> Unit = {},
     viewModel: ReconciliationDetailViewModel = hiltViewModel<ReconciliationDetailViewModel, ReconciliationDetailViewModel.Factory>(
         key = reconciliationId.value,
         creationCallback = { it.create(reconciliationId.value) },
@@ -67,7 +69,7 @@ fun ReconciliationDetailScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(state.closed) { if (state.closed) onFinished() }
-    ReconciliationDetailContent(state, viewModel::onAction, onRegisterForgotten, onCorrect, onResolve, modifier)
+    ReconciliationDetailContent(state, viewModel::onAction, onRegisterForgotten, onCorrect, onResolve, modifier, onExportDiagnostic, onExportDictionary)
 }
 
 @Composable
@@ -78,6 +80,8 @@ fun ReconciliationDetailContent(
     onCorrect: (ReconciliationMovement) -> Unit,
     onResolve: () -> Unit,
     modifier: Modifier = Modifier,
+    onExportDiagnostic: () -> Unit = {},
+    onExportDictionary: () -> Unit = {},
 ) {
     val detail = state.detail
     if (detail == null) {
@@ -120,6 +124,12 @@ fun ReconciliationDetailContent(
             TextButton(onClick = { onAction(ReconciliationDetailUiAction.AskCancel) }, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.reconciliation_cancel))
             }
+        }
+        TextButton(onClick = onExportDiagnostic, modifier = Modifier.fillMaxWidth()) {
+            Text(stringResource(R.string.reconciliation_export_diagnostic))
+        }
+        TextButton(onClick = onExportDictionary, modifier = Modifier.fillMaxWidth()) {
+            Text(stringResource(R.string.reconciliation_export_dictionary))
         }
         state.error?.let { Text(it.message(), color = MaterialTheme.colorScheme.error) }
     }

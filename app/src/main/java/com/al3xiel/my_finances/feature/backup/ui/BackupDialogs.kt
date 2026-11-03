@@ -2,11 +2,9 @@ package com.al3xiel.my_finances.feature.backup.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -15,10 +13,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.al3xiel.my_finances.R
+import com.al3xiel.my_finances.core.designsystem.PasswordField
 import com.al3xiel.my_finances.core.security.AuthPrompt
 
 /** Los diálogos de cada paso; los pasos que abren el selector del sistema los lanza [BackupScreen]. */
@@ -94,18 +91,6 @@ private fun RestorePasswordDialog(message: BackupMessage?, onAction: (BackupUiAc
             }) { Text(stringResource(R.string.backup_password_ok)) }
         },
         dismissButton = { CancelButton { onAction(BackupUiAction.Cancel) } },
-    )
-}
-
-@Composable
-private fun PasswordField(value: String, label: Int, onChange: (String) -> Unit) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onChange,
-        label = { Text(stringResource(label)) },
-        singleLine = true,
-        visualTransformation = PasswordVisualTransformation(),
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
     )
 }
 

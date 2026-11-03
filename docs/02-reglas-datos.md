@@ -116,8 +116,8 @@
 | Exportar reporte | Movimientos / reportes filtrados | CSV o PDF | Aviso: "este archivo no está cifrado". |
 | Respaldo | Registro completo de eventos + metadatos | Archivo `.fbak` (líneas JSON en gzip, cifrado AES-256-GCM en bloques de 64 KiB; clave por PBKDF2-HMAC-SHA256, 600 000 iteraciones, sal de 16 bytes en la cabecera) | Contraseña obligatoria (≥ 10 caracteres, doble ingreso, nunca se guarda); destino elegido con `CreateDocument` (SAF); se relee y verifica antes de registrar `BackupCreated`; pide re-autenticación si el bloqueo está activo (D48). |
 | Restaurar | Importa eventos a una base de staging, verifica hashes, reproduce proyecciones | `.fbak` | Solo sobre una base sin datos propios (D44); requiere contraseña; muestra un resumen sin montos ni nombres; nada toca la base real hasta verificar todo; reinicia la app (D49). |
-| Exportar diagnóstico | Eventos, asientos y proyecciones del alcance de una conciliación (ver `04-modelo-datos.md` §3.3.1) | `.fdiag` (ZIP: PDF + CSV + JSONL + JSON) | Anonimizado por defecto; contraseña opcional; vista previa de qué se incluye; queda registrado con `DiagnosticExportCreated`. |
-| Abrir diagnóstico | Paquete recibido de otra persona | `.fdiag` | Se importa en una BD **separada** y de solo lectura; nunca se mezcla con los datos propios; borrable. |
+| Exportar diagnóstico | Eventos, asientos y proyecciones del alcance de una conciliación (ver `04-modelo-datos.md` §3.3.1) | `.fdiag` (ZIP: PDF + CSV + JSONL + JSON; con contraseña, dentro del contenedor cifrado) | Anonimizado por defecto; contraseña opcional; vista previa de qué se incluye; pide re-autenticación si el bloqueo está activo; destino elegido con `CreateDocument` (SAF), se relee y verifica y solo entonces queda registrado con `DiagnosticExportCreated` (D53). |
+| Abrir diagnóstico | Paquete recibido de otra persona | `.fdiag` | Se elige con `OpenDocument` (SAF); se importa en una BD **separada** con clave propia, que solo escriben el importador, el aplicador de diccionario y el borrado; nunca se mezcla con los datos propios; borrable. Sin `intent-filter`. |
 | Exportar diccionario | Seudónimo → nombre real (y notas elegidas) de un paquete ya exportado | `.fkey` (JSON cifrado) | Solo tras la auditoría, desde la misma conciliación; parcial por defecto; contraseña obligatoria; queda registrado con `DiagnosticDictionaryExported`. |
 
 **Reglas del paquete de diagnóstico**:
@@ -131,6 +131,8 @@
 - DG8. Parcial por defecto: revela solo lo pedido en la solicitud del reporte de diferencias. Antes de exportar se muestra la lista exacta de nombres y notas que se revelarán.
 - DG9. Contraseña **obligatoria** para el diccionario.
 - DG10. El diccionario solo se aplica si su `exportId` y `packageHash` coinciden con el paquete abierto, y vive solo dentro del espacio de diagnóstico.
+- DG11. Entrada no confiable: se validan tamaño del archivo, cinco entradas exactas sin repetidas, tamaño de cada entrada descomprimida, cantidad de eventos y largo de línea; nada se extrae a disco ni se usan nombres de entrada como rutas; el JSON se valida; un `schemaVersion` mayor al soportado o un tipo de evento desconocido se rechaza con ese mensaje (D54).
+- DG12. Un solo paquete abierto a la vez (abrir otro pide borrar el actual). Borrar el espacio elimina el archivo de la base con `-wal`/`-shm`, su clave, el alias de Keystore y los archivos del paquete y del diccionario; «Borrar todos mis datos» lo incluye y nunca toca la clave de la base real (D51).
 
 **Reglas de la exportación de reportes (S45)**:
 - RX1. Solo por acción explícita; el aviso "este archivo no está cifrado" se muestra antes del selector del sistema.

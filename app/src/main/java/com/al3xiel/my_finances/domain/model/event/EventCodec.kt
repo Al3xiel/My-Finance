@@ -1,6 +1,7 @@
 package com.al3xiel.my_finances.domain.model.event
 
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 
@@ -75,6 +76,8 @@ object EventCodec {
         "ProjectionsRebuilt" to ProjectionsRebuilt.serializer(),
         "BackupCreated" to BackupCreated.serializer(),
         "BackupRestored" to BackupRestored.serializer(),
+        "DiagnosticExportCreated" to DiagnosticExportCreated.serializer(),
+        "DiagnosticDictionaryExported" to DiagnosticDictionaryExported.serializer(),
     )
 
     val types: Set<String> get() = serializers.keys
@@ -87,6 +90,9 @@ object EventCodec {
         val upcast = UpcasterRegistry.upcast(type, schemaVersion, json.parseToJsonElement(payload) as JsonObject)
         return json.decodeFromJsonElement(serializerFor(type), upcast)
     }
+
+    /** Estructura del payload de un tipo: la usa el anonimizador para encontrar cada texto plano. */
+    fun descriptor(type: String): SerialDescriptor = serializerFor(type).descriptor
 
     private fun serializerFor(type: String): KSerializer<out DomainEvent> =
         serializers[type] ?: error("unknown event type: $type")
