@@ -42,7 +42,7 @@ android {
             signingConfigs.findByName("release")?.let { signingConfig = it }
             optimization {
                 enable = true
-                packageScope = setOf("androidx.**", "kotlin.**", "kotlinx.**")
+                packageScope = setOf("androidx.**")
             }
         }
     }
