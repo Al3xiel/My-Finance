@@ -12,6 +12,7 @@ import com.al3xiel.my_finances.feature.categories.domain.model.Category
 import com.al3xiel.my_finances.feature.movements.domain.model.MovementFilter
 import com.al3xiel.my_finances.feature.movements.domain.model.MovementSummary
 import com.al3xiel.my_finances.feature.movements.domain.usecase.MovementFixture
+import com.al3xiel.my_finances.feature.movements.domain.usecase.VoidMovementUseCase
 import com.al3xiel.my_finances.feature.tags.domain.model.Tag
 import com.al3xiel.my_finances.domain.model.event.TagKind
 import org.junit.Assert.assertEquals
@@ -38,7 +39,7 @@ class MovementsViewModelTest {
         status: MovementStatus = MovementStatus.ACTIVE,
     ) = MovementSummary(MovementId(id), type, account, counter, f.pen(minor), note, on, status, 1)
 
-    private fun viewModel() = MovementsViewModel(MovementsPreset(), f.movements, f.accounts, f.categories, f.tags)
+    private fun viewModel() = MovementsViewModel(MovementsPreset(), f.movements, f.accounts, f.categories, f.tags, VoidMovementUseCase(f.movements, f.accounts, f.rules, f.recorder, f.writeLock))
 
     @Test
     fun groupsRowsByDayKeepingTheRepositoryOrderAndResolvesAccountNames() {

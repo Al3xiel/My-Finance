@@ -4,6 +4,7 @@ import com.al3xiel.my_finances.domain.model.CategoryId
 import com.al3xiel.my_finances.feature.categories.domain.model.Category
 import com.al3xiel.my_finances.feature.movements.domain.model.MovementFilter
 import com.al3xiel.my_finances.feature.movements.domain.usecase.MovementFixture
+import com.al3xiel.my_finances.feature.movements.domain.usecase.VoidMovementUseCase
 import com.al3xiel.my_finances.core.MainDispatcherRule
 import java.time.LocalDate
 import org.junit.Assert.assertEquals
@@ -16,7 +17,7 @@ class MovementsFilteredTest {
 
     private val f = MovementFixture()
 
-    private fun viewModel(preset: MovementsPreset) = MovementsViewModel(preset, f.movements, f.accounts, f.categories, f.tags)
+    private fun viewModel(preset: MovementsPreset) = MovementsViewModel(preset, f.movements, f.accounts, f.categories, f.tags, VoidMovementUseCase(f.movements, f.accounts, f.rules, f.recorder, f.writeLock))
 
     @Test
     fun routeTextsBecomeTheFilter() {

@@ -5,22 +5,27 @@ import androidx.lifecycle.viewModelScope
 import com.al3xiel.my_finances.core.designsystem.EntityOption
 import com.al3xiel.my_finances.core.money.Money
 import com.al3xiel.my_finances.domain.model.AccountId
+import com.al3xiel.my_finances.domain.model.BusinessError
 import com.al3xiel.my_finances.domain.model.CategoryId
 import com.al3xiel.my_finances.domain.model.MovementId
 import com.al3xiel.my_finances.domain.model.MovementStatus
 import com.al3xiel.my_finances.domain.model.MovementType
 import com.al3xiel.my_finances.domain.model.TagId
+import com.al3xiel.my_finances.domain.model.attempt
+import com.al3xiel.my_finances.domain.model.errorOrNull
 import com.al3xiel.my_finances.feature.accounts.domain.repository.AccountRepository
 import com.al3xiel.my_finances.feature.categories.domain.repository.CategoryRepository
 import com.al3xiel.my_finances.feature.movements.domain.model.MovementFilter
 import com.al3xiel.my_finances.feature.movements.domain.model.MovementSummary
 import com.al3xiel.my_finances.feature.movements.domain.repository.MovementRepository
+import com.al3xiel.my_finances.feature.movements.domain.usecase.VoidMovementUseCase
 import com.al3xiel.my_finances.feature.tags.domain.repository.TagRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -40,9 +45,14 @@ data class MovementRowUi(
     val note: String?,
     val amount: Money,
     val isVoided: Boolean,
+    /** Corregir solo existe para ingresos y gastos activos (D12); abre su editor. */
+    val canCorrect: Boolean = false,
+    /** Anular existe para todo menos transferencias, gastos no registrados de un fondo (D25) y lo ya anulado. */
+    val canVoid: Boolean = false,
 )
 
-data class DaySection(val day: LocalDate, val rows: List<MovementRowUi>)
+/** Un día con su subtotal: ingresos menos gastos de lo activo; las transferencias y lo anulado no cuentan. */
+data class DaySection(val day: LocalDate, val rows: List<MovementRowUi>, val subtotal: Money)
 
 data class FilterOptions(
     val accounts: List<EntityOption> = emptyList(),
@@ -58,6 +68,10 @@ data class MovementsUiState(
     val options: FilterOptions = FilterOptions(),
     val isFiltered: Boolean = false,
     val loaded: Boolean = false,
+    /** Movimiento cuya anulación espera el motivo (deslizar una fila). */
+    val voidingId: MovementId? = null,
+    val negativeWarning: BusinessError.WouldGoNegative? = null,
+    val error: BusinessError? = null,
 )
 
 sealed interface MovementsUiAction {
@@ -69,6 +83,12 @@ sealed interface MovementsUiAction {
     data class SetTo(val day: LocalDate?) : MovementsUiAction
     data class SetText(val text: String) : MovementsUiAction
     data object ClearFilters : MovementsUiAction
+    data class AskVoid(val id: MovementId) : MovementsUiAction
+    data object DismissVoid : MovementsUiAction
+    data class ConfirmVoid(val reason: String) : MovementsUiAction
+    data object ConfirmNegativeBalance : MovementsUiAction
+    data object DismissWarning : MovementsUiAction
+    data object DismissError : MovementsUiAction
 }
 
 /**
@@ -91,6 +111,7 @@ class MovementsViewModel @AssistedInject constructor(
     accounts: AccountRepository,
     categories: CategoryRepository,
     tags: TagRepository,
+    private val voidMovement: VoidMovementUseCase,
 ) : ViewModel() {
     @AssistedFactory
     interface Factory {
@@ -123,7 +144,17 @@ class MovementsViewModel @AssistedInject constructor(
         }
     }
 
-    val uiState: StateFlow<MovementsUiState> = combine(
+    private data class VoidState(
+        val voidingId: MovementId? = null,
+        val pendingReason: String? = null,
+        val negativeWarning: BusinessError.WouldGoNegative? = null,
+        val submitting: Boolean = false,
+        val error: BusinessError? = null,
+    )
+
+    private val voidState = MutableStateFlow(VoidState())
+
+    private val listState: Flow<MovementsUiState> = combine(
         query,
         query.flatMapLatest { movements.observeMovements(it.filter) },
         accounts.observeAccounts(),
@@ -132,7 +163,7 @@ class MovementsViewModel @AssistedInject constructor(
     ) { query, summaries, accountList, categoryList, tagList ->
         val names = accountList.associate { it.account.id to it.account.name }
         MovementsUiState(
-            days = summaries.groupBy { it.occurredOn }.map { (day, rows) -> DaySection(day, rows.map { it.toRow(names) }) },
+            days = summaries.groupBy { it.occurredOn }.map { (day, rows) -> DaySection(day, rows.map { it.toRow(names) }, rows.subtotal()) },
             filter = query.filter,
             searchText = query.searchText,
             options = FilterOptions(
@@ -143,6 +174,10 @@ class MovementsViewModel @AssistedInject constructor(
             isFiltered = query.filter != MovementFilter(),
             loaded = true,
         )
+    }
+
+    val uiState: StateFlow<MovementsUiState> = combine(listState, voidState) { list, voiding ->
+        list.copy(voidingId = voiding.voidingId, negativeWarning = voiding.negativeWarning, error = voiding.error)
     }.stateIn(viewModelScope, SharingStarted.Eagerly, MovementsUiState())
 
     fun onAction(action: MovementsUiAction) {
@@ -157,7 +192,52 @@ class MovementsViewModel @AssistedInject constructor(
                 Query(searchText = action.text, filter = it.filter.copy(text = action.text.trim().ifEmpty { null }))
             }
             MovementsUiAction.ClearFilters -> query.value = Query()
+            is MovementsUiAction.AskVoid -> voidState.update { it.copy(voidingId = action.id, error = null) }
+            MovementsUiAction.DismissVoid -> voidState.update { it.copy(voidingId = null) }
+            is MovementsUiAction.ConfirmVoid -> submitVoid(action.reason, confirmNegative = false)
+            MovementsUiAction.ConfirmNegativeBalance -> {
+                val reason = voidState.value.pendingReason ?: return
+                voidState.update { it.copy(negativeWarning = null) }
+                submitVoid(reason, confirmNegative = true)
+            }
+            MovementsUiAction.DismissWarning -> voidState.update { it.copy(negativeWarning = null, pendingReason = null, voidingId = null) }
+            MovementsUiAction.DismissError -> voidState.update { it.copy(error = null) }
         }
+    }
+
+    /** Un segundo toque mientras se guarda no emite otro `MovementVoided`. */
+    private fun submitVoid(reason: String, confirmNegative: Boolean) {
+        val current = voidState.value
+        val id = current.voidingId ?: return
+        if (current.submitting) return
+        voidState.update { it.copy(submitting = true) }
+        viewModelScope.launch {
+            val error = attempt { voidMovement(id, reason, confirmNegative) }.errorOrNull()
+            voidState.update {
+                when (error) {
+                    is BusinessError.WouldGoNegative -> it.copy(submitting = false, pendingReason = reason, negativeWarning = error)
+                    else -> it.copy(submitting = false, pendingReason = null, voidingId = null, error = error)
+                }
+            }
+        }
+    }
+
+    private fun List<MovementSummary>.subtotal(): Money {
+        val currency = first().amount.currency
+        return filter { it.status == MovementStatus.ACTIVE }.fold(Money(0, currency)) { total, summary ->
+            when (summary.type.signOnDay()) {
+                1 -> total + summary.amount
+                -1 -> total - summary.amount
+                else -> total
+            }
+        }
+    }
+
+    /** Ingresos y cobros suman; gastos y préstamos restan; transferencias y ajustes no mueven el día. */
+    private fun MovementType.signOnDay(): Int = when (this) {
+        MovementType.INCOME, MovementType.REIMBURSEMENT, MovementType.LOAN_REPAYMENT -> 1
+        MovementType.EXPENSE, MovementType.LOAN_DISBURSEMENT, MovementType.FUND_UNTRACKED_SPEND -> -1
+        MovementType.TRANSFER, MovementType.ADJUSTMENT -> 0
     }
 
     private fun update(change: MovementFilter.() -> MovementFilter) = query.update { it.copy(filter = it.filter.change()) }
@@ -170,5 +250,7 @@ class MovementsViewModel @AssistedInject constructor(
         note = note,
         amount = amount,
         isVoided = status == MovementStatus.VOIDED,
+        canCorrect = status == MovementStatus.ACTIVE && (type == MovementType.EXPENSE || type == MovementType.INCOME),
+        canVoid = status == MovementStatus.ACTIVE && type != MovementType.TRANSFER && type != MovementType.FUND_UNTRACKED_SPEND,
     )
 }

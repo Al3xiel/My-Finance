@@ -360,6 +360,8 @@
     <string name="movement_detail_fee">Comisión</string>
     <string name="movement_detail_revision">Versión %1$d</string>
     <string name="movement_detail_history">Historial</string>
+    <string name="movement_detail_history_open">Desplegado</string>
+    <string name="movement_detail_history_folded">Plegado</string>
     <string name="movement_detail_correct">Corregir</string>
     <string name="movement_detail_void">Anular</string>
     <string name="movement_detail_void_title">Anular movimiento</string>
