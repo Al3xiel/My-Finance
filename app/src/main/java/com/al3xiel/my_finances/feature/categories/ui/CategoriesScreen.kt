@@ -1,19 +1,10 @@
 package com.al3xiel.my_finances.feature.categories.ui
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -21,8 +12,11 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.al3xiel.my_finances.R
+import com.al3xiel.my_finances.core.designsystem.SectionCard
+import com.al3xiel.my_finances.core.designsystem.PillStyle
+import com.al3xiel.my_finances.core.designsystem.PillButton
+import com.al3xiel.my_finances.core.designsystem.CatalogScaffold
 import com.al3xiel.my_finances.core.designsystem.CatalogRow
-import com.al3xiel.my_finances.core.designsystem.EmptyState
 import com.al3xiel.my_finances.core.designsystem.NameDialog
 import com.al3xiel.my_finances.core.designsystem.NoticeDialog
 import com.al3xiel.my_finances.domain.model.CategoryId
@@ -42,31 +36,22 @@ fun CategoriesContent(
     onAction: (CategoriesUiAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier.fillMaxSize()) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Text(stringResource(R.string.categories_title), style = MaterialTheme.typography.titleLarge)
-            TextButton(onClick = { onAction(CategoriesUiAction.ShowCreate(parentId = null)) }) {
-                Text(stringResource(R.string.catalog_add))
-            }
-        }
-        if (state.nodes.isEmpty()) {
-            EmptyState(
-                title = stringResource(R.string.catalog_empty_title),
-                body = stringResource(R.string.catalog_empty_body),
-            )
-        } else {
-            LazyColumn {
-                items(state.nodes, key = { it.category.id.value }) { node ->
+    CatalogScaffold(
+        title = stringResource(R.string.categories_title),
+        onAdd = { onAction(CategoriesUiAction.ShowCreate(parentId = null)) },
+        isEmpty = state.nodes.isEmpty(),
+        modifier = modifier,
+    ) {
+        state.nodes.forEach { node ->
+            key(node.category.id.value) {
+                SectionCard {
                     CatalogRow(
                         title = node.category.name,
                         onRename = { onAction(CategoriesUiAction.ShowRename(node.category.id, node.category.name)) },
                         onArchive = { onAction(CategoriesUiAction.Archive(node.category.id)) },
                     )
                     node.children.forEach { child ->
+                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                         CatalogRow(
                             title = child.name,
                             onRename = { onAction(CategoriesUiAction.ShowRename(child.id, child.name)) },
@@ -74,10 +59,12 @@ fun CategoriesContent(
                             modifier = Modifier.padding(start = 24.dp),
                         )
                     }
-                    TextButton(
+                    PillButton(
+                        text = stringResource(R.string.categories_add_child),
                         onClick = { onAction(CategoriesUiAction.ShowCreate(parentId = node.category.id)) },
-                        modifier = Modifier.padding(start = 16.dp),
-                    ) { Text(stringResource(R.string.categories_add_child)) }
+                        style = PillStyle.TEXT,
+                        modifier = Modifier.padding(start = 8.dp),
+                    )
                 }
             }
         }

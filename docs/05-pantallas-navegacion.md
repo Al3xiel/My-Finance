@@ -96,6 +96,14 @@ Orden de arranque: `AppLock` → `Onboarding` → `MainScaffold`. El flujo no ti
 - El pie (`EditorFooter`) con la píldora "Guardar" y el error de negocio queda **fijo** al fondo y sube con el teclado; el aviso de saldo negativo (D14) se conserva.
 - En el registro rápido, los tramos reconocidos y los ambiguos se distinguen con `StatusBadge` y texto; un conflicto (D64) bloquea Guardar y se explica con texto.
 
+**Disposición de las listas de lectura (S20, S21, S51, S56–S59).** Solo cambia lo visual; los filtros, su orden y las consultas no se tocan.
+- Movimientos (S20): agrupados por día; cada día lleva un encabezado con su fecha y el **subtotal del día**, derivado en el `UiState` de los movimientos ya cargados (sin consulta nueva ni recalcular saldos). Filtros en chips; fila con icono de categoría (`MovementRow`); estado vacío con acción sugerida. `LazyColumn` con clave estable por movimiento.
+- Deslizar una fila es solo un atajo (anular o corregir, con confirmación y motivo obligatorio, U3); toda acción sigue disponible en el detalle.
+- Detalle (S21): datos, partes y conceptos en secciones (`SectionCard`); el estado de reembolso con `StatusBadge`; el historial de versiones, plegable pero siempre alcanzable.
+- Cuentas (S51): tarjetas con saldo (`AccountCard`); en el detalle, saldo a una fecha, asientos y última conciliación.
+- Catálogos (S56–S59): el mismo marco (`ScreenScaffold` + `SectionCard`) y la acción "Agregar" en el encabezado.
+- «Ocultar montos» cubre filas, subtotales y detalle.
+
 ### 3.4 Por cobrar
 
 | ID | Pantalla | Ruta | Contenido | Acciones → evento |

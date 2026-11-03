@@ -1,20 +1,14 @@
 package com.al3xiel.my_finances.feature.tags.ui
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -22,8 +16,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.al3xiel.my_finances.R
+import com.al3xiel.my_finances.core.designsystem.SectionCard
+import com.al3xiel.my_finances.core.designsystem.CatalogScaffold
 import com.al3xiel.my_finances.core.designsystem.CatalogRow
-import com.al3xiel.my_finances.core.designsystem.EmptyState
 import com.al3xiel.my_finances.core.designsystem.EntityOption
 import com.al3xiel.my_finances.core.designsystem.EntityPicker
 import com.al3xiel.my_finances.core.designsystem.NameDialog
@@ -44,51 +39,31 @@ fun TagsScreen(modifier: Modifier = Modifier, viewModel: TagsViewModel = hiltVie
 
 @Composable
 fun TagsContent(state: TagsUiState, onAction: (TagsUiAction) -> Unit, modifier: Modifier = Modifier) {
-    Column(modifier = modifier.fillMaxSize()) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Text(stringResource(R.string.tags_title), style = MaterialTheme.typography.titleLarge)
-            TextButton(onClick = { onAction(TagsUiAction.ShowCreate) }) { Text(stringResource(R.string.catalog_add)) }
-        }
-        if (state.tags.isEmpty()) {
-            EmptyState(
-                title = stringResource(R.string.catalog_empty_title),
-                body = stringResource(R.string.catalog_empty_body),
-            )
-        } else {
-            LazyColumn {
-                section(R.string.tags_section_person, state.tags.filter { it.kind == TagKind.PERSON }, onAction)
-                section(R.string.tags_section_topic, state.tags.filter { it.kind == TagKind.TOPIC }, onAction)
-            }
-        }
+    CatalogScaffold(
+        title = stringResource(R.string.tags_title),
+        onAdd = { onAction(TagsUiAction.ShowCreate) },
+        isEmpty = state.tags.isEmpty(),
+        modifier = modifier,
+    ) {
+        TagSection(R.string.tags_section_person, state.tags.filter { it.kind == TagKind.PERSON }, onAction)
+        TagSection(R.string.tags_section_topic, state.tags.filter { it.kind == TagKind.TOPIC }, onAction)
     }
     state.notice?.let { NoticeDialog(it, onDismiss = { onAction(TagsUiAction.DismissNotice) }) }
     state.dialog?.let { TagDialog(it, state.people, onAction) }
 }
 
-private fun androidx.compose.foundation.lazy.LazyListScope.section(
-    titleRes: Int,
-    tags: List<Tag>,
-    onAction: (TagsUiAction) -> Unit,
-) {
+@Composable
+private fun TagSection(titleRes: Int, tags: List<Tag>, onAction: (TagsUiAction) -> Unit) {
     if (tags.isEmpty()) return
-    item(key = "header-$titleRes") {
-        Text(
-            stringResource(titleRes),
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-        )
-    }
-    items(tags, key = { it.id.value }) { tag ->
-        CatalogRow(
-            title = tag.name,
-            onRename = { onAction(TagsUiAction.ShowRename(tag.id, tag.name)) },
-            onArchive = { onAction(TagsUiAction.Archive(tag.id)) },
-        )
+    SectionCard(title = stringResource(titleRes)) {
+        tags.forEachIndexed { index, tag ->
+            if (index > 0) HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+            CatalogRow(
+                title = tag.name,
+                onRename = { onAction(TagsUiAction.ShowRename(tag.id, tag.name)) },
+                onArchive = { onAction(TagsUiAction.Archive(tag.id)) },
+            )
+        }
     }
 }
 

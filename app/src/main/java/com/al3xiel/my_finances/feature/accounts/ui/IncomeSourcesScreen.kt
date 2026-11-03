@@ -1,19 +1,7 @@
 package com.al3xiel.my_finances.feature.accounts.ui
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -21,8 +9,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.al3xiel.my_finances.R
+import com.al3xiel.my_finances.core.designsystem.CatalogScaffold
+import com.al3xiel.my_finances.core.designsystem.CatalogCard
 import com.al3xiel.my_finances.core.designsystem.CatalogRow
-import com.al3xiel.my_finances.core.designsystem.EmptyState
 import com.al3xiel.my_finances.core.designsystem.EntityOption
 import com.al3xiel.my_finances.core.designsystem.EntityPicker
 import com.al3xiel.my_finances.core.designsystem.NameDialog
@@ -46,34 +35,20 @@ fun IncomeSourcesContent(
     onAction: (IncomeSourcesUiAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier.fillMaxSize()) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Text(stringResource(R.string.sources_title), style = MaterialTheme.typography.titleLarge)
-            TextButton(onClick = { onAction(IncomeSourcesUiAction.ShowCreate) }) {
-                Text(stringResource(R.string.catalog_add))
-            }
-        }
-        if (state.sources.isEmpty()) {
-            EmptyState(
-                title = stringResource(R.string.catalog_empty_title),
-                body = stringResource(R.string.catalog_empty_body),
+    CatalogScaffold(
+        title = stringResource(R.string.sources_title),
+        onAdd = { onAction(IncomeSourcesUiAction.ShowCreate) },
+        isEmpty = state.sources.isEmpty(),
+        modifier = modifier,
+    ) {
+        CatalogCard(state.sources) { source ->
+            CatalogRow(
+                title = source.name,
+                subtitle = stringResource(R.string.sources_system).takeIf { source.kind != IncomeSourceKind.REGULAR },
+                onRename = {},
+                onArchive = {},
+                canEdit = false,
             )
-        } else {
-            LazyColumn {
-                items(state.sources, key = { it.id.value }) { source ->
-                    CatalogRow(
-                        title = source.name,
-                        subtitle = stringResource(R.string.sources_system).takeIf { source.kind != IncomeSourceKind.REGULAR },
-                        onRename = {},
-                        onArchive = {},
-                        canEdit = false,
-                    )
-                }
-            }
         }
     }
     state.dialog?.let { dialog ->

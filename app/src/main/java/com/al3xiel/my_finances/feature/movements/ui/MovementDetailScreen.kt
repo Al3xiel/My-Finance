@@ -9,16 +9,22 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import com.al3xiel.my_finances.core.designsystem.PillButton
+import com.al3xiel.my_finances.core.designsystem.PillStyle
+import com.al3xiel.my_finances.core.designsystem.ScreenScaffold
+import com.al3xiel.my_finances.core.designsystem.SectionCard
+import com.al3xiel.my_finances.core.designsystem.SectionRow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -83,46 +89,69 @@ fun MovementDetailContent(
 ) {
     val detail = state.detail
     if (detail == null) {
-        if (state.loaded) EmptyState(title = stringResource(R.string.movement_detail_not_found), body = "", modifier = modifier)
+        if (state.loaded) {
+            ScreenScaffold(title = "", modifier = modifier) { padding ->
+                EmptyState(title = stringResource(R.string.movement_detail_not_found), body = "", modifier = Modifier.padding(padding))
+            }
+        }
         return
     }
     val movement = detail.movement
-    Column(
-        modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Text(stringResource(movement.type.labelRes()), style = MaterialTheme.typography.titleLarge)
-        MoneyText(movement.amount, style = MaterialTheme.typography.headlineMedium)
-        if (movement.status == MovementStatus.VOIDED) {
-            Text(stringResource(R.string.history_voided), color = MaterialTheme.colorScheme.error)
-        }
-        Text(stringResource(R.string.movement_detail_revision, movement.revision), style = MaterialTheme.typography.bodySmall)
-        Field(R.string.movement_detail_date, dayText(movement.occurredOn))
-        val account = state.names.accounts[movement.accountId.value].orEmpty()
-        val counter = movement.counterAccountId?.let { state.names.accounts[it.value].orEmpty() }
-        Field(R.string.movement_detail_account, listOfNotNull(account, counter).joinToString(" → "))
-        movement.incomeSourceId?.let { Field(R.string.sources_title, state.names.incomeSources[it.value].orEmpty()) }
-        movement.note?.let { Field(R.string.movement_detail_note, it) }
-
-        if (movement.parts.isNotEmpty()) {
-            Section(R.string.movement_detail_parts)
-            movement.parts.forEach { part -> PartRow(part, movement.amount.currency, state.names) }
-        }
-
-        Section(R.string.movement_detail_history)
-        detail.history.forEach { entry -> HistoryRow(entry) }
-
-        when {
-            state.canEdit -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
-                Button(onClick = onCorrect) { Text(stringResource(R.string.movement_detail_correct)) }
-                OutlinedButton(onClick = { onAction(MovementDetailUiAction.ShowVoidDialog) }) {
-                    Text(stringResource(R.string.movement_detail_void))
+    var historyOpen by rememberSaveable { mutableStateOf(true) }
+    val historyState = stringResource(if (historyOpen) R.string.movement_detail_history_open else R.string.movement_detail_history_folded)
+    ScreenScaffold(title = stringResource(movement.type.labelRes()), modifier = modifier) { padding ->
+        Column(
+            modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                MoneyText(movement.amount, style = MaterialTheme.typography.headlineMedium)
+                if (movement.status == MovementStatus.VOIDED) {
+                    Text(stringResource(R.string.history_voided), color = MaterialTheme.colorScheme.error)
+                }
+                Text(
+                    stringResource(R.string.movement_detail_revision, movement.revision),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            SectionCard {
+                Field(R.string.movement_detail_date, dayText(movement.occurredOn))
+                val account = state.names.accounts[movement.accountId.value].orEmpty()
+                val counter = movement.counterAccountId?.let { state.names.accounts[it.value].orEmpty() }
+                Field(R.string.movement_detail_account, listOfNotNull(account, counter).joinToString(" → "))
+                movement.incomeSourceId?.let { Field(R.string.sources_title, state.names.incomeSources[it.value].orEmpty()) }
+                movement.note?.let { Field(R.string.movement_detail_note, it) }
+            }
+            if (movement.parts.isNotEmpty()) {
+                SectionCard(title = stringResource(R.string.movement_detail_parts)) {
+                    movement.parts.forEach { part -> PartRow(part, movement.amount.currency, state.names) }
                 }
             }
-            movement.type == MovementType.TRANSFER ->
-                Text(stringResource(R.string.error_transfer_not_editable), style = MaterialTheme.typography.bodySmall)
-            state.isUntracked ->
-                Text(stringResource(R.string.error_untracked_spend_locked), style = MaterialTheme.typography.bodySmall)
+            SectionCard {
+                SectionRow(
+                    headline = stringResource(R.string.movement_detail_history),
+                    supporting = detail.history.size.toString(),
+                    onClick = { historyOpen = !historyOpen },
+                    modifier = Modifier.semantics { stateDescription = historyState },
+                )
+                if (historyOpen) detail.history.forEach { entry -> HistoryRow(entry) }
+            }
+
+            when {
+                state.canEdit -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    PillButton(text = stringResource(R.string.movement_detail_correct), onClick = onCorrect)
+                    PillButton(
+                        text = stringResource(R.string.movement_detail_void),
+                        onClick = { onAction(MovementDetailUiAction.ShowVoidDialog) },
+                        style = PillStyle.TONAL,
+                    )
+                }
+                movement.type == MovementType.TRANSFER ->
+                    Text(stringResource(R.string.error_transfer_not_editable), style = MaterialTheme.typography.bodySmall)
+                state.isUntracked ->
+                    Text(stringResource(R.string.error_untracked_spend_locked), style = MaterialTheme.typography.bodySmall)
+            }
         }
     }
     if (state.showVoidDialog) {
@@ -144,45 +173,32 @@ fun MovementDetailContent(
 
 @Composable
 private fun Field(labelRes: Int, value: String) {
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(stringResource(labelRes), color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(value)
-    }
-}
-
-@Composable
-private fun Section(titleRes: Int) {
-    HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
-    Text(stringResource(titleRes), style = MaterialTheme.typography.titleMedium)
+    SectionRow(headline = stringResource(labelRes), trailing = { Text(value) })
 }
 
 @Composable
 private fun PartRow(part: MovementPart, currency: CurrencyCode, names: CatalogNames) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Column(modifier = Modifier.weight(1f)) {
-            val category = names.categories[part.categoryId.value].orEmpty()
-            val title = if (part.kind == PartKind.FEE) stringResource(R.string.movement_detail_fee) else category
-            Text(title, style = MaterialTheme.typography.bodyLarge)
-            val sub = if (part.kind == PartKind.FEE) category else part.tagIds.joinToString(", ") { names.tags[it.value].orEmpty() }
-            if (sub.isNotEmpty()) Text(sub, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        MoneyText(Money(part.amount.amountMinor, currency))
-    }
+    val category = names.categories[part.categoryId.value].orEmpty()
+    val title = if (part.kind == PartKind.FEE) stringResource(R.string.movement_detail_fee) else category
+    val sub = if (part.kind == PartKind.FEE) category else part.tagIds.joinToString(", ") { names.tags[it.value].orEmpty() }
+    SectionRow(
+        headline = title,
+        supporting = sub.ifEmpty { null },
+        trailing = { MoneyText(Money(part.amount.amountMinor, currency)) },
+    )
 }
 
 @Composable
 private fun HistoryRow(entry: MovementHistoryEntry) {
-    Column {
-        val label = when (entry.kind) {
-            HistoryKind.REGISTERED -> R.string.history_registered
-            HistoryKind.CORRECTED -> R.string.history_corrected
-            HistoryKind.VOIDED -> R.string.history_voided
-        }
-        Text(stringResource(R.string.history_entry, stringResource(label), dayText(entry.occurredOn)), style = MaterialTheme.typography.bodyMedium)
-        entry.reason?.let {
-            Text(stringResource(R.string.history_reason, it), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
+    val label = when (entry.kind) {
+        HistoryKind.REGISTERED -> R.string.history_registered
+        HistoryKind.CORRECTED -> R.string.history_corrected
+        HistoryKind.VOIDED -> R.string.history_voided
     }
+    SectionRow(
+        headline = stringResource(R.string.history_entry, stringResource(label), dayText(entry.occurredOn)),
+        supporting = entry.reason?.let { stringResource(R.string.history_reason, it) },
+    )
 }
 
 private val previewMovement = Movement(

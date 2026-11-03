@@ -1,5 +1,6 @@
 package com.al3xiel.my_finances.core.designsystem
 
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -35,6 +36,7 @@ fun MovementRow(
     modifier: Modifier = Modifier,
     subtitle: String? = null,
     isVoided: Boolean = false,
+    @DrawableRes icon: Int? = null,
 ) {
     val sign = when (kind) {
         MovementRowKind.INCOME -> MoneySign.PLUS
@@ -58,6 +60,7 @@ fun MovementRow(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        icon?.let { IconBadge(it) }
         Column(modifier = Modifier.weight(1f)) {
             Text(title, style = MaterialTheme.typography.bodyLarge, textDecoration = strike)
             val line = listOfNotNull(subtitle, stringResource(R.string.movement_row_voided).takeIf { isVoided })

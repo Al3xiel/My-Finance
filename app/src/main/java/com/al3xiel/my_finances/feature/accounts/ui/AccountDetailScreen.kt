@@ -7,10 +7,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -28,6 +27,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.al3xiel.my_finances.R
 import com.al3xiel.my_finances.core.designsystem.DateChooserDialog
 import com.al3xiel.my_finances.core.designsystem.EmptyState
+import com.al3xiel.my_finances.core.designsystem.PillButton
+import com.al3xiel.my_finances.core.designsystem.PillStyle
+import com.al3xiel.my_finances.core.designsystem.ScreenScaffold
+import com.al3xiel.my_finances.core.designsystem.SectionCard
 import com.al3xiel.my_finances.core.designsystem.LocalHideAmounts
 import com.al3xiel.my_finances.core.designsystem.MoneySign
 import com.al3xiel.my_finances.core.designsystem.MoneyText
@@ -77,52 +80,70 @@ fun AccountDetailContent(
 ) {
     val account = state.account
     if (account == null) {
-        EmptyState(
-            title = stringResource(R.string.error_not_found),
-            body = "",
-            modifier = modifier,
-        )
+        ScreenScaffold(title = "", modifier = modifier) { padding ->
+            EmptyState(title = stringResource(R.string.error_not_found), body = "", modifier = Modifier.padding(padding))
+        }
         return
     }
     var pickingDate by rememberSaveable { mutableStateOf(false) }
-    LazyColumn(modifier = modifier.fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp)) {
-        item {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(account.account.name, style = MaterialTheme.typography.titleLarge)
-                Text(
-                    stringResource(R.string.account_detail_balance),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                MoneyText(Money(account.balanceMinor, account.account.currency), style = MaterialTheme.typography.headlineMedium)
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (state.asOf != null && state.balanceAsOfMinor != null) {
+    ScreenScaffold(title = account.account.name, modifier = modifier) { padding ->
+        LazyColumn(
+            modifier = Modifier.fillMaxSize().padding(padding),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            item {
+                SectionCard {
+                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text(
-                            stringResource(R.string.account_detail_balance_at, dayText(state.asOf)),
-                            modifier = Modifier.weight(1f),
+                            stringResource(R.string.account_detail_balance),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                        MoneyText(Money(state.balanceAsOfMinor, account.account.currency))
-                        TextButton(onClick = { onAction(AccountDetailUiAction.ClearAsOf) }) {
-                            Text(stringResource(R.string.movements_filter_clear))
+                        MoneyText(Money(account.balanceMinor, account.account.currency), style = MaterialTheme.typography.headlineMedium)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            if (state.asOf != null && state.balanceAsOfMinor != null) {
+                                Text(
+                                    stringResource(R.string.account_detail_balance_at, dayText(state.asOf)),
+                                    modifier = Modifier.weight(1f),
+                                )
+                                MoneyText(Money(state.balanceAsOfMinor, account.account.currency))
+                                PillButton(
+                                    text = stringResource(R.string.movements_filter_clear),
+                                    onClick = { onAction(AccountDetailUiAction.ClearAsOf) },
+                                    style = PillStyle.TEXT,
+                                )
+                            } else {
+                                PillButton(
+                                    text = stringResource(R.string.account_detail_pick_date),
+                                    onClick = { pickingDate = true },
+                                    style = PillStyle.TEXT,
+                                )
+                            }
                         }
-                    } else {
-                        TextButton(onClick = { pickingDate = true }) { Text(stringResource(R.string.account_detail_pick_date)) }
                     }
                 }
-                if (state.canReconcile) {
-                    ReconciliationEntry(state, onReconcile, onOpenReconciliation)
-                }
-                Text(
-                    stringResource(R.string.account_detail_ledger),
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(top = 16.dp, bottom = 8.dp),
-                )
             }
-        }
-        if (state.ledger.isEmpty()) {
-            item { Text(stringResource(R.string.account_detail_no_ledger), color = MaterialTheme.colorScheme.onSurfaceVariant) }
-        } else {
-            items(state.ledger, key = { it.id }) { line -> LedgerRow(line, account.account.currency) }
+            if (state.canReconcile) {
+                item {
+                    SectionCard {
+                        ReconciliationEntry(state, onReconcile, onOpenReconciliation, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+                    }
+                }
+            }
+            item { SectionTitle(stringResource(R.string.account_detail_ledger)) }
+            if (state.ledger.isEmpty()) {
+                item { Text(stringResource(R.string.account_detail_no_ledger), color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            } else {
+                item {
+                    SectionCard {
+                        state.ledger.forEachIndexed { index, line ->
+                            if (index > 0) HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                            LedgerRow(line, account.account.currency)
+                        }
+                    }
+                }
+            }
         }
     }
     if (pickingDate) {
@@ -138,10 +159,15 @@ fun AccountDetailContent(
 }
 
 @Composable
+private fun SectionTitle(text: String) {
+    Text(text, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(horizontal = 16.dp))
+}
+
+@Composable
 private fun LedgerRow(line: LedgerLine, currency: CurrencyCode) {
     val strike = if (line.isVoided) TextDecoration.LineThrough else null
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
