@@ -5,8 +5,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -21,9 +19,9 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.al3xiel.my_finances.R
 import com.al3xiel.my_finances.core.designsystem.DateField
-import com.al3xiel.my_finances.core.designsystem.EditorFooter
+import com.al3xiel.my_finances.core.designsystem.EditorLayout
 import com.al3xiel.my_finances.core.designsystem.EntityOption
-import com.al3xiel.my_finances.core.designsystem.EntityPicker
+import com.al3xiel.my_finances.core.designsystem.EntityChips
 import com.al3xiel.my_finances.core.designsystem.MoneyInput
 import com.al3xiel.my_finances.core.designsystem.NegativeBalanceDialog
 import com.al3xiel.my_finances.domain.model.AccountId
@@ -54,20 +52,17 @@ fun TransferEditorContent(
     onAction: (TransferEditorUiAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
+    EditorLayout(error = state.error, onSave = { onAction(TransferEditorUiAction.Save) }, modifier = modifier) {
         Text(stringResource(R.string.transfer_title), style = MaterialTheme.typography.titleLarge)
         Text(stringResource(state.label.labelRes()), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
-        EntityPicker(
+        EntityChips(
             label = stringResource(R.string.transfer_from),
             options = state.accountOptions,
             selectedId = state.fromId?.value,
             onSelect = { onAction(TransferEditorUiAction.SelectFrom(AccountId(it))) },
             modifier = Modifier.fillMaxWidth(),
         )
-        EntityPicker(
+        EntityChips(
             label = stringResource(R.string.transfer_to),
             options = state.accountOptions,
             selectedId = state.toId?.value,
@@ -79,6 +74,7 @@ fun TransferEditorContent(
             onValueChange = { onAction(TransferEditorUiAction.EditAmount(it)) },
             label = stringResource(R.string.editor_amount),
             modifier = Modifier.fillMaxWidth(),
+            large = true,
         )
         MoneyInput(
             value = state.feeText,
@@ -98,7 +94,6 @@ fun TransferEditorContent(
             label = { Text(stringResource(R.string.editor_note)) },
             modifier = Modifier.fillMaxWidth(),
         )
-        EditorFooter(error = state.error, onSave = { onAction(TransferEditorUiAction.Save) })
     }
     state.negativeWarning?.let {
         NegativeBalanceDialog(

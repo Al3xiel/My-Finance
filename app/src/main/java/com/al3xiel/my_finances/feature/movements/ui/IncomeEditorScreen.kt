@@ -5,8 +5,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Card
@@ -26,9 +24,9 @@ import com.al3xiel.my_finances.core.money.MoneyFormatter
 import com.al3xiel.my_finances.core.designsystem.DateField
 import com.al3xiel.my_finances.core.designsystem.EmptyState
 import com.al3xiel.my_finances.core.designsystem.FundPicker
-import com.al3xiel.my_finances.core.designsystem.EditorFooter
+import com.al3xiel.my_finances.core.designsystem.EditorLayout
 import com.al3xiel.my_finances.core.designsystem.EntityOption
-import com.al3xiel.my_finances.core.designsystem.EntityPicker
+import com.al3xiel.my_finances.core.designsystem.EntityChips
 import com.al3xiel.my_finances.core.designsystem.MoneyInput
 import com.al3xiel.my_finances.core.designsystem.NegativeBalanceDialog
 import com.al3xiel.my_finances.core.designsystem.ReasonDialog
@@ -68,10 +66,7 @@ fun IncomeEditorContent(
         EmptyState(title = stringResource(R.string.editor_not_found), body = "", modifier = modifier)
         return
     }
-    Column(
-        modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
+    EditorLayout(error = state.error, onSave = { onAction(IncomeEditorUiAction.Save) }, modifier = modifier) {
         Text(
             stringResource(if (state.isCorrection) R.string.income_correct_title else R.string.income_new_title),
             style = MaterialTheme.typography.titleLarge,
@@ -81,15 +76,16 @@ fun IncomeEditorContent(
             onValueChange = { onAction(IncomeEditorUiAction.EditAmount(it)) },
             label = stringResource(R.string.editor_amount),
             modifier = Modifier.fillMaxWidth(),
+            large = true,
         )
-        EntityPicker(
+        EntityChips(
             label = stringResource(R.string.editor_account),
             options = state.accountOptions,
             selectedId = state.accountId?.value,
             onSelect = { onAction(IncomeEditorUiAction.SelectAccount(AccountId(it))) },
             modifier = Modifier.fillMaxWidth(),
         )
-        EntityPicker(
+        EntityChips(
             label = stringResource(R.string.income_source),
             options = state.sourceOptions,
             selectedId = state.sourceId?.value,
@@ -150,7 +146,6 @@ fun IncomeEditorContent(
                 )
             }
         }
-        EditorFooter(error = state.error, onSave = { onAction(IncomeEditorUiAction.Save) })
     }
     if (state.showReasonDialog) {
         ReasonDialog(
