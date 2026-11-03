@@ -43,6 +43,8 @@ class DomainEventSerializationTest {
         ProjectionsRebuilt(mapOf("catalog" to 1), "replay"),
         BackupCreated("b1", 3, "h"),
         BackupRestored("b1", 3),
+        DiagnosticExportCreated("x1", ReconciliationId("r1"), DiagnosticScope.RECONCILIATION, true, 9, mapOf("Account-A" to EntityRef(EntityType.ACCOUNT, "a1")), 4, "h"),
+        DiagnosticDictionaryExported("d1", "x1", ReconciliationId("r1"), DictionaryScope.PARTIAL, listOf("Account-A"), emptyList()),
     ) + poolLoanSamples + fundSamples + expectedIncomeSamples + reconciliationSamples
 
     @Test
