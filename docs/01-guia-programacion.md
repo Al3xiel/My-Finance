@@ -86,7 +86,7 @@ ui/        Screen (stateful) → Content (stateless) → components
            ViewModel: StateFlow<UiState>, recibe UiAction
 domain/    model (Kotlin puro), usecase, rules (reglas de negocio), repository (interfaces)
 data/      eventstore (append-only), projection (projectors + tablas), repository (impl), backup/export
-core/      money, time, security, di, designsystem
+core/      money, time, security, di, designsystem, navigation (Route, MainScaffold, FAB "Registrar")
 ```
 
 Reglas de dependencia:
@@ -98,9 +98,14 @@ Organización por *feature* dentro de cada capa:
 
 ```
 pe.gcasas.finanzas
-├── core/        (money, time, security, designsystem, di)
+├── core/        (money, time, security [contenedor cifrado], designsystem, navigation, di)
 ├── feature/
-│   ├── accounts/       (cuentas, transferencias, conciliación)
+│   ├── home/           (Inicio: indicadores, tarjetas, alertas; solo lee)
+│   ├── onboarding/     (primer uso: bienvenida, cuentas iniciales, seguridad, respaldo)
+│   ├── quickentry/     (registro rápido por texto: gramática, vista previa)
+│   ├── accounts/       (cuentas, transferencias)
+│   ├── reconciliation/ (conciliación en dos pasos, causa, ajuste no identificado, needsReview)
+│   ├── diagnostics/    (paquete .fdiag, espacio de diagnóstico, diccionario .fkey, DevTools)
 │   ├── movements/      (ingresos, gastos, división)
 │   ├── categories/
 │   ├── tags/           (conceptos)
@@ -109,8 +114,9 @@ pe.gcasas.finanzas
 │   ├── loans/          (deudas sueltas)
 │   ├── funds/          (fondos, arqueo)
 │   ├── expectedincome/
+│   ├── privacy/        (bloqueo S01, privacidad S71, ajustes S72, borrado total)
 │   ├── reports/
-│   └── backup/
+│   └── backup/         (S70: crear y restaurar .fbak, recordatorio, estado de la cadena)
 └── data/eventstore/
 ```
 

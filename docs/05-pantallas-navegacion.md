@@ -51,6 +51,8 @@
 **FAB "Registrar" (+)**: visible en Inicio, Movimientos y Por cobrar. Abre un *bottom sheet*:
 `Gasto` · `Ingreso` · `Transferencia` · `Reembolso recibido` · `Registro rápido (texto)`
 
+El FAB solo aparece en la raíz de esas pestañas (no sobre un detalle apilado) y se oculta si ninguna feature aportó acciones. **Atrás** desde la raíz de una pestaña distinta de Inicio vuelve a Inicio; desde la raíz de Inicio sale de la app.
+
 ---
 
 ## 3. Inventario de pantallas
@@ -61,27 +63,29 @@ Formato: **ID · Nombre (UI)** · `RouteKey` · propósito · acciones principal
 
 | ID | Pantalla | Ruta | Contenido | Acciones → evento |
 |---|---|---|---|---|
-| S01 | Bloqueo | `AppLock` | Logo, botón "Desbloquear" (biometría), PIN de respaldo | — |
-| S02 | Bienvenida | `Onboarding.Welcome` | Qué hace la app, "tus datos no salen del teléfono" | Continuar |
-| S03 | Crear cuentas | `Onboarding.Accounts` | Lista sugerida: BBVA, BCP, Efectivo, cada una con saldo inicial | Crear → `AccountCreated` ×n |
-| S04 | Seguridad | `Onboarding.Security` | Activar biometría, ocultar en recientes | Guardar ajustes |
-| S05 | Respaldo | `Onboarding.Backup` | Explica el respaldo cifrado, frecuencia de recordatorio | Guardar ajustes |
+| S01 | Bloqueo | `AppLock` | Logo, botón "Desbloquear" (biometría o credencial del dispositivo); el contenido no se compone mientras está bloqueada | — |
+| S02 | Bienvenida | `Onboarding.Welcome` | Qué hace la app, "tus datos no salen del teléfono"; "Restaurar respaldo" solo si `CanRestoreUseCase` lo permite (mismo flujo y reinicio que S70) | Continuar · Restaurar |
+| S03 | Crear cuentas | `Onboarding.Accounts` | Lista sugerida editable y quitable: BBVA, BCP, Efectivo, cada una con saldo inicial (mínimo una; sin billetera digital) | Crear → `AccountCreated` ×n, todas o ninguna (D59) |
+| S04 | Seguridad | `Onboarding.Security` | Estado real del bloqueo (activado por defecto; sin huella ni credencial del dispositivo se avisa y no se activa), ocultar en recientes | Guardar ajustes |
+| S05 | Respaldo | `Onboarding.Backup` | Explica el respaldo cifrado, recordatorio (interruptor y días; `POST_NOTIFICATIONS` en contexto, si se niega todo sigue funcionando) y enlace a S70 | Terminar → `onboardingCompleted` |
+
+Orden de arranque: `AppLock` → `Onboarding` → `MainScaffold`. El flujo no tiene pestañas ni FAB. Dónde se retoma (D60): sin cuentas y sin bandera → S02; con cuentas y sin bandera → S04; con bandera → la app. Cerrar a mitad retoma en el paso que corresponde; tras restaurar un respaldo (reinicio, D44) hay cuentas sin bandera y se cae en S04 (D61); «Borrar todos mis datos» limpia la bandera y vuelve a S02. Quien ya tenía datos y actualiza la app ve S04 y S05 una vez.
 
 ### 3.2 Inicio
 
 | ID | Pantalla | Ruta | Contenido | Acciones → evento |
 |---|---|---|---|---|
-| S10 | Inicio | `Home` | **4 indicadores** (Saldo en cuentas, Apartado en fondos, Disponible libre, Por cobrar) · tarjetas de cuentas con saldo · fondos activos con barra de consumo · próximo ingreso esperado · alertas (respaldo vencido, conciliación abierta, `needsReview`, ingreso vencido) | Tocar tarjeta → detalle · ojo para ocultar montos |
+| S10 | Inicio | `Home` | **4 indicadores** (Saldo en cuentas, Apartado en fondos, Disponible libre —en rojo y con aviso si es negativo—, Por cobrar) · una fila compacta por cuenta con su saldo · fondos activos con barra de lo consumido (rótulo «estimado» solo en los modos estimados) · próximo ingreso esperado (el vencido más antiguo; si no, el programado más cercano; solo `PEN`) · hasta 3 alertas derivadas y no descartables, en este orden: `needsReview`, conciliación abierta, ingreso vencido, respaldo vencido · estados vacíos por bloque (sin cuentas, sin fondos, sin esperados) | Tocar cuenta → detalle de cuenta; fondo → detalle de fondo; `needsReview` y conciliación abierta → `ReconciliationDetail`; ingreso vencido → `IncomeEditor` prellenado desde el esperado; respaldo vencido → `Backup` · ojo en el encabezado alterna `hideAmounts` (persiste; oculta los cuatro números y las filas) |
 
 ### 3.3 Movimientos
 
 | ID | Pantalla | Ruta | Contenido | Acciones → evento |
 |---|---|---|---|---|
 | S20 | Movimientos | `Movements` | Lista agrupada por día, con chips de filtro (cuenta, tipo, categoría, concepto, cúmulo, fondo, rango de fechas) y búsqueda en notas | Tocar → S21 |
-| S21 | Detalle de movimiento | `MovementDetail(id)` | Datos, partes, conceptos, estado de reembolso, **historial de versiones** (eventos del agregado) | Corregir → S22 · Anular → `MovementVoided` (pide motivo) |
-| S22 | Registrar / corregir gasto | `ExpenseEditor(id?)` | Monto, cuenta, fecha, nota · **partes** (por defecto 1): monto, categoría, conceptos, cúmulo **o** fondo · indicador "falta asignar S/ X" | Guardar → `ExpenseRegistered` / `MovementCorrected` (pide motivo) |
-| S23 | Registrar ingreso | `IncomeEditor(id?)` | Monto, cuenta, fuente, fecha, nota · opción "apartar en fondo" · opción "confirma ingreso esperado" | Guardar → `IncomeRegistered` (+ `FundToppedUp` / `ExpectedIncomeConfirmed`) |
-| S24 | Transferencia | `TransferEditor(id?)` | Desde, hacia, monto, comisión opcional; etiqueta automática "Retiro"/"Depósito" | Guardar → `TransferRegistered` |
+| S21 | Detalle de movimiento | `MovementDetail(id)` | Datos, partes, conceptos, estado de reembolso, **historial de versiones** (eventos del agregado) | Corregir → S22 · Anular → `MovementVoided` (pide motivo; no disponible en transferencias, que se revierten con otra, D12) |
+| S22 | Registrar / corregir gasto | `ExpenseEditor(id?, presetPoolId?, presetFundId?)` | Monto, cuenta, fecha, nota · **partes** (por defecto 1): monto, categoría, conceptos, cúmulo (al elegirlo toma su categoría y conceptos por defecto) **o** fondo · indicador "falta asignar S/ X" | Guardar → `ExpenseRegistered` / `MovementCorrected` (pide motivo) |
+| S23 | Registrar ingreso | `IncomeEditor(id?, expectedIncomeId?, reconciliationId?)` | Monto, cuenta, fuente, fecha, nota · opción "apartar en fondo" (fondo y monto ≤ el ingreso) · opción "confirma ingreso esperado" (con `expectedIncomeId` llega prellenado; sin él sugiere los pendientes de la misma cuenta y fuente: "¿confirma Sueldo ~S/ 2,000?") · con `reconciliationId` (desde S61) se oculta "apartar en fondo" y "confirma ingreso esperado", se propone la cuenta de la conciliación y el ingreso queda vinculado (D34) | Guardar → `IncomeRegistered` (+ `FundToppedUp` / `ExpectedIncomeConfirmed`) |
+| S24 | Transferencia | `TransferEditor(reconciliationId?)` | Desde, hacia, monto, comisión opcional; etiqueta automática "Retiro"/"Depósito". Solo crea: no se edita ni se corrige; un error se revierte con otra transferencia (D12) | Guardar → `TransferRegistered` |
 | S25 | Registro rápido | `QuickEntry` | Campo de texto + vista previa interpretada (ver §5) | Confirmar → evento correspondiente |
 
 ### 3.4 Por cobrar
@@ -92,7 +96,7 @@ Formato: **ID · Nombre (UI)** · `RouteKey` · propósito · acciones principal
 | S31 | Detalle de cúmulo | `PoolDetail(id)` | Responsable, periodo actual (gastos, total, reembolsado, pendiente), historial de periodos | Agregar gasto (abre S22 con cúmulo preseleccionado) · **Rendir cuentas** → S33 · Registrar reembolso → S34 |
 | S32 | Crear / editar cúmulo | `PoolEditor(id?)` | Nombre, responsable, tipo (permanente/evento), categoría y conceptos por defecto | Guardar → `ReimbursementPoolCreated` / `Renamed` |
 | S33 | Rendición de cuentas | `SettlementStatement(poolId)` | **Vista previa** de la imagen/PDF: detalle de gastos, total pendiente; elegir formato | Compartir → `SettlementStatementGenerated` + Intent de Android |
-| S34 | Registrar reembolso | `ReimbursementEditor(personId)` | Persona, cuenta destino, monto, estrategia (antiguos primero / manual) · lista de partes pendientes con lo que se saldaría · bloqueo si excede (D1) | Guardar → `ReimbursementReceived` |
+| S34 | Registrar reembolso | `ReimbursementEditor(personId?, poolId?)` | Persona, cuenta destino, monto, estrategia (antiguos primero / manual) · lista de partes pendientes con lo que se saldaría · bloqueo si excede (D1) | Guardar → `ReimbursementReceived` |
 | S35 | Detalle de persona | `PersonDetail(id)` | Saldo con la persona, cúmulos, deudas, reembolsos, gastos con concepto de esa persona | — |
 | S36 | Deuda suelta | `LoanEditor(id?)` / `LoanDetail(id)` | Persona, cuenta, monto, pagos recibidos | Guardar → `LoanGranted` · Registrar pago → `LoanRepaymentReceived` |
 
@@ -100,44 +104,44 @@ Formato: **ID · Nombre (UI)** · `RouteKey` · propósito · acciones principal
 
 | ID | Pantalla | Ruta | Contenido |
 |---|---|---|---|
-| S40 | Resumen | `Reports` | Selector de periodo · ingresos vs. gastos propios · gasto por otros (reembolsable) · línea "No identificado" |
+| S40 | Resumen | `Reports` | Selector de periodo (mes, año o rango; nunca futuro, D36) · ingresos vs. gastos propios · gasto por otros (reembolsable) · línea "No identificado" · acceso a S44 |
 | S41 | Por categoría | `Reports.ByCategory` | Torta/barras que **suman 100%** · tocar → movimientos filtrados |
 | S42 | Por concepto | `Reports.ByTag` | Total **por concepto por separado** (sin torta comparativa) · cruce con categoría |
 | S43 | Por cuenta | `Reports.ByAccount` | Entradas, salidas y transferencias por cuenta |
-| S44 | Origen del dinero | `Reports.Origin` | Composición por fuente en cada cuenta · "¿en qué se gastó lo de X?" · Sankey fuentes → cuentas → categorías · rotulado **estimado** |
-| S45 | Exportar reporte | `Reports.Export` | CSV/PDF del periodo y filtros actuales, con aviso "no cifrado" |
+| S44 | Origen del dinero | `Reports.Origin` | Composición por fuente en cada cuenta · "¿en qué se gastó lo de X?" · Sankey fuentes → cuentas → categorías · rotulado **estimado** · nota de que los fondos no se rastrean por fuente · aviso de cuenta con faltante (`UNKNOWN_ADJUSTMENT` negativa) |
+| S45 | Exportar reporte | `Reports.Export` | CSV/PDF del periodo y filtros actuales, con aviso "no cifrado"; el PDF suma la composición actual por cuenta y el gasto de cada fuente, rotulados *estimado* |
 
 ### 3.6 Más
 
 | ID | Pantalla | Ruta | Contenido | Acciones → evento |
 |---|---|---|---|---|
 | S50 | Más | `More` | Menú de secciones | — |
-| S51 | Cuentas | `Accounts` / `AccountDetail(id)` | Saldo, saldo a una fecha, asientos, última conciliación | Crear/renombrar/archivar → `Account*` · **Conciliar** → S60 |
+| S51 | Cuentas | `Accounts` / `AccountDetail(id)` | Saldo, saldo a una fecha, asientos, última conciliación | Crear/renombrar/archivar → `Account*` (no se archiva con una conciliación `OPEN`) · **Conciliar** → S60 · aviso `needsReview` |
 | S52 | Fondos | `Funds` / `FundDetail(id)` | Asignado, gastado (detallado + no registrado), restante estimado, días de uso, historial de arqueos y desviación | Recargar → `FundToppedUp` · Marcar día → `UsageDayMarked` · **Arquear** → S53 · Cerrar → `FundClosed` |
 | S53 | Arqueo de fondo | `FundCount(id)` | "¿Cuánto te queda?" · cálculo de gastado vs. estimado · si hay gasto no registrado: cuenta y categoría a cargar | Confirmar → `FundCounted` |
-| S54 | Crear fondo | `FundEditor(id?)` | Nombre, modo de consumo, estimado diario, fechas | Guardar → `FundCreated` |
-| S55 | Ingresos esperados | `ExpectedIncomes` / `ExpectedIncomeEditor(id?)` | Lista con estado (programado/vencido/confirmado), rango de fechas | Programar → `ExpectedIncomeScheduled` · Confirmar (abre S23) · Cancelar |
+| S54 | Crear / editar fondo | `FundEditor(id?)` | Nombre, modo de consumo, estimado diario, fechas; el modo y el inicio se muestran bloqueados cuando ya tienen historia | Guardar → `FundCreated` / `FundEdited` |
+| S55 | Ingresos esperados | `ExpectedIncomes` / `ExpectedIncomeEditor(id?)` | Lista con estado (programado/vencido/confirmado/cancelado), rango de fechas, marca de cuenta archivada (las fuentes no se archivan) que bloquea Confirmar hasta editarlo; el editor corrige uno pendiente | Programar → `ExpectedIncomeScheduled` · Confirmar (abre S23) · Cancelar |
 | S56 | Categorías | `Categories` | Árbol de 1 nivel | `Category*` |
 | S57 | Conceptos | `Tags` | Lista por tipo (persona/tema) | `Tag*` |
 | S58 | Personas | `People` | Lista de alias | `Person*` |
 | S59 | Fuentes de ingreso | `IncomeSources` | Lista | `IncomeSourceCreated` |
-| S70 | Respaldo y restauración | `Backup` | Último respaldo, crear respaldo (contraseña + destino), restaurar, frecuencia de recordatorio | `BackupCreated` / `BackupRestored` |
-| S71 | Privacidad y seguridad | `Privacy` | Qué se guarda, biometría, ocultar en recientes, **Borrar todos mis datos** | — |
-| S72 | Ajustes | `Settings` | Tema, moneda por defecto, formato | — |
+| S70 | Respaldo y restauración | `Backup` | Último respaldo y estado de la cadena · crear (contraseña con doble ingreso, re-autenticación, selector) · restaurar (archivo → contraseña → resumen sin montos ni nombres → confirmar; deshabilitado con explicación si hay datos propios) · recordatorio (interruptor, días; pide `POST_NOTIFICATIONS`) | `BackupCreated` / `BackupRestored` |
+| S71 | Privacidad y seguridad | `Privacy` | Qué se guarda, interruptores (bloqueo, minutos en segundo plano, pantalla segura, ocultar montos), **Borrar todos mis datos** (aviso → autenticar → escribir frase → borrar). Sin biometría ni credencial registradas el bloqueo no se activa y se avisa | — |
+| S72 | Ajustes | `Settings` | Tema (sistema/claro/oscuro); moneda PEN y formato `es-PE` solo informativos · secciones aportadas por cada feature (`SettingsSectionContributor`), p. ej. **Recordatorios** de ingresos esperados: interruptor que pide `POST_NOTIFICATIONS` en contexto | — |
 | S73 | Herramientas de desarrollador | `DevTools` | Verificar cadena de hashes, re-proyectar, comparar proyecciones, ver eventos crudos, conciliaciones `needsReview` · **Abrir paquete de diagnóstico** → S64 | `ProjectionsRebuilt` |
 
-> S73 se habilita tocando 7 veces la versión de la app en "Acerca de" (patrón de Android).
+> S73 se habilita tocando 7 veces la versión de la app en la sección «Acerca de» de S72 (patrón de Android); el estado «herramientas activadas» va en DataStore. Cada vez que se entra pide biometría o credencial. «Abrir paquete de diagnóstico» usa el selector `OpenDocument`.
 
 ### 3.7 Conciliación y diagnóstico
 
 | ID | Pantalla | Ruta | Contenido | Acciones → evento |
 |---|---|---|---|---|
-| S60 | Nueva conciliación | `ReconciliationStart(accountId)` | "¿Cuánto dice tu banco?" · saldo de la app · diferencia | Registrar → `BalanceCheckRecorded` (**no ajusta**) |
-| S61 | Conciliación abierta | `ReconciliationDetail(id)` | Saldo real, saldo de la app al momento, **diferencia restante en vivo** · movimientos vinculados · sugerencias (movimientos recientes sin conciliar) | Registrar movimiento olvidado (abre S22/S23/S24 vinculado) · Vincular existente → `MovementLinkedToReconciliation` · **Resolver** → S62 · Cancelar → `ReconciliationCancelled` · **Exportar diagnóstico** → S63 · **Exportar diccionario** → S65 |
-| S62 | Resolver conciliación | `ReconciliationResolve(id)` | Causa (Saldado / Faltó registrar / Registro erróneo / Posible error de la app / Desconocida) · si diferencia ≠ 0: vista del ingreso/egreso no identificado | Confirmar → `ReconciliationResolved` |
-| S63 | Exportar diagnóstico | `DiagnosticExport(reconciliationId)` | Alcance, anonimización (activada), contraseña opcional, **vista previa del contenido** | Exportar → `DiagnosticExportCreated` + Intent |
+| S60 | Nueva conciliación | `ReconciliationStart(accountId)` | "¿Cuánto dice tu banco?" · saldo de la app · diferencia | Registrar → `BalanceCheckRecorded` (**no ajusta**); el saldo real puede ser 0 o negativo; si ya hay una `OPEN` en la cuenta abre S61 |
+| S61 | Conciliación abierta | `ReconciliationDetail(id)` | Saldo real, saldo de la app al momento, **diferencia restante en vivo** · movimientos vinculados · sugerencias (movimientos recientes sin conciliar) | Registrar movimiento olvidado (abre S22/S23/S24 vinculado) · Vincular existente → `MovementLinkedToReconciliation` · **Resolver** → S62 · Cancelar (motivo obligatorio) → `ReconciliationCancelled` · **Exportar diagnóstico** → S63 · **Exportar diccionario** → S65 |
+| S62 | Resolver conciliación | `ReconciliationResolve(id)` | Causa (Saldado / Faltó registrar / Registro erróneo / Posible error de la app / Desconocida) · solo admite las causas que permite la diferencia (0: Saldado / Faltó registrar / Registro erróneo; ≠ 0: Posible error de la app / Desconocida) · si diferencia ≠ 0: vista del ingreso/egreso no identificado · nota opcional | Confirmar → `ReconciliationResolved` |
+| S63 | Exportar diagnóstico | `DiagnosticExport(reconciliationId)` | Alcance, anonimización (activada), contraseña opcional, **vista previa del contenido** | Exportar → selector `CreateDocument` → relee y verifica → `DiagnosticExportCreated` (cancelar no deja evento); pide re-autenticación si el bloqueo está activo |
 | S64 | Espacio de diagnóstico | `DiagnosticWorkspace(packageId)` | Resumen del paquete · **reporte de diferencias** (primer `sequence` divergente, asientos lado a lado) · generar solicitud de diccionario · aplicar diccionario · borrar espacio | — (BD separada) |
-| S65 | Exportar diccionario | `DictionaryExport(exportId)` | Cargar solicitud (código o lista) · alcance parcial/completo · **lista exacta de lo que se revelará** · contraseña obligatoria | Exportar → `DiagnosticDictionaryExported` + Intent |
+| S65 | Exportar diccionario | `DictionaryExport(exportId)` | Cargar solicitud (código o lista) · alcance parcial/completo · **lista exacta de lo que se revelará** · contraseña obligatoria | Exportar → selector `CreateDocument` → relee y verifica → `DiagnosticDictionaryExported` |
 
 **Total MVP: 45 pantallas (49 rutas)**, incluidos editores y detalles.
 
@@ -170,20 +174,31 @@ S55: programar "Sueldo, BBVA, ~S/ 2,000, entre el 28 y el 5, mensual" → Inicio
 
 ## 5. Registro rápido por texto (S25)
 
+Solo **gasto** e **ingreso**, siempre con la fecha de hoy (reloj inyectado). Transferencias, reembolsos, varias partes y comisión se hacen en los editores. Un gasto tiene una parte.
+
 Gramática (orden libre, separado por espacios):
 
 | Token | Interpretación | Ejemplo |
 |---|---|---|
-| Número | Monto | `45`, `12.50` |
+| Número | Monto: el primero que aparezca; `.` o `,`, hasta 2 decimales, prefijo `S/`; sin separador de miles | `45`, `12.50`, `S/45` |
+| `+` al inicio | Ingreso en vez de gasto; entonces el token de **fuente de ingreso** entra a la tabla | `+50 bcp sueldo` |
 | Nombre de cuenta | Cuenta | `bbva`, `bcp`, `efectivo` |
 | Nombre de categoría | Categoría | `mercado` |
 | Nombre de concepto | Concepto (0..n) | `pareja` |
 | Nombre de cúmulo o su responsable | Cúmulo | `perros`, `mamá` |
 | Nombre de fondo | Fondo | `pasajes` |
-| `+` al inicio | Ingreso en vez de gasto | `+50 bcp mamá` |
+| Fuente de ingreso (solo con `+`) | Fuente | `sueldo` |
 | Resto | Nota | |
 
-Coincidencia sin tildes ni mayúsculas, por prefijo y por alias. **Siempre muestra la vista previa interpretada antes de guardar**; lo ambiguo se resalta para elegir.
+Reglas de coincidencia:
+- Sin tildes ni mayúsculas (`Locale.ROOT`). La coincidencia **exacta gana** sobre el prefijo; el prefijo exige al menos 3 letras.
+- Los nombres de varias palabras se prueban primero como secuencia, de la más larga a la más corta (D63).
+- Un token que coincide con más de una entidad (de cualquier tipo) se **resalta** y el usuario elige; nunca se adivina.
+- `cúmulo + fondo`, o dos cuentas o dos categorías, es conflicto y bloquea Guardar hasta elegir (D64).
+
+Valores ausentes (D62): la categoría se sugiere desde la `defaultCategoryId` del cúmulo o, si no hay, la del último gasto; la cuenta, la del último gasto activo o, si está archivada o no hay historial, la primera activa por creación. Se marcan "sugerida" (con texto, no solo color). Sin categoría, Guardar queda desactivado. Los conceptos por defecto del cúmulo se aplican como en el editor de gasto.
+
+**Siempre muestra la vista previa interpretada antes de guardar.** Es editable en línea (tocar un campo abre `EntityPicker`). Confirmar ejecuta los mismos casos de uso y validaciones que los editores (D66). El texto no se guarda, no se restaura al cerrar la app y no se registra (D65).
 
 ---
 
@@ -210,15 +225,40 @@ Coincidencia sin tildes ni mayúsculas, por prefijo y por alias. **Siempre muest
 
 // Detalles y editores (ejemplos)
 @Serializable data class MovementDetail(val movementId: String) : Route
-@Serializable data class ExpenseEditor(val movementId: String? = null, val presetPoolId: String? = null,
+@Serializable data class ExpenseEditor(val id: String? = null, val presetPoolId: String? = null,
                                        val presetFundId: String? = null, val reconciliationId: String? = null) : Route
-@Serializable data class PoolDetail(val poolId: String) : Route
+@Serializable data object Funds : Route
+@Serializable data class FundDetail(val id: String) : Route
+@Serializable data class FundCount(val id: String) : Route
+@Serializable data class FundEditor(val id: String? = null) : Route
+@Serializable data class IncomeEditor(val id: String? = null, val expectedIncomeId: String? = null,
+                                      val reconciliationId: String? = null) : Route
+@Serializable data class TransferEditor(val reconciliationId: String? = null) : Route
+@Serializable data object ExpectedIncomes : Route
+@Serializable data class ExpectedIncomeEditor(val id: String? = null) : Route
+@Serializable data class PoolDetail(val id: String) : Route
+@Serializable data class PoolEditor(val id: String? = null) : Route
+@Serializable data class SettlementStatement(val poolId: String) : Route
+@Serializable data class ReimbursementEditor(val personId: String? = null, val poolId: String? = null) : Route
+@Serializable data class PersonDetail(val id: String) : Route
+@Serializable data class LoanEditor(val personId: String? = null) : Route
+@Serializable data class LoanDetail(val id: String) : Route
+@Serializable data class ReconciliationStart(val accountId: String) : Route
 @Serializable data class ReconciliationDetail(val reconciliationId: String) : Route
+@Serializable data class ReconciliationResolve(val reconciliationId: String) : Route
 @Serializable data class DiagnosticWorkspace(val packageId: String) : Route
+@Serializable data class ReportByCategory(val from: String, val to: String) : Route
+@Serializable data class ReportByTag(val from: String, val to: String) : Route
+@Serializable data class ReportByAccount(val from: String, val to: String) : Route
+@Serializable data class ReportExport(val from: String, val to: String) : Route
+@Serializable data class MovementsFiltered(val from: String? = null, val to: String? = null,
+                                           val categoryId: String? = null, val tagId: String? = null,
+                                           val accountId: String? = null) : Route
 // … una clase por fila del inventario (§3)
 ```
 
 - Cada pestaña tiene **su propio back stack** (se conserva al cambiar de pestaña).
+- Todas las rutas viven en un solo archivo (`core/navigation/Routes.kt`: la interfaz sellada exige mismo módulo y paquete); cada feature agrega las suyas ahí y aporta sus pantallas, acciones del "+" y entradas de "Más" por contribuciones Hilt (`@IntoSet`), así el shell no conoce a ninguna.
 - Los editores reciben "presets" para abrirse desde contexto (desde un cúmulo, un fondo o una conciliación) sin duplicar pantallas.
 - Los IDs viajan como `String` (UUID) y se convierten a `value class` en el ViewModel.
 
@@ -236,7 +276,7 @@ Coincidencia sin tildes ni mayúsculas, por prefijo y por alias. **Siempre muest
 | `MovementRow` | Fila de la lista de movimientos |
 | `ExpensePartEditor` | Una parte del gasto (monto, categoría, conceptos, cúmulo/fondo) |
 | `EntityPicker` | Selector con búsqueda para cuenta, categoría, concepto, persona, cúmulo, fondo |
-| `EstimatedBadge` | Etiqueta "estimado" |
+| `EstimatedBadge` | Etiqueta "estimado"; todo número de origen la lleva y no depende solo del color |
 | `ReasonDialog` | Pide motivo para corregir o anular |
 | `ShareSheetLauncher` | Genera imagen/PDF y abre el Intent de compartir |
 | `EmptyState` | Estados vacíos con acción sugerida |

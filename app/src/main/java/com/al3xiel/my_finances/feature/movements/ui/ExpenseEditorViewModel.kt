@@ -1,0 +1,299 @@
+package com.al3xiel.my_finances.feature.movements.ui
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.al3xiel.my_finances.core.designsystem.EntityOption
+import com.al3xiel.my_finances.core.designsystem.MoneyInputFilter
+import com.al3xiel.my_finances.core.money.CurrencyCode
+import com.al3xiel.my_finances.core.money.Money
+import com.al3xiel.my_finances.domain.model.AccountId
+import com.al3xiel.my_finances.domain.model.BusinessError
+import com.al3xiel.my_finances.domain.model.CategoryId
+import com.al3xiel.my_finances.domain.model.MovementId
+import com.al3xiel.my_finances.domain.model.MovementStatus
+import com.al3xiel.my_finances.domain.model.FundId
+import com.al3xiel.my_finances.domain.model.PartId
+import com.al3xiel.my_finances.domain.model.PoolId
+import com.al3xiel.my_finances.domain.model.ReconciliationId
+import com.al3xiel.my_finances.domain.model.MovementType
+import com.al3xiel.my_finances.domain.model.PartKind
+import com.al3xiel.my_finances.domain.model.TagId
+import com.al3xiel.my_finances.domain.model.attempt
+import com.al3xiel.my_finances.domain.model.errorOrNull
+import com.al3xiel.my_finances.feature.accounts.domain.repository.AccountRepository
+import com.al3xiel.my_finances.feature.categories.domain.repository.CategoryRepository
+import com.al3xiel.my_finances.feature.movements.domain.model.ExpensePartInput
+import com.al3xiel.my_finances.feature.movements.domain.model.Movement
+import com.al3xiel.my_finances.feature.movements.domain.model.MovementDraft
+import com.al3xiel.my_finances.feature.movements.domain.repository.MovementRepository
+import com.al3xiel.my_finances.feature.movements.domain.usecase.CorrectMovementUseCase
+import com.al3xiel.my_finances.feature.movements.domain.usecase.RegisterExpenseUseCase
+import com.al3xiel.my_finances.feature.funds.domain.model.FundOverview
+import com.al3xiel.my_finances.feature.funds.domain.model.FundStatus
+import com.al3xiel.my_finances.feature.funds.domain.repository.FundRepository
+import com.al3xiel.my_finances.feature.pools.domain.repository.PoolRepository
+import com.al3xiel.my_finances.feature.reconciliation.domain.repository.ReconciliationRepository
+import com.al3xiel.my_finances.feature.tags.domain.repository.TagRepository
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import java.time.Clock
+import java.time.LocalDate
+
+/** S22: registra un gasto nuevo, o corrige uno existente (con motivo) si recibe su id. */
+@HiltViewModel(assistedFactory = ExpenseEditorViewModel.Factory::class)
+class ExpenseEditorViewModel @AssistedInject constructor(
+    @Assisted("movement") movementIdValue: String?,
+    @Assisted("preset") presetPoolIdValue: String?,
+    @Assisted("presetFund") presetFundIdValue: String?,
+    private val movements: MovementRepository,
+    private val accounts: AccountRepository,
+    private val categories: CategoryRepository,
+    tags: TagRepository,
+    private val pools: PoolRepository,
+    private val funds: FundRepository,
+    private val registerExpense: RegisterExpenseUseCase,
+    private val correctMovement: CorrectMovementUseCase,
+    clock: Clock,
+    private val reconciliations: ReconciliationRepository,
+    @Assisted("reconciliation") reconciliationIdValue: String? = null,
+) : ViewModel() {
+    @AssistedFactory
+    interface Factory {
+        fun create(
+            @Assisted("movement") movementIdValue: String?,
+            @Assisted("preset") presetPoolIdValue: String?,
+            @Assisted("presetFund") presetFundIdValue: String?,
+            @Assisted("reconciliation") reconciliationIdValue: String?,
+        ): ExpenseEditorViewModel
+    }
+
+    // KSP no puede nombrar una fábrica asistida con un value class: llega el texto y se envuelve aquí.
+    private val movementId = movementIdValue?.let(::MovementId)
+    private val presetPoolId = presetPoolIdValue?.let(::PoolId)
+    private val presetFundId = presetFundIdValue?.let(::FundId)
+
+    /** Si viene de S61, el gasto queda vinculado a esa conciliación y se propone su cuenta. */
+    private val reconciliationId = reconciliationIdValue?.let(::ReconciliationId)
+    private val today = LocalDate.now(clock)
+
+    private data class Form(
+        val loaded: Boolean = false,
+        val notFound: Boolean = false,
+        val totalText: String = "",
+        val accountId: AccountId? = null,
+        val occurredOn: LocalDate,
+        val note: String = "",
+        val parts: List<PartDraft> = emptyList(),
+        val originalMinor: Map<PartId, Long> = emptyMap(),
+        val nextKey: Int = 0,
+        val error: BusinessError? = null,
+        val negativeWarning: BusinessError.WouldGoNegative? = null,
+        val showReasonDialog: Boolean = false,
+        val pendingReason: String? = null,
+        val saved: Boolean = false,
+        val submitting: Boolean = false,
+    )
+
+    private val form = MutableStateFlow(Form(occurredOn = today))
+
+    val uiState: StateFlow<ExpenseEditorUiState> = combine(
+        form,
+        accounts.observeAccounts(),
+        categories.observeAll(),
+        tags.observeAll(),
+        combine(pools.observePools(), funds.observeFunds(), ::Pair),
+    ) { form, accountList, categoryList, tagList, (poolList, fundList) ->
+        ExpenseEditorUiState(
+            isCorrection = movementId != null,
+            linkedToReconciliation = reconciliationId != null,
+            loaded = form.loaded,
+            notFound = form.notFound,
+            totalText = form.totalText,
+            accountId = form.accountId,
+            occurredOn = form.occurredOn,
+            today = today,
+            note = form.note,
+            parts = form.parts,
+            accountOptions = accountList.filter { !it.account.isArchived }.map { EntityOption(it.account.id.value, it.account.name) },
+            categoryOptions = categoryOptionsOf(categoryList),
+            tagOptions = tagList.filter { !it.isArchived }.map { EntityOption(it.id.value, it.name) },
+            poolOptions = poolList.filter { pool -> !pool.isArchived || form.parts.any { it.poolId == pool.id } }
+                .map { EntityOption(it.id.value, it.name) },
+            fundOptions = fundList.filter { it.fund.status == FundStatus.ACTIVE || form.parts.any { part -> part.fundId == it.fund.id } }
+                .map { EntityOption(it.fund.id.value, it.fund.name) },
+            overspentFunds = overspent(form, fundList),
+            unassignedMinor = unassigned(form),
+            error = form.error,
+            negativeWarning = form.negativeWarning,
+            showReasonDialog = form.showReasonDialog,
+            saved = form.saved,
+        )
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, ExpenseEditorUiState(occurredOn = today, today = today))
+
+    init {
+        viewModelScope.launch { initialize() }
+    }
+
+    private suspend fun initialize() {
+        if (movementId == null) {
+            val last = movements.lastExpense()
+            val reconciled = reconciliationId?.let { reconciliations.find(it) }?.accountId
+            val account = reconciled ?: last?.accountId ?: accounts.observeAccounts().first().firstOrNull { !it.account.isArchived }?.account?.id
+            val category = last?.parts?.firstOrNull { it.kind == PartKind.NORMAL }?.categoryId
+                ?: categories.observeAll().first().firstOrNull { !it.isArchived }?.id
+            val preset = presetPoolId?.let { pools.find(it) }?.takeIf { !it.isArchived }
+            val presetFund = presetFundId?.let { funds.find(it) }?.takeIf { it.fund.status == FundStatus.ACTIVE }
+            val first = PartDraft(key = 0, categoryId = category).inPool(preset).copy(fundId = presetFund?.fund?.id)
+            form.update { it.copy(loaded = true, accountId = account, parts = listOf(first), nextKey = 1) }
+            return
+        }
+        val movement = movements.find(movementId)
+        if (movement == null || movement.type != MovementType.EXPENSE || movement.status != MovementStatus.ACTIVE) {
+            form.update { it.copy(loaded = true, notFound = true) }
+            return
+        }
+        form.update { loaded(it, movement) }
+    }
+
+    private fun loaded(current: Form, movement: Movement): Form {
+        val parts = movement.parts.filter { it.kind == PartKind.NORMAL }
+        return current.copy(
+            loaded = true,
+            totalText = MoneyInputFilter.fromMinor(movement.amount.amountMinor),
+            accountId = movement.accountId,
+            occurredOn = movement.occurredOn,
+            note = movement.note.orEmpty(),
+            parts = parts.mapIndexed { i, part ->
+                PartDraft(i, MoneyInputFilter.fromMinor(part.amount.amountMinor), part.categoryId, part.tagIds.toSet(), part.id, part.poolId, part.fundId)
+            },
+            originalMinor = parts.associate { it.id to it.amount.amountMinor },
+            nextKey = parts.size,
+        )
+    }
+
+    fun onAction(action: ExpenseEditorUiAction) {
+        when (action) {
+            is ExpenseEditorUiAction.EditTotal -> edit { copy(totalText = MoneyInputFilter.sanitize(action.text)) }
+            is ExpenseEditorUiAction.SelectAccount -> edit { copy(accountId = action.id) }
+            is ExpenseEditorUiAction.SelectOccurredOn -> edit { copy(occurredOn = action.occurredOn) }
+            is ExpenseEditorUiAction.EditNote -> edit { copy(note = action.text) }
+            is ExpenseEditorUiAction.EditPartAmount ->
+                editPart(action.key) { copy(amountText = MoneyInputFilter.sanitize(action.text)) }
+            is ExpenseEditorUiAction.SelectPartCategory -> editPart(action.key) { copy(categoryId = action.id) }
+            is ExpenseEditorUiAction.TogglePartTag -> editPart(action.key) {
+                copy(tagIds = if (action.id in tagIds) tagIds - action.id else tagIds + action.id)
+            }
+            is ExpenseEditorUiAction.SelectPartPool -> selectPool(action.key, action.id)
+            is ExpenseEditorUiAction.SelectPartFund ->
+                editPart(action.key) { copy(fundId = action.id, poolId = if (action.id != null) null else poolId) }
+            ExpenseEditorUiAction.AddPart -> edit {
+                // Al pasar de una a dos partes, la primera conserva el total para no perder lo tecleado.
+                val seeded = if (parts.size == 1) listOf(parts.single().copy(amountText = totalText)) else parts
+                copy(parts = seeded + PartDraft(key = nextKey, categoryId = parts.lastOrNull()?.categoryId), nextKey = nextKey + 1)
+            }
+            is ExpenseEditorUiAction.RemovePart -> edit {
+                if (parts.size > 1) copy(parts = parts.filterNot { it.key == action.key }) else this
+            }
+            ExpenseEditorUiAction.Save -> save()
+            is ExpenseEditorUiAction.ConfirmReason -> {
+                form.update { it.copy(pendingReason = action.reason, showReasonDialog = false) }
+                submit(confirmNegative = false)
+            }
+            ExpenseEditorUiAction.DismissReason -> form.update { it.copy(showReasonDialog = false) }
+            ExpenseEditorUiAction.ConfirmNegativeBalance -> {
+                form.update { it.copy(negativeWarning = null) }
+                submit(confirmNegative = true)
+            }
+            ExpenseEditorUiAction.DismissWarning -> form.update { it.copy(negativeWarning = null, pendingReason = null) }
+        }
+    }
+
+    private fun selectPool(key: Int, id: PoolId?) {
+        if (id == null) return editPart(key) { inPool(null) }
+        viewModelScope.launch {
+            val pool = pools.find(id) ?: return@launch
+            editPart(key) { inPool(pool) }
+        }
+    }
+
+    /** Cualquier cambio del usuario descarta el error anterior. */
+    private fun edit(change: Form.() -> Form) = form.update { it.change().copy(error = null) }
+
+    private fun editPart(key: Int, change: PartDraft.() -> PartDraft) =
+        edit { copy(parts = parts.map { if (it.key == key) it.change() else it }) }
+
+    private fun save() {
+        if (movementId != null && form.value.pendingReason == null) {
+            form.update { it.copy(showReasonDialog = true) }
+        } else {
+            submit(confirmNegative = false)
+        }
+    }
+
+    private fun submit(confirmNegative: Boolean) {
+        val current = form.value
+        if (current.submitting) return
+        val total = MoneyInputFilter.toMinor(current.totalText)?.let { Money(it, CurrencyCode.PEN) }
+        val account = current.accountId
+        val inputs = partInputs(current)
+        if (total == null) return fail(BusinessError.InvalidAmount)
+        if (account == null || inputs == null) return fail(BusinessError.NotFound)
+
+        form.update { it.copy(submitting = true) }
+        viewModelScope.launch {
+            val note = current.note.trim().ifEmpty { null }
+            val outcome = attempt {
+                if (movementId == null) {
+                    registerExpense(account, total, inputs, note, current.occurredOn, confirmNegative, reconciliationId)
+                } else {
+                    correctMovement(
+                        movementId,
+                        MovementDraft.Expense(account, total, inputs, note, current.occurredOn),
+                        current.pendingReason.orEmpty(),
+                        confirmNegative,
+                        reconciliationId,
+                    )
+                }
+            }
+            when (val error = outcome.errorOrNull()) {
+                null -> form.update { it.copy(saved = true, submitting = false) }
+                is BusinessError.WouldGoNegative -> form.update { it.copy(negativeWarning = error, submitting = false) }
+                else -> form.update { it.copy(error = error, pendingReason = null, submitting = false) }
+            }
+        }
+    }
+
+    private fun fail(error: BusinessError) = form.update { it.copy(error = error, pendingReason = null) }
+
+    private fun partInputs(form: Form): List<ExpensePartInput>? = form.parts.map { part ->
+        val category = part.categoryId ?: return null
+        ExpensePartInput(part.partId, Money(amountMinor(form, part), CurrencyCode.PEN), category, part.tagIds.toList(), part.poolId, part.fundId)
+    }
+
+    private fun amountMinor(form: Form, part: PartDraft): Long = // una sola parte lleva el total
+        MoneyInputFilter.toMinor(if (form.parts.size == 1) form.totalText else part.amountText) ?: 0L
+
+    /** Fondos a los que el gasto les suma más de lo que les queda; `originalMinor` (partes ya guardadas) ya está en su gastado. */
+    private fun overspent(form: Form, fundList: List<FundOverview>): List<String> =
+        fundList.filter { overview ->
+            val parts = form.parts.filter { it.fundId == overview.fund.id }
+            val extra = parts.sumOf { amountMinor(form, it) } - parts.sumOf { form.originalMinor[it.partId] ?: 0L }
+            parts.isNotEmpty() && extra > overview.estimatedRemaining.amountMinor.coerceAtLeast(0)
+        }.map { it.fund.name }
+
+    private fun unassigned(form: Form): Long {
+        if (form.parts.size < 2) return 0
+        val total = MoneyInputFilter.toMinor(form.totalText) ?: 0L
+        return total - form.parts.sumOf { MoneyInputFilter.toMinor(it.amountText) ?: 0L }
+    }
+}

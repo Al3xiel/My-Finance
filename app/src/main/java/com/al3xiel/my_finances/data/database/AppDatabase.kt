@@ -1,0 +1,122 @@
+package com.al3xiel.my_finances.data.database
+
+import androidx.room.Database
+import androidx.room.RoomDatabase
+import com.al3xiel.my_finances.data.eventstore.EventDao
+import com.al3xiel.my_finances.data.eventstore.EventEntity
+import com.al3xiel.my_finances.data.projection.ProjectionStateDao
+import com.al3xiel.my_finances.data.projection.ProjectionStateEntity
+import com.al3xiel.my_finances.data.projection.catalog.AccountEntity
+import com.al3xiel.my_finances.data.projection.catalog.CatalogDao
+import com.al3xiel.my_finances.data.projection.catalog.CatalogQueryDao
+import com.al3xiel.my_finances.data.projection.catalog.CategoryEntity
+import com.al3xiel.my_finances.data.projection.catalog.IncomeSourceEntity
+import com.al3xiel.my_finances.data.projection.catalog.PersonEntity
+import com.al3xiel.my_finances.data.projection.catalog.TagEntity
+import com.al3xiel.my_finances.data.projection.movement.AccountBalanceEntity
+import com.al3xiel.my_finances.data.projection.movement.LedgerDao
+import com.al3xiel.my_finances.data.projection.movement.LedgerQueryDao
+import com.al3xiel.my_finances.data.projection.movement.LedgerEntryEntity
+import com.al3xiel.my_finances.data.projection.movement.MovementDao
+import com.al3xiel.my_finances.data.projection.movement.MovementEntity
+import com.al3xiel.my_finances.data.projection.movement.MovementPartEntity
+import com.al3xiel.my_finances.data.projection.movement.MovementPartTagEntity
+import com.al3xiel.my_finances.data.projection.movement.MovementQueryDao
+import com.al3xiel.my_finances.data.projection.origin.OriginAttributionEntity
+import com.al3xiel.my_finances.data.projection.origin.OriginBalanceEntity
+import com.al3xiel.my_finances.data.projection.origin.OriginCursorEntity
+import com.al3xiel.my_finances.data.projection.origin.OriginDao
+import com.al3xiel.my_finances.data.projection.origin.OriginQueryDao
+import com.al3xiel.my_finances.data.projection.report.ReportQueryDao
+import com.al3xiel.my_finances.data.projection.expectedincome.ExpectedIncomeDao
+import com.al3xiel.my_finances.data.projection.expectedincome.ExpectedIncomeEntity
+import com.al3xiel.my_finances.data.projection.expectedincome.ExpectedIncomeQueryDao
+import com.al3xiel.my_finances.data.projection.fund.FundCountEntity
+import com.al3xiel.my_finances.data.projection.fund.FundDao
+import com.al3xiel.my_finances.data.projection.fund.FundEntity
+import com.al3xiel.my_finances.data.projection.fund.FundQueryDao
+import com.al3xiel.my_finances.data.projection.fund.FundTopUpEntity
+import com.al3xiel.my_finances.data.projection.fund.FundUsageDayEntity
+import com.al3xiel.my_finances.data.projection.loan.LoanDao
+import com.al3xiel.my_finances.data.projection.loan.LoanEntity
+import com.al3xiel.my_finances.data.projection.loan.LoanQueryDao
+import com.al3xiel.my_finances.data.projection.loan.LoanRepaymentEntity
+import com.al3xiel.my_finances.data.projection.pool.PersonQueryDao
+import com.al3xiel.my_finances.data.projection.pool.PoolDao
+import com.al3xiel.my_finances.data.projection.pool.PoolEntity
+import com.al3xiel.my_finances.data.projection.pool.PoolPeriodEntity
+import com.al3xiel.my_finances.data.projection.pool.PoolQueryDao
+import com.al3xiel.my_finances.data.projection.pool.ReimbursementAllocationEntity
+import com.al3xiel.my_finances.data.projection.pool.ReimbursementDao
+import com.al3xiel.my_finances.data.projection.pool.ReimbursementEntity
+import com.al3xiel.my_finances.data.projection.pool.SettlementStatementEntity
+import com.al3xiel.my_finances.data.projection.reconciliation.ReconciliationDao
+import com.al3xiel.my_finances.data.projection.reconciliation.ReconciliationEntity
+import com.al3xiel.my_finances.data.projection.reconciliation.ReconciliationLinkEntity
+import com.al3xiel.my_finances.data.projection.reconciliation.ReconciliationQueryDao
+
+/** Versión del esquema; el manifiesto del respaldo la anota. */
+const val DATABASE_VERSION = 6
+
+/** Base cifrada con SQLCipher. Cada versión nueva trae su `Migration` en `migration/`. */
+@Database(
+    entities = [
+        EventEntity::class,
+        ProjectionStateEntity::class,
+        AccountEntity::class,
+        CategoryEntity::class,
+        TagEntity::class,
+        PersonEntity::class,
+        IncomeSourceEntity::class,
+        MovementEntity::class,
+        MovementPartEntity::class,
+        MovementPartTagEntity::class,
+        LedgerEntryEntity::class,
+        AccountBalanceEntity::class,
+        PoolEntity::class,
+        PoolPeriodEntity::class,
+        SettlementStatementEntity::class,
+        ReimbursementEntity::class,
+        ReimbursementAllocationEntity::class,
+        LoanEntity::class,
+        LoanRepaymentEntity::class,
+        FundEntity::class,
+        FundUsageDayEntity::class,
+        FundCountEntity::class,
+        FundTopUpEntity::class,
+        ExpectedIncomeEntity::class,
+        ReconciliationEntity::class,
+        ReconciliationLinkEntity::class,
+        OriginBalanceEntity::class,
+        OriginAttributionEntity::class,
+        OriginCursorEntity::class,
+    ],
+    version = DATABASE_VERSION,
+    exportSchema = true,
+)
+abstract class AppDatabase : RoomDatabase() {
+    abstract fun eventDao(): EventDao
+    abstract fun projectionStateDao(): ProjectionStateDao
+    abstract fun catalogDao(): CatalogDao
+    abstract fun movementDao(): MovementDao
+    abstract fun ledgerDao(): LedgerDao
+    abstract fun catalogQueryDao(): CatalogQueryDao
+    abstract fun movementQueryDao(): MovementQueryDao
+    abstract fun ledgerQueryDao(): LedgerQueryDao
+    abstract fun poolDao(): PoolDao
+    abstract fun reimbursementDao(): ReimbursementDao
+    abstract fun loanDao(): LoanDao
+    abstract fun fundDao(): FundDao
+    abstract fun fundQueryDao(): FundQueryDao
+    abstract fun expectedIncomeDao(): ExpectedIncomeDao
+    abstract fun reconciliationDao(): ReconciliationDao
+    abstract fun reconciliationQueryDao(): ReconciliationQueryDao
+    abstract fun expectedIncomeQueryDao(): ExpectedIncomeQueryDao
+    abstract fun poolQueryDao(): PoolQueryDao
+    abstract fun personQueryDao(): PersonQueryDao
+    abstract fun loanQueryDao(): LoanQueryDao
+    abstract fun reportQueryDao(): ReportQueryDao
+
+    abstract fun originQueryDao(): OriginQueryDao
+    abstract fun originDao(): OriginDao
+}

@@ -1,0 +1,49 @@
+package com.al3xiel.my_finances.feature.reports.domain.model
+
+import java.time.LocalDate
+
+/** Una fila por parte de gasto (D38). `ownAmountMinor` es lo que cuenta como gasto propio de esa parte. */
+data class CsvReportRow(
+    val date: LocalDate,
+    val account: String,
+    val category: String,
+    val tags: List<String>,
+    val ownAmountMinor: Long,
+    val type: String,
+    val note: String?,
+)
+
+/** Una tabla del reporte: encabezado, columnas y filas ya formateadas (nombres y montos listos para imprimir). */
+data class PdfSection(val heading: String, val columns: List<String>, val rows: List<List<String>>)
+
+data class PdfReportData(val title: String, val subtitle: String, val notice: String, val sections: List<PdfSection>)
+
+/** Textos del PDF, resueltos por la pantalla (el ViewModel no conoce `Context`). */
+data class ReportExportTexts(
+    val title: String,
+    val periodLabel: String,
+    val notice: String,
+    val summaryHeading: String,
+    val categoryHeading: String,
+    val tagHeading: String,
+    val accountHeading: String,
+    val income: String,
+    val ownSpend: String,
+    val othersTotal: String,
+    val othersReimbursed: String,
+    val othersPending: String,
+    val unidentified: String,
+    val columnName: String,
+    val columnAmount: String,
+    val columnShare: String,
+    val columnInflow: String,
+    val columnOutflow: String,
+    val columnTransfers: String,
+    val originHeading: String,
+    val originSpendHeading: String,
+    val estimated: String,
+    val columnSource: String,
+    val columnTarget: String,
+    val loans: String,
+    val unidentifiedTarget: String,
+)

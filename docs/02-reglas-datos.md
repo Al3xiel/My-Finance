@@ -25,7 +25,7 @@
 | Financieros | Saldos, montos, cuentas (alias "BBVA", "BCP"), movimientos | **Alta** | BD cifrada |
 | Terceros | Nombres o alias de personas (mamá, pareja) | **Alta** (datos personales de terceros) | BD cifrada |
 | Notas libres | Texto que escribe el usuario | Alta | BD cifrada |
-| Preferencias | Tema, frecuencia de recordatorio, último respaldo | Baja | DataStore |
+| Preferencias | Tema, primer uso completado (`onboardingCompleted`), recordatorio de respaldo (activado y cada cuántos días), seguridad (bloqueo, minutos, pantalla segura, ocultar montos) | Baja | DataStore |
 | Clave de cifrado | Clave de la BD | **Crítica** | Android Keystore (envuelta), nunca en texto plano |
 
 **No se guarda nunca**: números de cuenta o de tarjeta completos, CCI, claves bancarias, tokens, DNI, ubicación ni contactos del teléfono. Para personas, se recomienda usar alias ("Mamá"), no nombres completos.
@@ -39,7 +39,7 @@
 | Regla | Implementación |
 |---|---|
 | S1. BD cifrada | Room + **SQLCipher**. Clave aleatoria de 256 bits generada al primer inicio, envuelta con una clave AES del **Android Keystore**. |
-| S2. Bloqueo de app | **BiometricPrompt** (huella/rostro) con respaldo de PIN/patrón del dispositivo. Bloqueo al volver de segundo plano tras N minutos. |
+| S2. Bloqueo de app | **BiometricPrompt** (huella/rostro) con credencial del dispositivo (PIN/patrón/clave) como alternativa; sin PIN propio. Bloqueo en arranque en frío y al volver de segundo plano tras N minutos (5 por defecto; 0/1/5/15). El bloqueo es de interfaz: la clave del Keystore no exige autenticación. Desactivarlo o borrar los datos pide autenticar. |
 | S3. Sin respaldo automático de Android | `android:allowBackup="false"` + `dataExtractionRules` excluyendo todo (evita copias silenciosas a Google Drive y transferencia entre dispositivos). |
 | S4. Sin Internet | El manifest **no** declara `android.permission.INTERNET`. Verificado en CI (falla el build si aparece). |
 | S5. Pantallas seguras | `FLAG_SECURE` en pantallas con montos (oculta la vista previa en recientes y bloquea capturas). Configurable por el usuario. |
@@ -79,7 +79,7 @@
 | C3. Ajustar solo al resolver | El ingreso o egreso **no identificado** se crea únicamente con `ReconciliationResolved`, por el monto exacto de la diferencia restante. |
 | C4. Causa obligatoria | Toda resolución declara causa: `BALANCED`, `MISSING_RECORD`, `RECORDING_ERROR`, `SUSPECTED_APP_ERROR` o `UNKNOWN`. |
 | C5. Origen aislado | Un ingreso no identificado usa la fuente `UNKNOWN_ADJUSTMENT`, que **no contamina** otras fuentes. |
-| C6. Re-verificación | Tras cada re-proyección se recalculan todas las conciliaciones; si una diferencia cambió, se marca `needs_review` (indicio de error de código, antes o ahora). |
+| C6. Re-verificación | Tras una re-proyección por cambio de versión de un proyector (o la manual), se re-verifican las conciliaciones resueltas contra la evidencia de sus eventos; si una diferencia cambió, se marca `needs_review` (indicio de error de código, antes o ahora). Una corrección normal no la dispara. |
 | C7. Cancelable | Si el saldo real se tipeó mal, la conciliación se cancela con motivo; no deja ajustes. |
 
 ---
@@ -95,8 +95,14 @@
 | Gasto dividido | La suma de las partes = monto total, al céntimo. |
 | Cúmulo | Siempre tiene `responsiblePersonId`. |
 | Gasto | No puede estar en un cúmulo **y** en un fondo a la vez. |
-| Reembolso | Monto asignado a gastos ≤ pendiente total; el excedente se rechaza o se registra explícitamente como saldo a favor. |
-| Arqueo de fondo | Saldo declarado ≥ 0. |
+| Reembolso | Monto asignado a gastos ≤ pendiente total; el excedente se rechaza (D1); no hay saldo a favor. |
+| Arqueo de fondo | Saldo declarado ≥ 0 y no mayor que lo que le queda al fondo (si lo es, se rechaza: revisa recargas o gastos anulados). |
+| Gasto con fondo | Fondo `ACTIVE`, fecha dentro de su rango y no anterior a su último arqueo (D21). Superar el restante avisa, no bloquea. |
+| Recarga de fondo | Con dinero propio ≤ Disponible libre; con ingreso vinculado, las recargas de ese ingreso suman como máximo su monto (D24). |
+| Ingreso con recargas / gasto no registrado | Un ingreso con recargas vinculadas no se anula ni baja de lo recargado; el gasto no registrado de un arqueo no se anula ni se corrige (D24, D25). Anular o bajar un ingreso (o un reembolso o pago) tampoco se permite si su dinero ya está apartado en fondos: el Disponible libre no puede quedar en negativo. Una parte de gasto no puede tener cúmulo y fondo a la vez. |
+| Día de uso | Solo en `DAILY_ESTIMATE`, dentro del rango del fondo y no futuro. |
+| Edición de fondo | Nombre y estimado siempre se editan. El modo no cambia con días de uso o arqueos; el inicio no cambia con gastos asignados ni días de uso; el fin no puede quedar antes del último día de uso o gasto asignado. |
+| Cierre de fondo | `ROLL_OVER` exige otro fondo `ACTIVE` como destino. |
 | Categoría | Exactamente una por gasto/parte. |
 | Conceptos (tags) | 0..n por gasto; no se suman entre sí en reportes de distribución. |
 
@@ -108,10 +114,10 @@
 |---|---|---|---|
 | Compartir rendición | Detalle de gastos de un cúmulo/periodo + total pendiente | Imagen PNG o PDF | El usuario elige app destino (Intent nativo). Vista previa antes de enviar. Sin saldos de cuentas. |
 | Exportar reporte | Movimientos / reportes filtrados | CSV o PDF | Aviso: "este archivo no está cifrado". |
-| Respaldo | Registro completo de eventos + metadatos | Archivo `.fbak` (JSON comprimido y cifrado AES-256-GCM, clave derivada de contraseña con PBKDF2/Argon2) | Contraseña obligatoria; destino elegido con Storage Access Framework. |
-| Restaurar | Importa eventos, verifica hashes, reproduce proyecciones | `.fbak` | Requiere contraseña; muestra resumen antes de reemplazar. |
-| Exportar diagnóstico | Eventos, asientos y proyecciones del alcance de una conciliación (ver `04-modelo-datos.md` §3.3.1) | `.fdiag` (ZIP: PDF + CSV + JSONL + JSON) | Anonimizado por defecto; contraseña opcional; vista previa de qué se incluye; queda registrado con `DiagnosticExportCreated`. |
-| Abrir diagnóstico | Paquete recibido de otra persona | `.fdiag` | Se importa en una BD **separada** y de solo lectura; nunca se mezcla con los datos propios; borrable. |
+| Respaldo | Registro completo de eventos + metadatos | Archivo `.fbak` (líneas JSON en gzip, cifrado AES-256-GCM en bloques de 64 KiB; clave por PBKDF2-HMAC-SHA256, 600 000 iteraciones, sal de 16 bytes en la cabecera) | Contraseña obligatoria (≥ 10 caracteres, doble ingreso, nunca se guarda); destino elegido con `CreateDocument` (SAF); se relee y verifica antes de registrar `BackupCreated`; pide re-autenticación si el bloqueo está activo (D48). |
+| Restaurar | Importa eventos a una base de staging, verifica hashes, reproduce proyecciones | `.fbak` | Solo sobre una base sin datos propios (D44); requiere contraseña; muestra un resumen sin montos ni nombres; nada toca la base real hasta verificar todo; reinicia la app (D49). |
+| Exportar diagnóstico | Eventos, asientos y proyecciones del alcance de una conciliación (ver `04-modelo-datos.md` §3.3.1) | `.fdiag` (ZIP: PDF + CSV + JSONL + JSON; con contraseña, dentro del contenedor cifrado) | Anonimizado por defecto; contraseña opcional; vista previa de qué se incluye; pide re-autenticación si el bloqueo está activo; destino elegido con `CreateDocument` (SAF), se relee y verifica y solo entonces queda registrado con `DiagnosticExportCreated` (D53). |
+| Abrir diagnóstico | Paquete recibido de otra persona | `.fdiag` | Se elige con `OpenDocument` (SAF); se importa en una BD **separada** con clave propia, que solo escriben el importador, el aplicador de diccionario y el borrado; nunca se mezcla con los datos propios; borrable. Sin `intent-filter`. |
 | Exportar diccionario | Seudónimo → nombre real (y notas elegidas) de un paquete ya exportado | `.fkey` (JSON cifrado) | Solo tras la auditoría, desde la misma conciliación; parcial por defecto; contraseña obligatoria; queda registrado con `DiagnosticDictionaryExported`. |
 
 **Reglas del paquete de diagnóstico**:
@@ -125,8 +131,22 @@
 - DG8. Parcial por defecto: revela solo lo pedido en la solicitud del reporte de diferencias. Antes de exportar se muestra la lista exacta de nombres y notas que se revelarán.
 - DG9. Contraseña **obligatoria** para el diccionario.
 - DG10. El diccionario solo se aplica si su `exportId` y `packageHash` coinciden con el paquete abierto, y vive solo dentro del espacio de diagnóstico.
+- DG11. Entrada no confiable: se validan tamaño del archivo, cinco entradas exactas sin repetidas, tamaño de cada entrada descomprimida, cantidad de eventos y largo de línea; nada se extrae a disco ni se usan nombres de entrada como rutas; el JSON se valida; un `schemaVersion` mayor al soportado o un tipo de evento desconocido se rechaza con ese mensaje (D54).
+- DG12. Un solo paquete abierto a la vez (abrir otro pide borrar el actual). Borrar el espacio elimina el archivo de la base con `-wal`/`-shm`, su clave, el alias de Keystore y los archivos del paquete y del diccionario; «Borrar todos mis datos» lo incluye y nunca toca la clave de la base real (D51).
 
-**Recordatorio de respaldo**: WorkManager periódico; notificación si pasaron más de N días (configurable, por defecto 15) desde el último respaldo exitoso.
+**Reglas de la exportación de reportes (S45)**:
+- RX1. Solo por acción explícita; el aviso "este archivo no está cifrado" se muestra antes del selector del sistema.
+- RX2. El destino lo elige el usuario con `CreateDocument` (SAF); sin archivo temporal ni `FileProvider`; cancelar no deja nada.
+- RX3. CSV: una fila por parte de gasto, coma, importes con punto decimal, UTF-8 con BOM; las celdas que empiezan con `=`, `+`, `-`, `@`, tabulador o retorno se prefijan con `'`; comillas y saltos de línea escapados; las notas solo si el usuario lo marca.
+- RX4. El archivo ignora "ocultar montos" (afecta solo a las pantallas); nada del contenido va a logs.
+
+**Reglas del respaldo (`.fbak`)**:
+- BK1. Cabecera en claro y autenticada (magic, versión, KDF, sal, prefijo de nonce); datos en bloques GCM de 64 KiB con nonce = prefijo aleatorio + contador y marca de último bloque (D45).
+- BK2. Entrada no confiable: se validan tamaño del archivo, iteraciones del KDF, cantidad de eventos, largo de línea y bytes descomprimidos antes y durante el descifrado (D49).
+- BK3. La restauración importa a `finances-restore.db` (misma clave y esquema), verifica la cadena fila a fila y solo entonces intercambia el archivo; si el proceso muere a mitad, se revierte al reabrir (D44, D49).
+- BK4. El respaldo no incluye DataStore, contraseñas ni la clave de la base. Nada del contenido va a logs ni a mensajes de error.
+
+**Recordatorio de respaldo**: apagado por defecto; Worker `backup_reminder`; avisa si pasaron más de N días (por defecto 15) desde el último respaldo derivado de los eventos (`BackupCreated`/`BackupRestored`; sin respaldo cuenta desde el primer evento) y repite cada 7 días; notificación genérica; `POST_NOTIFICATIONS` se pide al activarlo (D47).
 
 ---
 
@@ -143,6 +163,7 @@
 
 ## 8. Ética de diseño (del curso, aplicada)
 - **Uso del tiempo**: sin notificaciones de engagement; solo recordatorios útiles y configurables (respaldo, ingreso esperado vencido, cobro pendiente).
+- **Recordatorio de ingreso esperado** (`Reminder`): notificación local, privada y genérica (sin montos ni nombres); el día siguiente a `expectedTo`, luego cada 3 días, máximo 3 por esperado, y un solo aviso agrupado por corrida; interruptor global apagado por defecto; `POST_NOTIFICATIONS` se pide en contexto y, si se niega, el interruptor queda apagado y solo queda la alerta de Inicio. El estado "ya avisado" vive en DataStore y el Worker se cancela antes de borrar la clave.
 - **Peor escenario** (pregunta de la lámina "Considerar"): alguien con acceso al teléfono desbloqueado → mitigado con bloqueo propio de la app, `FLAG_SECURE` y BD cifrada.
 - **Datos de terceros**: la rendición compartida solo muestra lo necesario para la persona que reembolsa.
 - **Honestidad**: los cálculos estimados (fondos, proporción de origen) se rotulan como **estimados** en la UI.
