@@ -1,17 +1,17 @@
 package com.al3xiel.my_finances.core.navigation
 
+import com.al3xiel.my_finances.core.designsystem.AppIcons
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Test
 
 class RegisterSheetTest {
-    @Test fun everyKnownActionHasItsOwnIcon() {
-        val ids = listOf("expense", "income", "transfer", "reimbursement", "quick_entry")
-        assertEquals(ids.size, ids.map(::registerActionIcon).toSet().size)
+    @Test fun anActionWithoutItsOwnIconUsesTheAddIcon() {
+        assertEquals(AppIcons.Add, RegisterAction("income", 1, Privacy, order = 1).iconRes)
     }
 
-    @Test fun anUnknownActionFallsBackToTheAddIcon() {
-        assertEquals(registerActionIcon("income"), registerActionIcon("something_new"))
-        assertNotEquals(registerActionIcon("expense"), registerActionIcon("something_new"))
+    @Test fun anActionCarriesItsOwnIcon() {
+        val action = RegisterAction("expense", 1, Privacy, order = 1, iconRes = AppIcons.ActionExpense)
+        assertNotEquals(AppIcons.Add, action.iconRes)
     }
 }

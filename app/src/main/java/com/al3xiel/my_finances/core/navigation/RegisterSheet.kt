@@ -1,7 +1,6 @@
 package com.al3xiel.my_finances.core.navigation
 
 import android.content.res.Configuration
-import androidx.annotation.DrawableRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -21,19 +20,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.al3xiel.my_finances.R
-import com.al3xiel.my_finances.core.designsystem.AppIcons
 import com.al3xiel.my_finances.core.designsystem.IconBadge
 import com.al3xiel.my_finances.ui.theme.MyfinancesTheme
-
-/** Icono de cada acción de registro; una acción que aún no tiene el suyo usa el de agregar. */
-@DrawableRes
-internal fun registerActionIcon(id: String): Int = when (id) {
-    "expense" -> AppIcons.ActionExpense
-    "transfer" -> AppIcons.ActionTransfer
-    "reimbursement" -> AppIcons.ActionReimbursement
-    "quick_entry" -> AppIcons.ActionQuickEntry
-    else -> AppIcons.Add
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -59,7 +47,7 @@ fun RegisterSheet(
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    IconBadge(registerActionIcon(action.id))
+                    IconBadge(action.iconRes)
                     Text(text = stringResource(action.labelRes), style = MaterialTheme.typography.bodyLarge)
                 }
             }
