@@ -24,6 +24,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -74,7 +76,10 @@ fun HomeContent(
         HomeHeader(state.hideAmounts, onToggle = { onAction(HomeUiAction.ToggleHideAmounts) })
         val summary = state.summary
         if (summary == null) {
-            CircularProgressIndicator(modifier = Modifier.padding(32.dp).align(Alignment.CenterHorizontally))
+            val loading = stringResource(R.string.home_loading)
+            CircularProgressIndicator(
+                modifier = Modifier.padding(32.dp).align(Alignment.CenterHorizontally).semantics { contentDescription = loading },
+            )
         } else {
             HomeList(summary, onOpenAccount, onOpenFund, onOpenAlert, onOpenNextIncome)
         }
@@ -172,8 +177,9 @@ private fun HomeFundRow(overview: FundOverview, onClick: () -> Unit) {
             // La barra es decorativa: las cifras de abajo dicen lo mismo.
             LinearProgressIndicator(progress = { fraction }, modifier = Modifier.fillMaxWidth().clearAndSetSemantics {})
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-                val label = stringResource(R.string.home_fund_consumed) +
-                    if (HomeFundRules.isEstimated(overview)) " (${stringResource(R.string.home_fund_estimated)})" else ""
+                val label = stringResource(
+                    if (HomeFundRules.isEstimated(overview)) R.string.home_fund_consumed_estimated else R.string.home_fund_consumed,
+                )
                 Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 MoneyText(consumed, style = MaterialTheme.typography.bodyMedium)
                 Text(stringResource(R.string.home_fund_of), style = MaterialTheme.typography.bodySmall)

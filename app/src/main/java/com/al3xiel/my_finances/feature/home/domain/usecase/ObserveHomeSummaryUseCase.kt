@@ -17,9 +17,12 @@ import com.al3xiel.my_finances.feature.home.domain.model.HomeSummary
 import com.al3xiel.my_finances.feature.home.domain.rules.HomeAlertRules
 import com.al3xiel.my_finances.feature.pools.domain.repository.ReceivablesRepository
 import com.al3xiel.my_finances.feature.reconciliation.domain.repository.ReconciliationRepository
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flow
 import java.time.Clock
+import java.time.Duration
 import java.time.LocalDate
 import javax.inject.Inject
 
@@ -43,7 +46,17 @@ class ObserveHomeSummaryUseCase @Inject constructor(
             reconciliations.observeOpenId(),
             backupStatus(),
         ) { incomes, needsReview, open, backup -> AlertSources(incomes, needsReview, open, backup.overdue) }
-        return combine(money, alertSources) { m, a -> build(m, a, LocalDate.now(clock)) }
+        return combine(money, alertSources, today()) { m, a, day -> build(m, a, day) }
+    }
+
+    /** Hoy según el reloj inyectado; vuelve a emitir al cambiar el día para que «vencido» no quede con el día anterior. */
+    private fun today(): Flow<LocalDate> = flow {
+        while (true) {
+            val day = LocalDate.now(clock)
+            emit(day)
+            val nextMidnight = day.plusDays(1).atStartOfDay(clock.zone).toInstant()
+            delay(Duration.between(clock.instant(), nextMidnight).toMillis().coerceAtLeast(MIN_TICK_MILLIS))
+        }
     }
 
     private fun build(money: Money3, sources: AlertSources, today: LocalDate): HomeSummary {
@@ -68,6 +81,10 @@ class ObserveHomeSummaryUseCase @Inject constructor(
             nextIncome = oldestOverdue ?: scheduled,
             alerts = HomeAlertRules.build(sources.needsReviewId, sources.openId, oldestOverdue?.id, sources.backupOverdue),
         )
+    }
+
+    private companion object {
+        const val MIN_TICK_MILLIS = 1_000L
     }
 
     private class Money3(val accounts: List<AccountWithBalance>, val funds: List<FundOverview>, val receivable: Money)

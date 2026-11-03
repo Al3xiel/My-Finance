@@ -27,6 +27,9 @@ import com.al3xiel.my_finances.feature.reconciliation.domain.model.Reconciliatio
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -160,6 +163,31 @@ class ObserveHomeSummaryUseCaseTest {
 
         assertEquals("stale", home.nextIncome!!.id.value)
         assertEquals(listOf<HomeAlert>(HomeAlert.OverdueIncome(home.nextIncome!!.id)), home.alerts)
+    }
+
+    @Test
+    fun anIncomeBecomesOverdueWhenTheDayChangesWithoutAnyProjectionChange() = runTest {
+        val start = today.atTime(23, 0).toInstant(ZoneOffset.UTC)
+        val ticking = object : Clock() {
+            override fun getZone() = ZoneOffset.UTC
+            override fun withZone(zone: java.time.ZoneId) = this
+            override fun instant(): Instant = start.plusMillis(testScheduler.currentTime)
+        }
+        expected.put("ends-today", bbva, source, from = today.minusDays(3), to = today)
+        val emissions = mutableListOf<List<HomeAlert>>()
+        backgroundScope.launch {
+            ObserveHomeSummaryUseCase(
+                accounts, funds, receivables, expected, reconciliations,
+                ObserveBackupStatusUseCase(store, FakeBackupSettings(intervalDays = 15), ticking), ticking,
+            )().collect { emissions += it.alerts }
+        }
+        runCurrent()
+        assertEquals(listOf(emptyList<HomeAlert>()), emissions)
+
+        advanceTimeBy(Duration.ofHours(2).toMillis())
+        runCurrent()
+
+        assertEquals(HomeAlert.OverdueIncome::class, emissions.last().single()::class)
     }
 
     @Test
