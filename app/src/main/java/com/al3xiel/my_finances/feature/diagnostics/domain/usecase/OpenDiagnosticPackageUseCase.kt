@@ -8,8 +8,6 @@ import com.al3xiel.my_finances.feature.diagnostics.domain.repository.WorkspaceEv
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.WorkspaceMeta
 import java.io.IOException
 import kotlin.coroutines.cancellation.CancellationException
-import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 sealed interface OpenPackageResult {
@@ -29,7 +27,11 @@ sealed interface OpenPackageResult {
 
 /**
  * Abre un `.fdiag` en el espacio de diagnóstico (D50, DG5). El archivo se valida entero antes de escribir nada; si la
- * escritura falla se borra el espacio, para no dejar un paquete a medias. Debe llamarse fuera del hilo principal.
+ * escritura falla (o se cancela) se borra el espacio, para no dejar un paquete a medias. Debe llamarse fuera del hilo principal.
+ *
+ * Un espacio ocupado sin metadato legible se descarta antes de abrir. Eso incluye uno cuya clave se perdió o cuyo sellado se
+ * alteró: es una copia de un paquete ajeno que se puede volver a abrir desde su archivo. Las aperturas no se solapan porque la
+ * pantalla las serializa (una sola a la vez); el uso concurrente desde otro lugar no está previsto.
  */
 class OpenDiagnosticPackageUseCase @Inject constructor(
     private val files: BackupFilePort,
@@ -56,7 +58,7 @@ class OpenDiagnosticPackageUseCase @Inject constructor(
             writer.write(parsed.events)
             workspace.save(WorkspaceMeta(parsed.manifest, parsed.projections, parsed.packageHash))
         } catch (e: CancellationException) {
-            withContext(NonCancellable) { workspace.delete() }
+            workspace.delete()
             throw e
         } catch (_: Exception) {
             workspace.delete()

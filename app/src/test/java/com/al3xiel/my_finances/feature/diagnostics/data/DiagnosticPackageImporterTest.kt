@@ -1,4 +1,5 @@
 package com.al3xiel.my_finances.feature.diagnostics.data
+
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.BuiltPackage
 
 import com.al3xiel.my_finances.core.money.CurrencyCode

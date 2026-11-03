@@ -1,4 +1,5 @@
 package com.al3xiel.my_finances.feature.diagnostics.data.workspace
+
 import com.al3xiel.my_finances.feature.diagnostics.domain.repository.DiagnosticWorkspaceStore
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.WorkspaceMeta
 

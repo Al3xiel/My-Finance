@@ -73,7 +73,10 @@
 | Espacio de diagnóstico | `DiagnosticWorkspace` | BD separada | Donde se abre un paquete recibido; solo lo escriben el importador, el aplicador de diccionario y el borrado. |
 | Resumen del diagnóstico | `DiagnosticSummary` | modelo | Lo que dice `summary.pdf`: alcance, conteos, fechas y estado de la conciliación; nunca nombres ni notas. |
 | Huella de tabla | `TableFingerprint` | `table` + filas + hash | Resumen del contenido de una tabla de proyección; S73 las compara antes y después de re-proyectar. |
-| Corte de proyecciones | `SnapshotCut` | `upToSequence` + movimientos incluidos | Hasta dónde llegan los saldos y asientos que viajan en un paquete: los de reproducir solo los eventos elegidos. |
+| Corte de proyecciones | `SnapshotCut` | conjunto de `sequence` | Qué parte de saldos y asientos viaja en un paquete: la que produce reproducir exactamente los eventos elegidos. |
+| Asiento exportado | `ExportedLedgerLine` | modelo | Un asiento del libro tal como viaja en `projections.json` y `ledger.csv`, con su saldo acumulado. |
+| Libro recortado | `LedgerSnapshot` | regla | Aplica un corte a los asientos y recalcula el saldo acumulado de cada cuenta. |
+| Almacén del espacio | `DiagnosticWorkspaceStore` | puerto | Guarda, lee y borra el paquete abierto y el diccionario aplicado del espacio de diagnóstico. |
 | Reporte de diferencias | `DivergenceReport` | resultado | Primer `sequence` donde el saldo exportado y el recalculado divergen. |
 | Diccionario de seudónimos | `PseudonymDictionary` (`.fkey`) | archivo | Revela qué nombre real corresponde a cada seudónimo de un paquete. Separado del paquete. |
 | Alcance del diccionario | `DictionaryScope` | enum: `PARTIAL`, `FULL` | |

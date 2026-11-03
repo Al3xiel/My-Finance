@@ -37,14 +37,13 @@ class SelectDiagnosticEventsUseCase @Inject constructor(private val eventStore: 
 
         val upTo = all.lastOrNull()?.sequence ?: 0L
         val chosen: Chosen = when (request.scope) {
-            DiagnosticScope.FULL -> Chosen(null, null, candidates, SnapshotCut(upTo))
+            DiagnosticScope.FULL -> Chosen(null, null, candidates)
             DiagnosticScope.RECONCILIATION -> {
                 val id = request.reconciliationId ?: return@attempt Outcome.Failed(BusinessError.NotFound)
                 val check = candidates.firstOrNull { (it.event as? BalanceCheckRecorded)?.reconciliationId == id }
                     ?: return@attempt Outcome.Failed(BusinessError.NotFound)
                 val account = (check.event as BalanceCheckRecorded).accountId
-                val selected = forAccount(candidates, mentions, account, check.sequence, setOf(id.value))
-                Chosen(account, id, selected.events, SnapshotCut(check.sequence, selected.linkedMovements))
+                Chosen(account, id, forAccount(candidates, mentions, account, check.sequence, setOf(id.value)))
             }
             DiagnosticScope.ACCOUNT_HISTORY -> {
                 val fromReconciliation = request.reconciliationId?.let { id ->
@@ -58,7 +57,7 @@ class SelectDiagnosticEventsUseCase @Inject constructor(private val eventStore: 
                 }
                 val reconciliations = candidates.mapNotNull { it.event as? BalanceCheckRecorded }
                     .filter { it.accountId == account }.map { it.reconciliationId.value }.toSet()
-                Chosen(account, request.reconciliationId, forAccount(candidates, mentions, account, null, reconciliations).events, SnapshotCut(upTo))
+                Chosen(account, request.reconciliationId, forAccount(candidates, mentions, account, null, reconciliations))
             }
         }
 
@@ -73,14 +72,12 @@ class SelectDiagnosticEventsUseCase @Inject constructor(private val eventStore: 
                 firstOccurredOn = events.minOfOrNull { it.occurredOn },
                 lastOccurredOn = events.maxOfOrNull { it.occurredOn },
                 anonymizedFields = anonymizedFields(events),
-                cut = chosen.cut,
+                cut = SnapshotCut(events.map { it.sequence }.toSet()),
             ),
         )
     }
 
-    private class Chosen(val account: AccountId?, val reconciliationId: ReconciliationId?, val events: List<StoredEvent>, val cut: SnapshotCut)
-
-    private class Selected(val events: List<StoredEvent>, val linkedMovements: Set<String>)
+    private class Chosen(val account: AccountId?, val reconciliationId: ReconciliationId?, val events: List<StoredEvent>)
 
     /**
      * Lo que toca la cuenta (hasta `cutoff` si lo hay), los movimientos de esos eventos (correcciones y anulaciones no mencionan
@@ -92,7 +89,7 @@ class SelectDiagnosticEventsUseCase @Inject constructor(private val eventStore: 
         account: AccountId,
         cutoff: Long?,
         reconciliations: Set<String>,
-    ): Selected {
+    ): List<StoredEvent> {
         fun inRange(e: StoredEvent) = cutoff == null || e.sequence <= cutoff
         val touching = candidates.filter { e ->
             inRange(e) && account.value in mentions.of(e) &&
@@ -107,7 +104,7 @@ class SelectDiagnosticEventsUseCase @Inject constructor(private val eventStore: 
             it.event.aggregateType == AggregateType.MOVEMENT && it.event.aggregateId in movementIds &&
                 (inRange(it) || it.event.aggregateId in linkedMovements)
         }
-        return Selected((touching + reconciliationEvents + movementEvents).distinctBy { it.sequence }, linkedMovements)
+        return (touching + reconciliationEvents + movementEvents).distinctBy { it.sequence }
     }
 
     /** Suma los eventos de catálogo de cada id mencionado, y repite con lo que esos catálogos mencionan (un concepto apunta a una persona). */

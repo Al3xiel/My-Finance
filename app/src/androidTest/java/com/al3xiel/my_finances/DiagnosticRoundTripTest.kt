@@ -1,4 +1,5 @@
 package com.al3xiel.my_finances
+
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.DiagnosticPackageException
 
 import android.content.Context
@@ -21,6 +22,8 @@ import com.al3xiel.my_finances.domain.model.PersonId
 import com.al3xiel.my_finances.domain.model.ReconciliationId
 import com.al3xiel.my_finances.domain.model.event.AccountCreated
 import com.al3xiel.my_finances.domain.model.event.AccountType
+import com.al3xiel.my_finances.domain.model.event.AdjustmentData
+import com.al3xiel.my_finances.domain.model.event.AdjustmentDirection
 import com.al3xiel.my_finances.domain.model.event.BalanceCheckRecorded
 import com.al3xiel.my_finances.domain.model.event.DiagnosticExportCreated
 import com.al3xiel.my_finances.domain.model.event.DiagnosticScope
@@ -30,6 +33,8 @@ import com.al3xiel.my_finances.domain.model.event.IncomeRegistered
 import com.al3xiel.my_finances.domain.model.event.IncomeSourceCreated
 import com.al3xiel.my_finances.domain.model.event.NewEvent
 import com.al3xiel.my_finances.domain.model.event.PersonCreated
+import com.al3xiel.my_finances.domain.model.event.ReconciliationCause
+import com.al3xiel.my_finances.domain.model.event.ReconciliationResolved
 import com.al3xiel.my_finances.domain.usecase.EventRecorder
 import com.al3xiel.my_finances.feature.backup.domain.repository.BackupFilePort
 import com.al3xiel.my_finances.feature.diagnostics.data.DiagnosticPackageBuilder
@@ -217,6 +222,29 @@ class DiagnosticRoundTripTest {
         assertFalse("the later movement is not in the package and must not look like a divergence: $result", result.diverges)
         assertEquals(1_500L, result.balances.single().exportedMinor)
         assertEquals(1_500L, result.balances.single().recalculatedMinor)
+    }
+
+    /** El ajuste de una resolución nace del evento de conciliación (posterior al chequeo), no de un evento de movimiento. */
+    @Test
+    fun aResolvedReconciliationWithItsAdjustmentComparesWithoutDivergence() = runBlocking {
+        store.append(
+            "resolve",
+            listOf(
+                ReconciliationResolved(
+                    ReconciliationId("r1"), ReconciliationCause.UNKNOWN,
+                    AdjustmentData(MovementId("adjustment-1"), AdjustmentDirection.UNIDENTIFIED_INCOME, Money(100, pen)), null,
+                ),
+            ).map { NewEvent(it, LocalDate.of(2026, 10, 27)) },
+        )
+        assertEquals(1_600L, live.ledgerQueryDao().balance("a1"))
+
+        assertTrue(exportReconciliation(null) is ExportDiagnosticResult.Created)
+        assertTrue(open("doc://pkg", null) is OpenPackageResult.Opened)
+
+        val result = (report() as ReportOutcome.Ready).report
+        assertFalse("the adjustment must be in the export too: $result", result.diverges)
+        assertEquals(1_600L, result.balances.single().exportedMinor)
+        assertEquals(1_600L, result.balances.single().recalculatedMinor)
     }
 
     @Test

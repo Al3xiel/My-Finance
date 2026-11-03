@@ -1,4 +1,5 @@
 package com.al3xiel.my_finances.feature.diagnostics.data
+
 import com.al3xiel.my_finances.feature.diagnostics.domain.repository.DiagnosticPackageWriter
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.BuiltPackage
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.DiagnosticPackageFormat
@@ -34,7 +35,7 @@ class DiagnosticPackageBuilder(private val iterations: Int) : DiagnosticPackageW
     override fun build(input: DiagnosticPackageInput, password: CharArray?): BuiltPackage = build(input, password, SecureRandom())
 
     /** Borra `password` al terminar, haya o no contraseña que usar. */
-    fun build(input: DiagnosticPackageInput, password: CharArray?, random: SecureRandom): BuiltPackage {
+    internal fun build(input: DiagnosticPackageInput, password: CharArray?, random: SecureRandom): BuiltPackage {
         try {
             val contents = LinkedHashMap<String, ByteArray>()
             contents[DiagnosticPackageFormat.SUMMARY] = input.summaryPdf

@@ -101,18 +101,23 @@ class SelectDiagnosticEventsUseCaseTest {
     }
 
     @Test
-    fun theReconciliationCutIsTheCheckPlusTheLinkedMovements() {
-        val selection = select(reconciliation)
-        assertEquals(seq.getValue("check"), selection.cut.upToSequence)
-        assertEquals(setOf("m7"), selection.cut.alsoIncludedMovements)
+    fun theCutIsExactlyTheSequencesOfTheChosenEventsInEveryScope() {
+        val requests = listOf(
+            reconciliation,
+            DiagnosticSelectionRequest(DiagnosticScope.FULL),
+            DiagnosticSelectionRequest(DiagnosticScope.ACCOUNT_HISTORY, accountId = AccountId("a1")),
+        )
+        requests.forEach { request ->
+            val selection = select(request)
+            assertEquals(request.scope.name, selection.events.map { it.sequence }.toSet(), selection.cut.includedSequences)
+        }
     }
 
     @Test
-    fun theOtherScopesCutAtTheEndOfTheLog() {
-        val last = store.events.last().sequence
-        assertEquals(last, select(DiagnosticSelectionRequest(DiagnosticScope.FULL)).cut.upToSequence)
-        assertEquals(last, select(DiagnosticSelectionRequest(DiagnosticScope.ACCOUNT_HISTORY, accountId = AccountId("a1"))).cut.upToSequence)
-        assertTrue(select(DiagnosticSelectionRequest(DiagnosticScope.FULL)).cut.alsoIncludedMovements.isEmpty())
+    fun theReconciliationCutLeavesOutWhatThePackageLeavesOut() {
+        val cut = select(reconciliation).cut.includedSequences
+        assertTrue(seq.getValue("m7") in cut)
+        assertTrue(seq.getValue("m8") !in cut)
     }
 
     @Test

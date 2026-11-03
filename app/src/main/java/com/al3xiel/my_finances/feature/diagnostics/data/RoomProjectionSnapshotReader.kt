@@ -34,11 +34,14 @@ class RoomProjectionSnapshotReader @Inject constructor(private val database: App
                     balanceMinor = 0L,
                 )
             }
-        val ledger = LedgerSnapshot.apply(raw, cut ?: SnapshotCut(Long.MAX_VALUE))
+        val ledger = LedgerSnapshot.apply(raw, cut)
+        val stored = ledgerDao.balances().filter { accountId == null || it.accountId == accountId.value }
         val balances = if (cut == null) {
-            ledgerDao.balances().filter { accountId == null || it.accountId == accountId.value }.associate { it.accountId to it.balanceMinor }
+            stored.associate { it.accountId to it.balanceMinor }
         } else {
-            LedgerSnapshot.balances(ledger)
+            // Las mismas cuentas que tiene la base, con el saldo de los asientos del corte (0 si la cuenta no tiene ninguno).
+            val derived = LedgerSnapshot.balances(ledger)
+            stored.associate { it.accountId to (derived[it.accountId] ?: 0L) }
         }
         val reconciliation = reconciliationId?.let { database.reconciliationQueryDao().reconciliation(it.value) }?.let {
             ReconciliationState(

@@ -170,7 +170,7 @@ class ExportDiagnosticUseCaseTest {
     fun theProjectionsTravelCutAtTheSelectionNotAtToday() = runTest {
         seed()
         export(reconciliation, "doc://1", null)
-        assertEquals(5L, snapshots.cutAsked?.upToSequence)
+        assertEquals((1L..5L).toSet(), snapshots.cutAsked?.includedSequences)
     }
 
     @Test

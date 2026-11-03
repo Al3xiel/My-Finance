@@ -102,7 +102,7 @@ class ExportDictionaryUseCase internal constructor(
         val export = resolved.export
         val reconciliationId = checkNotNull(export.reconciliationId)
         val resolvedAliases = aliases(export.pseudonymMap.filterKeys { it in resolved.pseudonyms }, export.exportedUpToSequence)
-        val notes = notesOf(resolved.request.eventIds, export)
+        val notes = notesOf(resolved.request.eventIds, export) ?: return ExportDictionaryResult.PackageMismatch
         val file = DictionaryFile(
             DictionaryFormat.FORMAT_VERSION, ids.newId(), export.exportId, export.packageHash, scope, resolvedAliases, notes,
         )
@@ -153,10 +153,10 @@ class ExportDictionaryUseCase internal constructor(
      * Notas o motivos (los campos que el anonimizador elimina) de cada evento pedido, solo de los que viajaron en el paquete:
      * la solicitud es texto de fuera y no puede servir para leer notas de eventos que nunca salieron.
      */
-    private suspend fun notesOf(eventIds: List<String>, export: DiagnosticExportCreated): Map<String, List<String>> {
+    private suspend fun notesOf(eventIds: List<String>, export: DiagnosticExportCreated): Map<String, List<String>>? {
         if (eventIds.isEmpty()) return emptyMap()
-        val traveled = (select(DiagnosticSelectionRequest(export.scope, export.reconciliationId)) as? Outcome.Ok)?.value?.events.orEmpty()
-            .filter { it.sequence <= export.exportedUpToSequence }.map { it.eventId }.toSet()
+        val selection = (select(DiagnosticSelectionRequest(export.scope, export.reconciliationId)) as? Outcome.Ok)?.value ?: return null
+        val traveled = selection.events.filter { it.sequence <= export.exportedUpToSequence }.map { it.eventId }.toSet()
         val wanted = eventIds.filter { it in traveled }.toSet()
         val found = LinkedHashMap<String, List<String>>()
         for (stored in eventStore.readAll()) {

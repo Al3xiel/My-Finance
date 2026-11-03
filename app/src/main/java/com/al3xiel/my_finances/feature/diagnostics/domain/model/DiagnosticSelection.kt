@@ -17,11 +17,12 @@ data class DiagnosticSelectionRequest(
 )
 
 /**
- * Hasta dónde llegan las proyecciones que viajan con el paquete: los asientos con `sequence` hasta `upToSequence` más los de
- * los movimientos de `alsoIncludedMovements` (los vinculados a la conciliación, aunque sean posteriores). Así el saldo y los
- * asientos exportados son los de reproducir exactamente los eventos elegidos, y no los de la base de hoy.
+ * Qué parte de las proyecciones viaja con el paquete: la que produce reproducir exactamente los eventos elegidos, dada por
+ * sus `sequence`. Un asiento entra si el evento que lo creó viaja (también el ajuste de una resolución, que nace de un evento de
+ * conciliación), y queda anulado solo si el evento que lo anuló también viaja. Así saldo y asientos son los de ese replay y no
+ * los de la base de hoy.
  */
-data class SnapshotCut(val upToSequence: Long, val alsoIncludedMovements: Set<String> = emptySet())
+data class SnapshotCut(val includedSequences: Set<Long>)
 
 /** Los eventos elegidos y la vista previa que ve quien exporta: cuántos, de qué fechas y qué campos se anonimizarían. */
 data class DiagnosticSelection(
