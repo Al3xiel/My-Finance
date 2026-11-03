@@ -18,6 +18,14 @@ sealed interface Route : NavKey
 @Serializable data object Privacy : Route
 @Serializable data object Settings : Route
 
+// Onboarding feature (first use, S02–S05): its own flow, without tabs or FAB
+@Serializable sealed interface Onboarding : Route {
+    @Serializable data object Welcome : Onboarding
+    @Serializable data object Accounts : Onboarding
+    @Serializable data object Security : Onboarding
+    @Serializable data object Backup : Onboarding
+}
+
 // Backup feature
 @Serializable data object Backup : Route
 

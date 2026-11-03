@@ -28,7 +28,8 @@ import com.al3xiel.my_finances.feature.backup.domain.usecase.ChainStatus
 import com.al3xiel.my_finances.feature.backup.domain.model.BackupStatus
 import com.al3xiel.my_finances.ui.theme.MyfinancesTheme
 
-private val INTERVAL_OPTIONS = listOf(7, 15, 30)
+/** Días tras los que un respaldo se considera vencido; S70 y S05 ofrecen las mismas opciones. */
+internal val INTERVAL_OPTIONS = listOf(7, 15, 30)
 
 /** S70 sin estado: último respaldo, cadena, crear, restaurar y recordatorio. */
 @Composable

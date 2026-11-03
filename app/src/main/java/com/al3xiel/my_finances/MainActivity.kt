@@ -21,6 +21,7 @@ import com.al3xiel.my_finances.feature.privacy.domain.repository.SecuritySetting
 import com.al3xiel.my_finances.feature.privacy.domain.model.ThemeMode
 import com.al3xiel.my_finances.feature.privacy.domain.repository.ThemeRepository
 import com.al3xiel.my_finances.feature.backup.domain.usecase.ChainIntegrityMonitor
+import com.al3xiel.my_finances.feature.onboarding.ui.OnboardingGate
 import com.al3xiel.my_finances.feature.privacy.ui.AppLockGate
 import com.al3xiel.my_finances.ui.theme.MyfinancesTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -59,9 +60,12 @@ class MainActivity : FragmentActivity() {
             MyfinancesTheme(themeMode = themeMode) {
                 CompositionLocalProvider(LocalHideAmounts provides settings.hideAmounts) {
                     AppLockGate {
-                        // Solo se compone desbloqueada: la cadena se verifica en segundo plano, una vez por proceso.
-                        LaunchedEffect(Unit) { chainMonitor.checkOnce() }
-                        Box(Modifier.fillMaxSize().testTag(APP_CONTENT_TAG)) { MainScaffold() }
+                        // Primer uso (S02–S05) entre el bloqueo y la app; la app solo se compone ya completado.
+                        OnboardingGate {
+                            // La cadena se verifica en segundo plano, una vez por proceso.
+                            LaunchedEffect(Unit) { chainMonitor.checkOnce() }
+                            Box(Modifier.fillMaxSize().testTag(APP_CONTENT_TAG)) { MainScaffold() }
+                        }
                     }
                 }
             }

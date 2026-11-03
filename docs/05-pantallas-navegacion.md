@@ -64,10 +64,12 @@ Formato: **ID · Nombre (UI)** · `RouteKey` · propósito · acciones principal
 | ID | Pantalla | Ruta | Contenido | Acciones → evento |
 |---|---|---|---|---|
 | S01 | Bloqueo | `AppLock` | Logo, botón "Desbloquear" (biometría o credencial del dispositivo); el contenido no se compone mientras está bloqueada | — |
-| S02 | Bienvenida | `Onboarding.Welcome` | Qué hace la app, "tus datos no salen del teléfono" | Continuar |
-| S03 | Crear cuentas | `Onboarding.Accounts` | Lista sugerida: BBVA, BCP, Efectivo, cada una con saldo inicial | Crear → `AccountCreated` ×n |
-| S04 | Seguridad | `Onboarding.Security` | Activar biometría, ocultar en recientes | Guardar ajustes |
-| S05 | Respaldo | `Onboarding.Backup` | Explica el respaldo cifrado, recordatorio (interruptor y días) y ofrece restaurar uno existente | Guardar ajustes |
+| S02 | Bienvenida | `Onboarding.Welcome` | Qué hace la app, "tus datos no salen del teléfono"; "Restaurar respaldo" solo si `CanRestoreUseCase` lo permite (mismo flujo y reinicio que S70) | Continuar · Restaurar |
+| S03 | Crear cuentas | `Onboarding.Accounts` | Lista sugerida editable y quitable: BBVA, BCP, Efectivo, cada una con saldo inicial (mínimo una; sin billetera digital) | Crear → `AccountCreated` ×n, todas o ninguna (D59) |
+| S04 | Seguridad | `Onboarding.Security` | Estado real del bloqueo (activado por defecto; sin huella ni credencial del dispositivo se avisa y no se activa), ocultar en recientes | Guardar ajustes |
+| S05 | Respaldo | `Onboarding.Backup` | Explica el respaldo cifrado, recordatorio (interruptor y días; `POST_NOTIFICATIONS` en contexto, si se niega todo sigue funcionando) y enlace a S70 | Terminar → `onboardingCompleted` |
+
+Orden de arranque: `AppLock` → `Onboarding` → `MainScaffold`. El flujo no tiene pestañas ni FAB. Dónde se retoma (D60): sin cuentas y sin bandera → S02; con cuentas y sin bandera → S04; con bandera → la app. Cerrar a mitad retoma en el paso que corresponde; tras restaurar un respaldo (reinicio, D44) hay cuentas sin bandera y se cae en S04 (D61); «Borrar todos mis datos» limpia la bandera y vuelve a S02. Quien ya tenía datos y actualiza la app ve S04 y S05 una vez.
 
 ### 3.2 Inicio
 

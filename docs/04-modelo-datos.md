@@ -608,3 +608,6 @@ Resultado: BBVA 780 · BCP 170 · Efectivo 95 · Apartado Pasajes 45 · Por cobr
 | D56 | Consultas de Inicio | Inicio observa los esperados con `observeAll()` y deriva «vencido» con el reloj inyectado y la regla compartida con Ingresos esperados; las alertas de conciliación necesitan el id, no solo el conteo (2026-11-02) |
 | D57 | Apartado solo `ACTIVE` | Un fondo cerrado con sobrante `ROLL_OVER` ya devolvió su saldo al destino y no cuenta en Apartado. Convención, vetable (2026-11-02) |
 | D58 | Alertas sin descarte | Cada alerta desaparece sola al resolverse su causa; la de respaldo usa `BackupStatus` aunque las notificaciones estén apagadas (2026-11-02) |
+| D59 | Cuentas iniciales atómicas | `CreateInitialAccountsUseCase` registra todas las cuentas del primer uso en una sola llamada al registrador (todo o nada) y comparte reglas con `CreateAccountUseCase` (2026-11-02) |
+| D60 | Primer uso por cuentas y bandera | Se decide por cuentas (activas o archivadas) + `OnboardingCompleted`, no por eventos, porque el sembrado los deja desde el primer arranque; quien actualiza con datos ve S04 y S05 una vez (2026-11-02) |
+| D61 | Restaurar cae en S04 | Tras restaurar (reinicio, D44) hay cuentas y no bandera, así que se cae en S04 sin lógica extra. Convención, vetable (2026-11-02) |
