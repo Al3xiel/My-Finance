@@ -174,20 +174,31 @@ S55: programar "Sueldo, BBVA, ~S/ 2,000, entre el 28 y el 5, mensual" → Inicio
 
 ## 5. Registro rápido por texto (S25)
 
+Solo **gasto** e **ingreso**, siempre con la fecha de hoy (reloj inyectado). Transferencias, reembolsos, varias partes y comisión se hacen en los editores. Un gasto tiene una parte.
+
 Gramática (orden libre, separado por espacios):
 
 | Token | Interpretación | Ejemplo |
 |---|---|---|
-| Número | Monto | `45`, `12.50` |
+| Número | Monto: el primero que aparezca; `.` o `,`, hasta 2 decimales, prefijo `S/`; sin separador de miles | `45`, `12.50`, `S/45` |
+| `+` al inicio | Ingreso en vez de gasto; entonces el token de **fuente de ingreso** entra a la tabla | `+50 bcp sueldo` |
 | Nombre de cuenta | Cuenta | `bbva`, `bcp`, `efectivo` |
 | Nombre de categoría | Categoría | `mercado` |
 | Nombre de concepto | Concepto (0..n) | `pareja` |
 | Nombre de cúmulo o su responsable | Cúmulo | `perros`, `mamá` |
 | Nombre de fondo | Fondo | `pasajes` |
-| `+` al inicio | Ingreso en vez de gasto | `+50 bcp mamá` |
+| Fuente de ingreso (solo con `+`) | Fuente | `sueldo` |
 | Resto | Nota | |
 
-Coincidencia sin tildes ni mayúsculas, por prefijo y por alias. **Siempre muestra la vista previa interpretada antes de guardar**; lo ambiguo se resalta para elegir.
+Reglas de coincidencia:
+- Sin tildes ni mayúsculas (`Locale.ROOT`). La coincidencia **exacta gana** sobre el prefijo; el prefijo exige al menos 3 letras.
+- Los nombres de varias palabras se prueban primero como secuencia, de la más larga a la más corta (D63).
+- Un token que coincide con más de una entidad (de cualquier tipo) se **resalta** y el usuario elige; nunca se adivina.
+- `cúmulo + fondo`, o dos cuentas o dos categorías, es conflicto y bloquea Guardar hasta elegir (D64).
+
+Valores ausentes (D62): la categoría se sugiere desde la `defaultCategoryId` del cúmulo o, si no hay, la del último gasto; la cuenta, la del último gasto activo o, si está archivada o no hay historial, la primera activa por creación. Se marcan "sugerida" (con texto, no solo color). Sin categoría, Guardar queda desactivado. Los conceptos por defecto del cúmulo se aplican como en el editor de gasto.
+
+**Siempre muestra la vista previa interpretada antes de guardar.** Es editable en línea (tocar un campo abre `EntityPicker`). Confirmar ejecuta los mismos casos de uso y validaciones que los editores (D66). El texto no se guarda, no se restaura al cerrar la app y no se registra (D65).
 
 ---
 

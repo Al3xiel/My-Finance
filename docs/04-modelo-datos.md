@@ -611,3 +611,8 @@ Resultado: BBVA 780 · BCP 170 · Efectivo 95 · Apartado Pasajes 45 · Por cobr
 | D59 | Cuentas iniciales atómicas | `CreateInitialAccountsUseCase` registra todas las cuentas del primer uso en una sola llamada al registrador (todo o nada) y comparte reglas con `CreateAccountUseCase` (2026-11-02) |
 | D60 | Primer uso por cuentas y bandera | Se decide por cuentas (activas o archivadas) + `OnboardingCompleted`, no por eventos, porque el sembrado los deja desde el primer arranque; quien actualiza con datos ve S04 y S05 una vez (2026-11-02) |
 | D61 | Restaurar cae en S04 | Tras restaurar (reinicio, D44) hay cuentas y no bandera, así que se cae en S04 sin lógica extra. Convención, vetable (2026-11-02) |
+| D62 | Últimas usadas por consulta | Cuenta y categoría sugeridas salen de una consulta puntual del último gasto activo (no del DataStore); si su cuenta está archivada o no hay historial, la primera cuenta activa por creación, marcada «sugerida» (2026-11-02) |
+| D63 | Nombres de varias palabras | Se prueba primero la secuencia más larga de tokens con coincidencia exacta; sin ella se vuelve a tokens sueltos. Convención, vetable (2026-11-02) |
+| D64 | Conflicto en el registro rápido | `cúmulo + fondo`, y dos cuentas o dos categorías en la misma línea, se marcan conflicto y bloquean Guardar hasta elegir (2026-11-02) |
+| D65 | Privacidad del texto | El texto del registro rápido no se guarda en DataStore, no se restaura tras cerrar la app y no se registra; la nota final sigue las reglas de nota de los editores (2026-11-02) |
+| D66 | Un solo armado | `ConfirmQuickEntryUseCase` reutiliza la función de armado de partes y etiquetas de los editores para que el texto no pueda saltarse una validación (2026-11-02) |
