@@ -51,6 +51,7 @@ fun MyfinancesTheme(
     val colorScheme = staticSchemeFor(kind) ?: dynamicScheme(kind)
     CompositionLocalProvider(
         LocalFinanceColors provides financeColorsFor(kind),
+        LocalChartColors provides chartColorsFor(kind),
         LocalSpacing provides Spacing(),
     ) {
         MaterialTheme(colorScheme = colorScheme, typography = AppTypography, shapes = AppShapes, content = content)
