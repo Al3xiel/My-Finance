@@ -36,4 +36,11 @@ class FakeReconciliationRepository : ReconciliationRepository {
         flowOf(reconciliations.values.lastOrNull { it.accountId == accountId })
 
     override fun observeNeedsReviewCount(): Flow<Int> = flowOf(reconciliations.values.count { it.needsReview })
+
+    var needsReviewId: ReconciliationId? = null
+    var openId: ReconciliationId? = null
+
+    override fun observeOldestNeedsReviewId(): Flow<ReconciliationId?> = flowOf(needsReviewId)
+
+    override fun observeOpenId(): Flow<ReconciliationId?> = flowOf(openId)
 }

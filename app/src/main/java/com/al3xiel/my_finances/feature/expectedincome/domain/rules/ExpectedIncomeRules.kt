@@ -22,7 +22,7 @@ object ExpectedIncomeRules {
     ): ExpectedIncomeStatus = when {
         stored == ExpectedIncomeStatus.CANCELLED -> ExpectedIncomeStatus.CANCELLED
         stored == ExpectedIncomeStatus.CONFIRMED && !confirmedMovementVoided -> ExpectedIncomeStatus.CONFIRMED
-        today.isAfter(expectedTo) -> ExpectedIncomeStatus.OVERDUE
+        ExpectedIncomeStatusRules.isOverdue(expectedTo, today) ->ExpectedIncomeStatus.OVERDUE
         else -> ExpectedIncomeStatus.SCHEDULED
     }
 

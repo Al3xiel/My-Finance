@@ -26,4 +26,10 @@ interface ReconciliationRepository {
 
     /** Cuántas resueltas piden revisión, para el aviso de inicio. */
     fun observeNeedsReviewCount(): Flow<Int>
+
+    /** La que pide revisión desde hace más tiempo, o `null` (alerta de Inicio). */
+    fun observeOldestNeedsReviewId(): Flow<ReconciliationId?>
+
+    /** La `OPEN` más antigua, o `null` (alerta de Inicio). */
+    fun observeOpenId(): Flow<ReconciliationId?>
 }
