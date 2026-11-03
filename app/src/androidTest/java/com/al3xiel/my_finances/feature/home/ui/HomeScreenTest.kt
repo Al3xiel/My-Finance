@@ -3,6 +3,11 @@ package com.al3xiel.my_finances.feature.home.ui
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.height
+import androidx.compose.ui.unit.width
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -18,6 +23,7 @@ import com.al3xiel.my_finances.feature.accounts.domain.model.Account
 import com.al3xiel.my_finances.feature.accounts.domain.model.AccountWithBalance
 import com.al3xiel.my_finances.feature.home.domain.model.HomeSummary
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
@@ -78,5 +84,31 @@ class HomeScreenTest {
         rule.onNodeWithContentDescription(string(R.string.home_show_amounts)).performClick()
 
         assertEquals(listOf<HomeUiAction>(HomeUiAction.ToggleHideAmounts), actions)
+    }
+
+    @Test
+    fun accountsAreACarouselInOneRow() {
+        val two = summary(withAccount = true).let {
+            it.copy(accounts = it.accounts + AccountWithBalance(Account(AccountId("cash"), "Efectivo", AccountType.CASH, CurrencyCode.PEN, null, false), 5_000))
+        }
+        show(HomeUiState(summary = two))
+
+        val first = rule.onNodeWithText("BBVA", useUnmergedTree = true).getUnclippedBoundsInRoot().top
+        val second = rule.onNodeWithText("Efectivo", useUnmergedTree = true).getUnclippedBoundsInRoot().top
+        assertEquals(first, second)
+    }
+
+    @Test
+    fun anAccountNameStaysReadableAtTwiceTheFontSize() {
+        rule.setContent {
+            CompositionLocalProvider(
+                LocalDensity provides Density(LocalDensity.current.density, 2f),
+                LocalHideAmounts provides false,
+            ) {
+                HomeContent(HomeUiState(summary = summary(withAccount = true)), {}, {}, {}, {}, {})
+            }
+        }
+        val bounds = rule.onNodeWithText("BBVA", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        assertTrue("el nombre se partió letra por letra: ${bounds.width} x ${bounds.height}", bounds.width > bounds.height)
     }
 }
