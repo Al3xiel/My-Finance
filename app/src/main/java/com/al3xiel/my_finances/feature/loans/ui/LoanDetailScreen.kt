@@ -1,5 +1,6 @@
 package com.al3xiel.my_finances.feature.loans.ui
 
+import com.al3xiel.my_finances.core.designsystem.progressFraction
 import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -10,14 +11,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -29,7 +30,14 @@ import com.al3xiel.my_finances.core.designsystem.EntityOption
 import com.al3xiel.my_finances.core.designsystem.MoneyText
 import com.al3xiel.my_finances.core.designsystem.NegativeBalanceDialog
 import com.al3xiel.my_finances.core.designsystem.NoticeDialog
+import com.al3xiel.my_finances.core.designsystem.PillButton
+import com.al3xiel.my_finances.core.designsystem.PillStyle
 import com.al3xiel.my_finances.core.designsystem.ReasonDialog
+import com.al3xiel.my_finances.core.designsystem.ScreenScaffold
+import com.al3xiel.my_finances.core.designsystem.SectionCard
+import com.al3xiel.my_finances.core.designsystem.SectionDivider
+import com.al3xiel.my_finances.core.designsystem.SectionRow
+import com.al3xiel.my_finances.core.designsystem.StatusBadge
 import com.al3xiel.my_finances.core.designsystem.dayText
 import com.al3xiel.my_finances.core.money.CurrencyCode
 import com.al3xiel.my_finances.core.money.Money
@@ -41,6 +49,10 @@ import com.al3xiel.my_finances.feature.loans.domain.model.LoanDetail
 import com.al3xiel.my_finances.feature.loans.domain.model.LoanRepaymentLine
 import com.al3xiel.my_finances.feature.loans.domain.model.LoanStatus
 import com.al3xiel.my_finances.feature.loans.ui.components.LoanPayDialogContent
+import com.al3xiel.my_finances.feature.loans.ui.components.badge
+import com.al3xiel.my_finances.feature.loans.ui.components.loanStatusLabelRes
+import com.al3xiel.my_finances.ui.theme.LocalSpacing
+import com.al3xiel.my_finances.ui.theme.MyfinancesTheme
 import java.time.LocalDate
 
 /** S36: la deuda con sus pagos; registrar un pago y anular el préstamo o un pago (D20). */
@@ -65,45 +77,69 @@ fun LoanDetailContent(
 ) {
     val detail = state.detail
     if (detail == null) {
-        if (state.notFound) EmptyState(title = stringResource(R.string.error_not_found), body = "", modifier = modifier)
+        ScreenScaffold(title = "", modifier = modifier) { padding ->
+            if (state.notFound) EmptyState(title = stringResource(R.string.error_not_found), body = "", modifier = Modifier.padding(padding))
+        }
         return
     }
     val loan = detail.loan
-    LazyColumn(modifier = modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        item {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(stringResource(R.string.loan_detail_title, detail.personName), style = MaterialTheme.typography.titleLarge)
-                Text(
-                    "${dayText(loan.occurredOn)} · " + stringResource(loan.status.labelRes()),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                AmountLine(stringResource(R.string.loan_detail_principal), loan.principal)
-                AmountLine(stringResource(R.string.loan_detail_repaid), loan.repaid)
-                AmountLine(stringResource(R.string.loan_detail_pending), loan.pending, emphasis = true)
-            }
-        }
-        item {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (loan.pending.isPositive) {
-                    Button(onClick = { onAction(LoanDetailUiAction.OpenPay) }, modifier = Modifier.fillMaxWidth()) {
-                        Text(stringResource(R.string.loan_detail_register_payment))
+    val spacing = LocalSpacing.current
+    ScreenScaffold(title = stringResource(R.string.loan_detail_title, detail.personName), modifier = modifier) { padding ->
+        LazyColumn(
+            modifier = Modifier.fillMaxSize().padding(padding),
+            contentPadding = PaddingValues(spacing.lg),
+            verticalArrangement = Arrangement.spacedBy(spacing.lg),
+        ) {
+            item {
+                SectionCard {
+                    Column(modifier = Modifier.padding(spacing.lg), verticalArrangement = Arrangement.spacedBy(spacing.sm)) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(spacing.sm)) {
+                            Text(dayText(loan.occurredOn), color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
+                            StatusBadge(loan.status.badge(), label = stringResource(loanStatusLabelRes(loan.status, loan.isPartlyRepaid)))
+                        }
+                        // Decorativa: lo pagado y lo pendiente van en texto debajo.
+                        val fraction = progressFraction(loan.repaid, loan.principal)
+                        LinearProgressIndicator(progress = { fraction }, modifier = Modifier.fillMaxWidth().clearAndSetSemantics {})
+                        AmountLine(stringResource(R.string.loan_detail_principal), loan.principal)
+                        AmountLine(stringResource(R.string.loan_detail_repaid), loan.repaid)
+                        AmountLine(stringResource(R.string.loan_detail_pending), loan.pending, emphasis = true)
                     }
                 }
-                TextButton(onClick = { onAction(LoanDetailUiAction.AskVoidLoan) }, modifier = Modifier.align(Alignment.End)) {
-                    Text(stringResource(R.string.loan_detail_void_loan))
-                }
-                Text(stringResource(R.string.loan_detail_payments), style = MaterialTheme.typography.titleMedium)
-                if (detail.repayments.isEmpty()) {
-                    Text(stringResource(R.string.loan_detail_no_payments), color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(spacing.sm)) {
+                    if (loan.pending.isPositive) {
+                        PillButton(stringResource(R.string.loan_detail_register_payment), { onAction(LoanDetailUiAction.OpenPay) }, Modifier.fillMaxWidth())
+                    }
+                    PillButton(
+                        stringResource(R.string.loan_detail_void_loan),
+                        { onAction(LoanDetailUiAction.AskVoidLoan) },
+                        Modifier.align(Alignment.End),
+                        PillStyle.TEXT,
+                    )
                 }
             }
-        }
-        items(detail.repayments, key = { it.movementId.value }) { payment ->
-            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text(dayText(payment.occurredOn), modifier = Modifier.weight(1f))
-                MoneyText(payment.amount)
-                TextButton(onClick = { onAction(LoanDetailUiAction.AskVoidRepayment(payment.movementId)) }) {
-                    Text(stringResource(R.string.loan_detail_void_payment))
+            item {
+                SectionCard(title = stringResource(R.string.loan_detail_payments)) {
+                    if (detail.repayments.isEmpty()) {
+                        SectionRow(headline = stringResource(R.string.loan_detail_no_payments))
+                    }
+                    detail.repayments.forEachIndexed { index, payment ->
+                        if (index > 0) SectionDivider()
+                        SectionRow(
+                            headline = dayText(payment.occurredOn),
+                            trailing = {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    MoneyText(payment.amount)
+                                    PillButton(
+                                        stringResource(R.string.loan_detail_void_payment),
+                                        { onAction(LoanDetailUiAction.AskVoidRepayment(payment.movementId)) },
+                                        style = PillStyle.TEXT,
+                                    )
+                                }
+                            },
+                        )
+                    }
                 }
             }
         }
@@ -149,11 +185,6 @@ private fun AmountLine(label: String, amount: Money, emphasis: Boolean = false) 
     }
 }
 
-private fun LoanStatus.labelRes() = when (this) {
-    LoanStatus.OPEN -> R.string.loan_detail_status_open
-    LoanStatus.REPAID -> R.string.loan_detail_status_repaid
-}
-
 private fun pen(minor: Long) = Money(minor, CurrencyCode.PEN)
 
 private val previewState = LoanDetailUiState(
@@ -168,7 +199,8 @@ private val previewState = LoanDetailUiState(
 
 @Preview(showBackground = true)
 @Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(showBackground = true, fontScale = 2f)
 @Composable
 private fun LoanDetailContentPreview() {
-    LoanDetailContent(previewState, {})
+    MyfinancesTheme { LoanDetailContent(previewState, {}) }
 }

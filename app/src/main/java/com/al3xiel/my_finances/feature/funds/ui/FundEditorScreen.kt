@@ -14,7 +14,6 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -26,11 +25,15 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.al3xiel.my_finances.R
 import com.al3xiel.my_finances.core.designsystem.DateField
-import com.al3xiel.my_finances.core.designsystem.EditorFooter
+import com.al3xiel.my_finances.core.designsystem.EditorLayout
+import com.al3xiel.my_finances.core.designsystem.PillButton
+import com.al3xiel.my_finances.core.designsystem.PillStyle
+import com.al3xiel.my_finances.core.designsystem.ScreenScaffold
 import com.al3xiel.my_finances.core.designsystem.EmptyState
 import com.al3xiel.my_finances.core.designsystem.MoneyInput
 import com.al3xiel.my_finances.core.designsystem.dayText
 import com.al3xiel.my_finances.domain.model.event.ConsumptionMode
+import com.al3xiel.my_finances.ui.theme.MyfinancesTheme
 import java.time.LocalDate
 
 /** S54: crear un fondo o editar uno; lo que ya no se puede cambiar se muestra bloqueado. */
@@ -57,60 +60,56 @@ fun FundEditorContent(
     modifier: Modifier = Modifier,
 ) {
     if (state.notFound) {
-        EmptyState(title = stringResource(R.string.error_not_found), body = "", modifier = modifier)
+        ScreenScaffold(title = "", modifier = modifier) { padding ->
+            EmptyState(title = stringResource(R.string.error_not_found), body = "", modifier = Modifier.padding(padding))
+        }
         return
     }
-    Column(
-        modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Text(
-            stringResource(if (state.isEditing) R.string.fund_editor_title_edit else R.string.fund_editor_title_new),
-            style = MaterialTheme.typography.titleLarge,
-        )
-        OutlinedTextField(
-            value = state.name,
-            onValueChange = { onAction(FundEditorUiAction.EditName(it)) },
-            label = { Text(stringResource(R.string.fund_editor_name)) },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        Text(stringResource(R.string.fund_editor_mode), style = MaterialTheme.typography.labelLarge)
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            ConsumptionMode.entries.forEach { mode ->
-                FilterChip(
-                    selected = state.mode == mode,
-                    onClick = { onAction(FundEditorUiAction.SelectMode(mode)) },
-                    enabled = !state.modeLocked || state.mode == mode,
-                    label = { Text(stringResource(mode.labelRes())) },
-                )
-            }
-        }
-        if (state.modeLocked) LockedHint()
-        if (state.mode == ConsumptionMode.DAILY_ESTIMATE) {
-            MoneyInput(
-                value = state.estimateText,
-                onValueChange = { onAction(FundEditorUiAction.EditEstimate(it)) },
-                label = stringResource(R.string.fund_editor_estimate),
+    val title = stringResource(if (state.isEditing) R.string.fund_editor_title_edit else R.string.fund_editor_title_new)
+    ScreenScaffold(title = title, modifier = modifier) { padding ->
+        EditorLayout(error = state.error, onSave = { onAction(FundEditorUiAction.Save) }, modifier = Modifier.padding(padding)) {
+            OutlinedTextField(
+                value = state.name,
+                onValueChange = { onAction(FundEditorUiAction.EditName(it)) },
+                label = { Text(stringResource(R.string.fund_editor_name)) },
+                singleLine = true,
+                shape = MaterialTheme.shapes.medium,
                 modifier = Modifier.fillMaxWidth(),
             )
-        }
-        if (state.startLocked) {
-            Text(stringResource(R.string.fund_editor_starts_on_value, dayText(state.startsOn)))
-            LockedHint()
-        } else {
-            DateField(stringResource(R.string.fund_editor_starts_on), state.startsOn, { onAction(FundEditorUiAction.SetStartsOn(it)) })
-        }
-        val endsOn = state.endsOn
-        if (endsOn == null) {
-            TextButton(onClick = { onAction(FundEditorUiAction.SetEndsOn(state.startsOn)) }) {
-                Text(stringResource(R.string.fund_editor_ends_on))
+            Text(stringResource(R.string.fund_editor_mode), style = MaterialTheme.typography.labelLarge)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ConsumptionMode.entries.forEach { mode ->
+                    FilterChip(
+                        selected = state.mode == mode,
+                        onClick = { onAction(FundEditorUiAction.SelectMode(mode)) },
+                        enabled = !state.modeLocked || state.mode == mode,
+                        label = { Text(stringResource(mode.labelRes())) },
+                    )
+                }
             }
-        } else {
-            DateField(stringResource(R.string.fund_editor_ends_on), endsOn, { onAction(FundEditorUiAction.SetEndsOn(it)) })
-            TextButton(onClick = { onAction(FundEditorUiAction.SetEndsOn(null)) }) { Text(stringResource(R.string.fund_editor_no_end)) }
+            if (state.modeLocked) LockedHint()
+            if (state.mode == ConsumptionMode.DAILY_ESTIMATE) {
+                MoneyInput(
+                    value = state.estimateText,
+                    onValueChange = { onAction(FundEditorUiAction.EditEstimate(it)) },
+                    label = stringResource(R.string.fund_editor_estimate),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+            if (state.startLocked) {
+                Text(stringResource(R.string.fund_editor_starts_on_value, dayText(state.startsOn)))
+                LockedHint()
+            } else {
+                DateField(stringResource(R.string.fund_editor_starts_on), state.startsOn, { onAction(FundEditorUiAction.SetStartsOn(it)) })
+            }
+            val endsOn = state.endsOn
+            if (endsOn == null) {
+                PillButton(stringResource(R.string.fund_editor_ends_on), { onAction(FundEditorUiAction.SetEndsOn(state.startsOn)) }, style = PillStyle.TEXT)
+            } else {
+                DateField(stringResource(R.string.fund_editor_ends_on), endsOn, { onAction(FundEditorUiAction.SetEndsOn(it)) })
+                PillButton(stringResource(R.string.fund_editor_no_end), { onAction(FundEditorUiAction.SetEndsOn(null)) }, style = PillStyle.TEXT)
+            }
         }
-        EditorFooter(error = state.error, onSave = { onAction(FundEditorUiAction.Save) })
     }
 }
 
@@ -136,9 +135,10 @@ private val previewState = FundEditorUiState(
 
 @Preview(showBackground = true)
 @Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(showBackground = true, fontScale = 2f)
 @Composable
 private fun FundEditorContentPreview() {
-    FundEditorContent(previewState, {})
+    MyfinancesTheme { FundEditorContent(previewState, {}) }
 }
 
 @Preview(showBackground = true)

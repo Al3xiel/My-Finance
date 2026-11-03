@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
@@ -29,9 +28,15 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.al3xiel.my_finances.R
+import com.al3xiel.my_finances.ui.theme.LocalSpacing
+import com.al3xiel.my_finances.ui.theme.MyfinancesTheme
 import com.al3xiel.my_finances.core.designsystem.EmptyState
 import com.al3xiel.my_finances.core.designsystem.LocalHideAmounts
 import com.al3xiel.my_finances.core.designsystem.MoneyText
+import com.al3xiel.my_finances.core.designsystem.PillButton
+import com.al3xiel.my_finances.core.designsystem.ScreenScaffold
+import com.al3xiel.my_finances.core.designsystem.SectionCard
+import com.al3xiel.my_finances.core.designsystem.SectionDivider
 import com.al3xiel.my_finances.core.designsystem.message
 import com.al3xiel.my_finances.core.money.CurrencyCode
 import com.al3xiel.my_finances.core.money.Money
@@ -66,33 +71,38 @@ fun ReconciliationResolveContent(
 ) {
     val difference = state.difference
     if (difference == null) {
-        if (state.notFound) EmptyState(title = stringResource(R.string.error_not_found), body = "", modifier = modifier)
+        ScreenScaffold(title = "", modifier = modifier) { padding ->
+            if (state.notFound) EmptyState(title = stringResource(R.string.error_not_found), body = "", modifier = Modifier.padding(padding))
+        }
         return
     }
-    Column(
-        modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Text(stringResource(R.string.reconciliation_resolve_title), style = MaterialTheme.typography.titleLarge)
-        Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(R.string.reconciliation_remaining), style = MaterialTheme.typography.titleMedium)
-            DifferenceText(difference, style = MaterialTheme.typography.titleMedium)
-        }
-        Text(stringResource(R.string.reconciliation_resolve_cause), style = MaterialTheme.typography.titleSmall)
-        state.causes.forEach { cause ->
-            CauseOption(cause, selected = cause == state.selectedCause, onSelect = { onAction(ReconciliationResolveUiAction.SelectCause(cause)) })
-        }
-        AdjustmentPreview(state.adjustment)
-        OutlinedTextField(
-            value = state.note,
-            onValueChange = { onAction(ReconciliationResolveUiAction.EditNote(it)) },
-            label = { Text(stringResource(R.string.reconciliation_resolve_note)) },
-            minLines = 2,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        state.error?.let { Text(it.message(), color = MaterialTheme.colorScheme.error) }
-        Button(onClick = { onAction(ReconciliationResolveUiAction.Confirm) }, modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(R.string.reconciliation_resolve_confirm))
+    val spacing = LocalSpacing.current
+    ScreenScaffold(title = stringResource(R.string.reconciliation_resolve_title), modifier = modifier) { padding ->
+        Column(
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(padding).padding(spacing.lg),
+            verticalArrangement = Arrangement.spacedBy(spacing.lg),
+        ) {
+            Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth().padding(horizontal = spacing.sm)) {
+                Text(stringResource(R.string.reconciliation_remaining), style = MaterialTheme.typography.titleMedium)
+                DifferenceText(difference, style = MaterialTheme.typography.titleMedium)
+            }
+            SectionCard(title = stringResource(R.string.reconciliation_resolve_cause)) {
+                state.causes.forEachIndexed { index, cause ->
+                    if (index > 0) SectionDivider()
+                    CauseOption(cause, selected = cause == state.selectedCause, onSelect = { onAction(ReconciliationResolveUiAction.SelectCause(cause)) })
+                }
+            }
+            AdjustmentPreview(state.adjustment)
+            OutlinedTextField(
+                value = state.note,
+                onValueChange = { onAction(ReconciliationResolveUiAction.EditNote(it)) },
+                label = { Text(stringResource(R.string.reconciliation_resolve_note)) },
+                minLines = 2,
+                shape = MaterialTheme.shapes.medium,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            state.error?.let { Text(it.message(), color = MaterialTheme.colorScheme.error) }
+            PillButton(stringResource(R.string.reconciliation_resolve_confirm), { onAction(ReconciliationResolveUiAction.Confirm) }, Modifier.fillMaxWidth())
         }
     }
 }
@@ -102,7 +112,8 @@ private fun CauseOption(cause: ReconciliationCause, selected: Boolean, onSelect:
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 48.dp).selectable(selected = selected, onClick = onSelect, role = Role.RadioButton),
+        modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 48.dp).selectable(selected = selected, onClick = onSelect, role = Role.RadioButton)
+            .padding(horizontal = LocalSpacing.current.lg),
     ) {
         RadioButton(selected = selected, onClick = null)
         Text(stringResource(cause.labelRes()))
@@ -137,9 +148,10 @@ private val previewState = ReconciliationResolveUiState(
 
 @Preview(showBackground = true)
 @Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(showBackground = true, fontScale = 2f)
 @Composable
 private fun ReconciliationResolveContentPreview() {
-    CompositionLocalProvider(LocalHideAmounts provides false) { ReconciliationResolveContent(previewState, {}) }
+    MyfinancesTheme { CompositionLocalProvider(LocalHideAmounts provides false) { ReconciliationResolveContent(previewState, {}) } }
 }
 
 @Preview(showBackground = true)

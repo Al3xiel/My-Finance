@@ -44,9 +44,12 @@ private fun BadgeStatus.label(): Int = when (this) {
     BadgeStatus.ESTIMATED -> R.string.origin_estimated_label
 }
 
-/** Estado de una cosa: icono + texto + color. El color solo refuerza (D73). */
+/**
+ * Estado de una cosa: icono + texto + color. El color solo refuerza (D73). `label` reemplaza el texto cuando el estado
+ * de la pantalla tiene nombre propio (Saldado, Rendido…) pero comparte icono y color con uno de los cinco.
+ */
 @Composable
-fun StatusBadge(status: BadgeStatus, modifier: Modifier = Modifier) {
+fun StatusBadge(status: BadgeStatus, modifier: Modifier = Modifier, label: String? = null) {
     val f = LocalFinanceColors.current
     val (container, content) = when (status) {
         BadgeStatus.PENDING -> f.neutralContainer to f.onNeutralContainer
@@ -59,7 +62,7 @@ fun StatusBadge(status: BadgeStatus, modifier: Modifier = Modifier) {
         Row(Modifier.padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(painterResource(status.icon()), contentDescription = null, tint = content, modifier = Modifier.size(14.dp))
             Spacer(Modifier.width(4.dp))
-            Text(stringResource(status.label()), style = MaterialTheme.typography.labelMedium, color = content)
+            Text(label ?: stringResource(status.label()), style = MaterialTheme.typography.labelMedium, color = content)
         }
     }
 }

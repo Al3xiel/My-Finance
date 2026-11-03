@@ -1,6 +1,12 @@
 package com.al3xiel.my_finances.feature.movements.ui
 
 import com.al3xiel.my_finances.core.MainDispatcherRule
+import com.al3xiel.my_finances.core.money.CurrencyCode
+import com.al3xiel.my_finances.core.money.Money
+import com.al3xiel.my_finances.domain.model.PartId
+import com.al3xiel.my_finances.domain.model.PoolId
+import com.al3xiel.my_finances.feature.movements.domain.model.PartReimbursement
+import com.al3xiel.my_finances.domain.model.ReimbursementStatus
 import com.al3xiel.my_finances.domain.model.BusinessError
 import com.al3xiel.my_finances.domain.model.MovementId
 import com.al3xiel.my_finances.domain.model.MovementStatus
@@ -48,6 +54,19 @@ class MovementDetailViewModelTest {
         assertEquals("Viaje", state.names.tags["t1"])
         assertEquals("Sueldo", state.names.incomeSources["s1"])
         assertTrue(state.canEdit)
+    }
+
+    @Test
+    fun eachPartWithAPoolExposesItsReimbursementAndThePartsWithoutOneExposeNone() {
+        val movement = f.expenseMovement("m1", f.bbva, "p1" to 300, "p2" to 200)
+        val partial = PartReimbursement(PartId("p1"), PoolId("dogs"), "Perros", Money(300, CurrencyCode.PEN), Money(100, CurrencyCode.PEN), ReimbursementStatus.PARTIALLY_REIMBURSED)
+        f.movements.details[movement.id] = MovementDetail(movement, emptyList(), listOf(partial))
+
+        val state = viewModel("m1").uiState.value
+
+        assertEquals(partial, state.reimbursementOf(PartId("p1")))
+        assertEquals(200L, state.reimbursementOf(PartId("p1"))?.pending?.amountMinor)
+        assertNull(state.reimbursementOf(PartId("p2")))
     }
 
     @Test

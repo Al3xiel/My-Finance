@@ -6,6 +6,8 @@ import com.al3xiel.my_finances.data.projection.movement.MovementEntity
 import com.al3xiel.my_finances.data.projection.movement.MovementPartEntity
 import com.al3xiel.my_finances.data.projection.movement.MovementPartTagEntity
 import com.al3xiel.my_finances.data.projection.movement.MovementQueryDao
+import com.al3xiel.my_finances.data.projection.movement.PartReimbursementRow
+import com.al3xiel.my_finances.core.money.CurrencyCode
 import com.al3xiel.my_finances.domain.model.AccountId
 import com.al3xiel.my_finances.domain.model.CategoryId
 import com.al3xiel.my_finances.domain.model.IncomeSourceId
@@ -29,6 +31,7 @@ import com.al3xiel.my_finances.feature.movements.domain.model.MovementFilter
 import com.al3xiel.my_finances.feature.movements.domain.model.MovementHistoryEntry
 import com.al3xiel.my_finances.feature.movements.domain.model.MovementPart
 import com.al3xiel.my_finances.feature.movements.domain.model.MovementSummary
+import com.al3xiel.my_finances.feature.movements.domain.model.PartReimbursement
 import com.al3xiel.my_finances.feature.movements.domain.repository.MovementRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -65,10 +68,16 @@ class MovementRepositoryImpl @Inject constructor(
             queries.observeMovement(id.value),
             queries.observeParts(id.value),
             queries.observePartTags(id.value),
-        ) { movement, parts, tags -> movement?.toDomain(parts, tags) }
-            .map { movement ->
-                movement?.let { MovementDetail(it, history(id)) }
+            queries.observePartReimbursements(id.value),
+        ) { movement, parts, tags, reimbursements ->
+            movement?.let {
+                MovementDetail(
+                    movement = it.toDomain(parts, tags),
+                    history = history(id),
+                    reimbursements = reimbursements.map { row -> row.toDomain(it.currency) },
+                )
             }
+        }
 
     private suspend fun history(id: MovementId): List<MovementHistoryEntry> =
         eventStore.history(AggregateType.MOVEMENT, id.value).mapNotNull { it.toHistoryEntry() }
@@ -111,6 +120,15 @@ private fun MovementEntity.toDomain(parts: List<MovementPartEntity>, tags: List<
             fundId = part.fundId?.let(::FundId),
         )
     },
+)
+
+private fun PartReimbursementRow.toDomain(currency: CurrencyCode) = PartReimbursement(
+    partId = PartId(partId),
+    poolId = PoolId(poolId),
+    poolName = poolName,
+    amount = Money(amountMinor, currency),
+    reimbursed = Money(reimbursedMinor, currency),
+    status = status,
 )
 
 private fun StoredEvent.toHistoryEntry(): MovementHistoryEntry? {

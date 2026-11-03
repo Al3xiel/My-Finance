@@ -53,6 +53,27 @@ class FundProgressCardTest {
     }
 
     @Test
+    fun theRemainingIsLabelledEstimatedWithTheSharedBadge() {
+        rule.setContent { FundProgressCard("Pasajes", pen(5_000), pen(1_200), pen(3_800), isClosed = false, onClick = {}) }
+
+        rule.onNodeWithText("Estimado").assertIsDisplayed()
+    }
+
+    @Test
+    fun anOverspentFundWarnsInTextNotOnlyInRed() {
+        rule.setContent { FundProgressCard("Comida", pen(1_000), pen(1_500), pen(-500), isClosed = false, onClick = {}) }
+
+        rule.onNodeWithText("Gastaste más de lo asignado").assertIsDisplayed()
+    }
+
+    @Test
+    fun aFundWithinItsAllocationShowsNoWarning() {
+        rule.setContent { FundProgressCard("Pasajes", pen(5_000), pen(1_200), pen(3_800), isClosed = false, onClick = {}) }
+
+        rule.onNodeWithText("Gastaste más de lo asignado").assertDoesNotExist()
+    }
+
+    @Test
     fun hidingAmountsMasksTheFigures() {
         rule.setContent {
             CompositionLocalProvider(LocalHideAmounts provides true) {

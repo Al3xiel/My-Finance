@@ -11,8 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -22,6 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -29,9 +28,17 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.al3xiel.my_finances.R
+import com.al3xiel.my_finances.core.designsystem.AppIcons
+import com.al3xiel.my_finances.core.designsystem.BadgeStatus
 import com.al3xiel.my_finances.core.designsystem.EmptyState
+import com.al3xiel.my_finances.core.designsystem.EstimatedBadge
 import com.al3xiel.my_finances.core.designsystem.MoneyText
 import com.al3xiel.my_finances.core.designsystem.NoticeDialog
+import com.al3xiel.my_finances.core.designsystem.PillButton
+import com.al3xiel.my_finances.core.designsystem.PillStyle
+import com.al3xiel.my_finances.core.designsystem.ScreenScaffold
+import com.al3xiel.my_finances.core.designsystem.SectionCard
+import com.al3xiel.my_finances.core.designsystem.StatusBadge
 import com.al3xiel.my_finances.core.designsystem.dayText
 import com.al3xiel.my_finances.core.money.CurrencyCode
 import com.al3xiel.my_finances.core.money.Money
@@ -41,6 +48,7 @@ import com.al3xiel.my_finances.domain.model.IncomeSourceId
 import com.al3xiel.my_finances.feature.expectedincome.domain.model.ExpectedIncome
 import com.al3xiel.my_finances.feature.expectedincome.domain.model.ExpectedIncomeStatus
 import com.al3xiel.my_finances.feature.expectedincome.domain.rules.ExpectedRange
+import com.al3xiel.my_finances.ui.theme.LocalSpacing
 import com.al3xiel.my_finances.ui.theme.MyfinancesTheme
 import java.time.LocalDate
 
@@ -66,26 +74,29 @@ fun ExpectedIncomesContent(
     onConfirm: (ExpectedIncomeId) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    if (state.loaded && state.items.isEmpty()) {
-        EmptyState(
-            title = stringResource(R.string.expected_incomes_empty_title),
-            body = stringResource(R.string.expected_incomes_empty_body),
-            actionLabel = stringResource(R.string.expected_incomes_schedule),
-            onAction = onSchedule,
-            modifier = modifier,
-        )
-        return
-    }
-    LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        item {
-            Button(onClick = onSchedule, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.expected_incomes_schedule)) }
-        }
-        items(state.items, key = { it.income.id.value }) { item ->
-            ExpectedIncomeCard(item, onAction, onEdit, onConfirm)
+    val spacing = LocalSpacing.current
+    ScreenScaffold(title = stringResource(R.string.more_entry_expected_incomes), modifier = modifier) { padding ->
+        if (state.loaded && state.items.isEmpty()) {
+            EmptyState(
+                title = stringResource(R.string.expected_incomes_empty_title),
+                body = stringResource(R.string.expected_incomes_empty_body),
+                actionLabel = stringResource(R.string.expected_incomes_schedule),
+                onAction = onSchedule,
+                modifier = Modifier.padding(padding),
+            )
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize().padding(padding),
+                contentPadding = PaddingValues(spacing.lg),
+                verticalArrangement = Arrangement.spacedBy(spacing.lg),
+            ) {
+                item {
+                    PillButton(stringResource(R.string.expected_incomes_schedule), onSchedule, Modifier.fillMaxWidth(), PillStyle.TONAL, icon = AppIcons.Add)
+                }
+                items(state.items, key = { it.income.id.value }) { item ->
+                    ExpectedIncomeCard(item, onAction, onEdit, onConfirm)
+                }
+            }
         }
     }
     if (state.cancelling != null) CancelDialog(onAction)
@@ -100,11 +111,21 @@ private fun ExpectedIncomeCard(
     onConfirm: (ExpectedIncomeId) -> Unit,
 ) {
     val income = item.income
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+    val spacing = LocalSpacing.current
+    SectionCard {
+        Column(modifier = Modifier.padding(spacing.lg), verticalArrangement = Arrangement.spacedBy(spacing.xs)) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(spacing.sm),
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
                 Text(item.sourceName, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-                MoneyText(income.estimated, style = MaterialTheme.typography.titleMedium)
+                StatusBadge(income.status.badge(), label = stringResource(income.status.labelRes()))
+            }
+            // Es lo que se espera, no lo cobrado: se rotula estimado (U4).
+            Row(horizontalArrangement = Arrangement.spacedBy(spacing.sm), verticalAlignment = Alignment.CenterVertically) {
+                MoneyText(income.estimated, style = MaterialTheme.typography.titleLarge)
+                EstimatedBadge()
             }
             Text(
                 stringResource(
@@ -119,11 +140,6 @@ private fun ExpectedIncomeCard(
                     if (income.repeatsMonthly) stringResource(R.string.expected_income_monthly_suffix) else "",
                 style = MaterialTheme.typography.bodyMedium,
             )
-            Text(
-                stringResource(income.status.labelRes()),
-                style = MaterialTheme.typography.labelLarge,
-                color = if (income.status == ExpectedIncomeStatus.OVERDUE) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
-            )
             income.cancelReason?.let {
                 Text(stringResource(R.string.expected_income_cancel_reason, it), style = MaterialTheme.typography.bodySmall)
             }
@@ -135,14 +151,10 @@ private fun ExpectedIncomeCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    TextButton(onClick = { onConfirm(income.id) }, enabled = item.canConfirm) {
-                        Text(stringResource(R.string.expected_income_confirm))
-                    }
-                    TextButton(onClick = { onEdit(income.id) }) { Text(stringResource(R.string.expected_income_edit)) }
-                    TextButton(onClick = { onAction(ExpectedIncomesUiAction.AskCancel(income.id)) }) {
-                        Text(stringResource(R.string.expected_income_cancel))
-                    }
+                Row(horizontalArrangement = Arrangement.spacedBy(spacing.xs)) {
+                    PillButton(stringResource(R.string.expected_income_confirm), { onConfirm(income.id) }, style = PillStyle.TONAL, enabled = item.canConfirm)
+                    PillButton(stringResource(R.string.expected_income_edit), { onEdit(income.id) }, style = PillStyle.TEXT)
+                    PillButton(stringResource(R.string.expected_income_cancel), { onAction(ExpectedIncomesUiAction.AskCancel(income.id)) }, style = PillStyle.TEXT)
                 }
             }
         }
@@ -179,6 +191,13 @@ private fun CancelDialog(onAction: (ExpectedIncomesUiAction) -> Unit) {
     )
 }
 
+/** Tabla de estados (§7): programado y cancelado son neutros, vencido alerta, confirmado ya está. */
+internal fun ExpectedIncomeStatus.badge() = when (this) {
+    ExpectedIncomeStatus.SCHEDULED, ExpectedIncomeStatus.CANCELLED -> BadgeStatus.PENDING
+    ExpectedIncomeStatus.OVERDUE -> BadgeStatus.OVERDUE
+    ExpectedIncomeStatus.CONFIRMED -> BadgeStatus.RECONCILED
+}
+
 internal fun ExpectedIncomeStatus.labelRes() = when (this) {
     ExpectedIncomeStatus.SCHEDULED -> R.string.expected_status_scheduled
     ExpectedIncomeStatus.OVERDUE -> R.string.expected_status_overdue
@@ -207,6 +226,7 @@ private val previewState = ExpectedIncomesUiState(
 
 @Preview(showBackground = true)
 @Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(showBackground = true, fontScale = 2f)
 @Composable
 private fun ExpectedIncomesContentPreview() {
     MyfinancesTheme { ExpectedIncomesContent(previewState, onAction = {}, onSchedule = {}, onEdit = {}, onConfirm = {}) }

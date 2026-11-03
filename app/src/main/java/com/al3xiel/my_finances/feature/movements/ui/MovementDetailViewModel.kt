@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.al3xiel.my_finances.domain.model.BusinessError
 import com.al3xiel.my_finances.domain.model.MovementId
+import com.al3xiel.my_finances.domain.model.PartId
 import com.al3xiel.my_finances.domain.model.MovementStatus
 import com.al3xiel.my_finances.domain.model.MovementType
 import com.al3xiel.my_finances.domain.model.attempt
@@ -12,6 +13,7 @@ import com.al3xiel.my_finances.feature.accounts.domain.repository.AccountReposit
 import com.al3xiel.my_finances.feature.accounts.domain.repository.IncomeSourceRepository
 import com.al3xiel.my_finances.feature.categories.domain.repository.CategoryRepository
 import com.al3xiel.my_finances.feature.movements.domain.model.MovementDetail
+import com.al3xiel.my_finances.feature.movements.domain.model.PartReimbursement
 import com.al3xiel.my_finances.feature.movements.domain.repository.MovementRepository
 import com.al3xiel.my_finances.feature.movements.domain.usecase.VoidMovementUseCase
 import com.al3xiel.my_finances.feature.tags.domain.repository.TagRepository
@@ -43,6 +45,9 @@ data class MovementDetailUiState(
     val negativeWarning: BusinessError.WouldGoNegative? = null,
     val error: BusinessError? = null,
 ) {
+    /** El reembolso de una parte, si va a un cúmulo; las demás no lo tienen. */
+    fun reimbursementOf(partId: PartId): PartReimbursement? = detail?.reimbursements?.firstOrNull { it.partId == partId }
+
     /** El gasto que un arqueo cargó por lo no anotado no se anula ni se corrige (D25). */
     val isUntracked: Boolean get() = detail?.movement?.type == MovementType.FUND_UNTRACKED_SPEND
 

@@ -292,7 +292,7 @@ Viven en `core/designsystem`. Los de marco y agrupación son el estilo One UI de
 | `SectionCard` | Título de sección y tarjeta de esquinas 24 dp que agrupa filas con separadores finos |
 | `PillButton` | Botón en píldora: primario, tonal o texto; objetivo táctil ≥ 48 dp |
 | `IconBadge` | Icono dentro de un contenedor redondeado |
-| `StatusBadge` | Estado con icono, texto y color (pendiente, vencido, necesita revisión, conciliado, estimado); el color solo refuerza (D73) |
+| `StatusBadge` | Estado con icono, texto y color (pendiente, vencido, necesita revisión, conciliado, estimado); el color solo refuerza (D73). Un estado con nombre propio (Saldado, Rendido…) pasa su `label` y conserva icono y color del grupo |
 
 **Montos, campos y avisos**
 
@@ -316,6 +316,18 @@ Viven en `core/designsystem`. Los de marco y agrupación son el estilo One UI de
 | `ExpensePartEditor` | Una parte del gasto (monto, categoría, conceptos, cúmulo/fondo) |
 | `EstimatedBadge` | Etiqueta "estimado" (un `StatusBadge`); todo número de origen la lleva y no depende solo del color |
 | `EmptyState` | Estados vacíos con acción sugerida |
+
+**Estados y su insignia (una por estado, D73).** Las pantallas de Por cobrar, Fondos, Ingresos esperados y Conciliación usan esta tabla; ninguna inventa otra.
+
+| Insignia | Estados que la usan (texto) |
+|---|---|
+| Pendiente | Cúmulo/periodo: Abierto, Rendido · Deuda: Abierta · Parte de gasto: Pendiente, Parcial · Ingreso esperado: Programado, Cancelado · Conciliación: Abierta, Cancelada · Fondo: Cerrado |
+| Vencido | Ingreso esperado: Vencido |
+| Necesita revisión | Conciliación con `needsReview` |
+| Conciliado | Cúmulo/periodo: Saldado · Deuda: Pagada · Parte de gasto: Reembolsada · Ingreso esperado: Confirmado · Conciliación: Resuelta |
+| Estimado | Todo número de origen estimado (restante de un fondo) |
+
+Las barras de avance (`LinearProgressIndicator`) son decorativas: la cifra y el estado en texto siempre van al lado.
 
 ---
 

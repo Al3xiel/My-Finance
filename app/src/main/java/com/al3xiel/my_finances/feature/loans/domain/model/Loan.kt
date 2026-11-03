@@ -16,4 +16,5 @@ data class Loan(
     val occurredOn: LocalDate,
 ) {
     val pending: Money get() = principal - repaid
+    val isPartlyRepaid: Boolean get() = repaid.isPositive
 }

@@ -4,13 +4,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -22,6 +19,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.al3xiel.my_finances.R
+import com.al3xiel.my_finances.core.designsystem.PillButton
+import com.al3xiel.my_finances.core.designsystem.PillStyle
+import com.al3xiel.my_finances.core.designsystem.SectionCard
+import com.al3xiel.my_finances.core.designsystem.SectionDivider
+import com.al3xiel.my_finances.core.designsystem.SectionRow
+import com.al3xiel.my_finances.ui.theme.MyfinancesTheme
 import com.al3xiel.my_finances.core.designsystem.MoneyText
 import com.al3xiel.my_finances.core.designsystem.dayText
 import com.al3xiel.my_finances.core.money.CurrencyCode
@@ -45,34 +48,28 @@ internal fun MovementSection(
     modifier: Modifier = Modifier,
     hint: String? = null,
 ) {
-    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(title, style = MaterialTheme.typography.titleMedium)
-        hint?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-        if (movements.isEmpty()) {
-            Text(emptyText, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    SectionCard(title = title, modifier = modifier) {
+        hint?.let { SectionRow(headline = it) }
+        if (movements.isEmpty() && emptyText.isNotEmpty()) SectionRow(headline = emptyText)
+        movements.forEachIndexed { index, movement ->
+            if (index > 0 || hint != null) SectionDivider()
+            MovementLine(movement, actionLabel, onAction)
         }
-        movements.forEach { movement -> MovementLine(movement, actionLabel, onAction) }
     }
 }
 
 @Composable
 private fun MovementLine(movement: ReconciliationMovement, actionLabel: String?, onAction: (ReconciliationMovement) -> Unit) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(stringResource(movement.type.labelRes()), style = MaterialTheme.typography.bodyMedium)
-            Text(
-                listOfNotNull(dayText(movement.occurredOn), movement.note).joinToString(" · "),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        MoneyText(movement.amount, style = MaterialTheme.typography.bodyMedium)
-        if (actionLabel != null) TextButton(onClick = { onAction(movement) }) { Text(actionLabel) }
-    }
+    SectionRow(
+        headline = stringResource(movement.type.labelRes()),
+        supporting = listOfNotNull(dayText(movement.occurredOn), movement.note).joinToString(" · "),
+        trailing = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                MoneyText(movement.amount, style = MaterialTheme.typography.bodyMedium)
+                if (actionLabel != null) PillButton(actionLabel, { onAction(movement) }, style = PillStyle.TEXT)
+            }
+        },
+    )
 }
 
 /** Corregir solo aplica a ingresos y gastos (D12, D25, D33). */
@@ -82,9 +79,7 @@ internal fun ReconciliationMovement.isCorrectable() = type == MovementType.INCOM
 @Composable
 internal fun RegisterForgottenButton(onRegister: (MovementType) -> Unit, modifier: Modifier = Modifier) {
     var expanded by remember { mutableStateOf(false) }
-    OutlinedButton(onClick = { expanded = true }, modifier = modifier.fillMaxWidth()) {
-        Text(stringResource(R.string.reconciliation_register_forgotten))
-    }
+    PillButton(stringResource(R.string.reconciliation_register_forgotten), { expanded = true }, modifier.fillMaxWidth(), PillStyle.TONAL)
     DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
         listOf(MovementType.INCOME, MovementType.EXPENSE, MovementType.TRANSFER).forEach { type ->
             DropdownMenuItem(
@@ -100,20 +95,23 @@ internal fun RegisterForgottenButton(onRegister: (MovementType) -> Unit, modifie
 
 @Composable
 internal fun ResolveButton(onResolve: () -> Unit, modifier: Modifier = Modifier) {
-    Button(onClick = onResolve, modifier = modifier.fillMaxWidth()) { Text(stringResource(R.string.reconciliation_resolve)) }
+    PillButton(stringResource(R.string.reconciliation_resolve), onResolve, modifier.fillMaxWidth())
 }
 
 @Preview(showBackground = true)
 @Preview(showBackground = true, uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)
+@Preview(showBackground = true, fontScale = 2f)
 @Composable
 private fun ReconciliationDetailPartsPreview() {
     val movement = ReconciliationMovement(
         MovementId("m1"), MovementType.INCOME, AccountId("bcp"), null, Money(1_000, CurrencyCode.PEN),
         LocalDate.of(2026, 10, 25), "Reembolso", MovementStatus.ACTIVE,
     )
-    Column {
-        MovementSection("Vinculados", listOf(movement), "Nada", "Corregir", {})
-        RegisterForgottenButton({})
-        ResolveButton({})
+    MyfinancesTheme {
+        Column {
+            MovementSection("Vinculados", listOf(movement), "Nada", "Corregir", {})
+            RegisterForgottenButton({})
+            ResolveButton({})
+        }
     }
 }

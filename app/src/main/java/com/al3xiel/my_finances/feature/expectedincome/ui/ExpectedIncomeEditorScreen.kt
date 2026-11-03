@@ -24,11 +24,14 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.al3xiel.my_finances.R
 import com.al3xiel.my_finances.core.designsystem.DateField
-import com.al3xiel.my_finances.core.designsystem.EditorFooter
+import com.al3xiel.my_finances.core.designsystem.EditorLayout
 import com.al3xiel.my_finances.core.designsystem.EmptyState
 import com.al3xiel.my_finances.core.designsystem.EntityOption
 import com.al3xiel.my_finances.core.designsystem.EntityPicker
 import com.al3xiel.my_finances.core.designsystem.MoneyInput
+import com.al3xiel.my_finances.core.designsystem.ScreenScaffold
+import com.al3xiel.my_finances.core.designsystem.SectionCard
+import com.al3xiel.my_finances.core.designsystem.SectionRow
 import com.al3xiel.my_finances.domain.model.AccountId
 import com.al3xiel.my_finances.domain.model.IncomeSourceId
 import com.al3xiel.my_finances.ui.theme.MyfinancesTheme
@@ -56,49 +59,50 @@ fun ExpectedIncomeEditorContent(
     onAction: (ExpectedIncomeEditorUiAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    if (state.notFound) {
-        EmptyState(title = stringResource(R.string.error_not_found), body = "", modifier = modifier)
-        return
-    }
-    if (state.notEditable) {
-        EmptyState(title = stringResource(R.string.error_not_pending), body = "", modifier = modifier)
-        return
-    }
-    Column(
-        modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Text(
-            stringResource(if (state.isEditing) R.string.expected_income_editor_title_edit else R.string.expected_income_editor_title_new),
-            style = MaterialTheme.typography.titleLarge,
-        )
-        EntityPicker(
-            label = stringResource(R.string.income_source),
-            options = state.sourceOptions,
-            selectedId = state.sourceId?.value,
-            onSelect = { onAction(ExpectedIncomeEditorUiAction.SelectSource(IncomeSourceId(it))) },
-            modifier = Modifier.fillMaxWidth(),
-        )
-        EntityPicker(
-            label = stringResource(R.string.editor_account),
-            options = state.accountOptions,
-            selectedId = state.accountId?.value,
-            onSelect = { onAction(ExpectedIncomeEditorUiAction.SelectAccount(AccountId(it))) },
-            modifier = Modifier.fillMaxWidth(),
-        )
-        MoneyInput(
-            value = state.amountText,
-            onValueChange = { onAction(ExpectedIncomeEditorUiAction.EditAmount(it)) },
-            label = stringResource(R.string.expected_income_editor_estimated),
-            modifier = Modifier.fillMaxWidth(),
-        )
-        DateField(stringResource(R.string.expected_income_editor_from), state.expectedFrom, { onAction(ExpectedIncomeEditorUiAction.SetFrom(it)) })
-        DateField(stringResource(R.string.expected_income_editor_to), state.expectedTo, { onAction(ExpectedIncomeEditorUiAction.SetTo(it)) })
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(stringResource(R.string.expected_income_editor_repeats), modifier = Modifier.weight(1f))
-            Switch(checked = state.repeatsMonthly, onCheckedChange = { onAction(ExpectedIncomeEditorUiAction.SetRepeatsMonthly(it)) })
+    if (state.notFound || state.notEditable) {
+        ScreenScaffold(title = "", modifier = modifier) { padding ->
+            EmptyState(
+                title = stringResource(if (state.notFound) R.string.error_not_found else R.string.error_not_pending),
+                body = "",
+                modifier = Modifier.padding(padding),
+            )
         }
-        EditorFooter(error = state.error, onSave = { onAction(ExpectedIncomeEditorUiAction.Save) })
+        return
+    }
+    val title = stringResource(if (state.isEditing) R.string.expected_income_editor_title_edit else R.string.expected_income_editor_title_new)
+    ScreenScaffold(title = title, modifier = modifier) { padding ->
+        EditorLayout(error = state.error, onSave = { onAction(ExpectedIncomeEditorUiAction.Save) }, modifier = Modifier.padding(padding)) {
+            EntityPicker(
+                label = stringResource(R.string.income_source),
+                options = state.sourceOptions,
+                selectedId = state.sourceId?.value,
+                onSelect = { onAction(ExpectedIncomeEditorUiAction.SelectSource(IncomeSourceId(it))) },
+                modifier = Modifier.fillMaxWidth(),
+            )
+            EntityPicker(
+                label = stringResource(R.string.editor_account),
+                options = state.accountOptions,
+                selectedId = state.accountId?.value,
+                onSelect = { onAction(ExpectedIncomeEditorUiAction.SelectAccount(AccountId(it))) },
+                modifier = Modifier.fillMaxWidth(),
+            )
+            MoneyInput(
+                value = state.amountText,
+                onValueChange = { onAction(ExpectedIncomeEditorUiAction.EditAmount(it)) },
+                label = stringResource(R.string.expected_income_editor_estimated),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            DateField(stringResource(R.string.expected_income_editor_from), state.expectedFrom, { onAction(ExpectedIncomeEditorUiAction.SetFrom(it)) })
+            DateField(stringResource(R.string.expected_income_editor_to), state.expectedTo, { onAction(ExpectedIncomeEditorUiAction.SetTo(it)) })
+            SectionCard {
+                SectionRow(
+                    headline = stringResource(R.string.expected_income_editor_repeats),
+                    trailing = {
+                        Switch(checked = state.repeatsMonthly, onCheckedChange = { onAction(ExpectedIncomeEditorUiAction.SetRepeatsMonthly(it)) })
+                    },
+                )
+            }
+        }
     }
 }
 
@@ -116,6 +120,7 @@ private val previewState = ExpectedIncomeEditorUiState(
 
 @Preview(showBackground = true)
 @Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(showBackground = true, fontScale = 2f)
 @Composable
 private fun ExpectedIncomeEditorContentPreview() {
     MyfinancesTheme { ExpectedIncomeEditorContent(previewState, onAction = {}) }

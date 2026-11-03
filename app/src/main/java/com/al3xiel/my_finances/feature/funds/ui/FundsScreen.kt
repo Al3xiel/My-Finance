@@ -7,14 +7,15 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -22,10 +23,15 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.al3xiel.my_finances.R
+import com.al3xiel.my_finances.core.designsystem.AppIcons
 import com.al3xiel.my_finances.core.designsystem.EmptyState
 import com.al3xiel.my_finances.core.designsystem.FundProgressCard
 import com.al3xiel.my_finances.core.designsystem.LocalHideAmounts
 import com.al3xiel.my_finances.core.designsystem.MoneyText
+import com.al3xiel.my_finances.core.designsystem.MoneyTone
+import com.al3xiel.my_finances.core.designsystem.PillButton
+import com.al3xiel.my_finances.core.designsystem.PillStyle
+import com.al3xiel.my_finances.core.designsystem.ScreenScaffold
 import com.al3xiel.my_finances.core.money.CurrencyCode
 import com.al3xiel.my_finances.core.money.Money
 import com.al3xiel.my_finances.domain.model.FundId
@@ -34,6 +40,9 @@ import com.al3xiel.my_finances.feature.funds.domain.model.Fund
 import com.al3xiel.my_finances.feature.funds.domain.model.FundOverview
 import com.al3xiel.my_finances.feature.funds.domain.model.FundStatus
 import com.al3xiel.my_finances.feature.funds.domain.model.FundSummary
+import com.al3xiel.my_finances.ui.theme.LocalFinanceColors
+import com.al3xiel.my_finances.ui.theme.LocalSpacing
+import com.al3xiel.my_finances.ui.theme.MyfinancesTheme
 import java.time.LocalDate
 
 /** S52 (lista): lo apartado, lo que queda libre y una tarjeta por fondo. */
@@ -55,56 +64,63 @@ fun FundsContent(
     onCreateFund: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    if (state.loaded && state.funds.isEmpty()) {
-        EmptyState(
-            title = stringResource(R.string.funds_empty_title),
-            body = stringResource(R.string.funds_empty_body),
-            actionLabel = stringResource(R.string.funds_create),
-            onAction = onCreateFund,
-            modifier = modifier,
-        )
-        return
-    }
-    LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        item { SummaryRow(state.summary) }
-        item {
-            Button(onClick = onCreateFund, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.funds_create)) }
-        }
-        items(state.funds, key = { it.fund.id.value }) { overview ->
-            FundProgressCard(
-                name = overview.fund.name,
-                allocated = overview.fund.allocated,
-                spent = overview.detailedSpent + overview.fund.untrackedSpent,
-                remaining = overview.estimatedRemaining,
-                isClosed = overview.fund.status == FundStatus.CLOSED,
-                onClick = { onOpenFund(overview.fund.id) },
+    val spacing = LocalSpacing.current
+    ScreenScaffold(title = stringResource(R.string.funds_title), modifier = modifier) { padding ->
+        if (state.loaded && state.funds.isEmpty()) {
+            EmptyState(
+                title = stringResource(R.string.funds_empty_title),
+                body = stringResource(R.string.funds_empty_body),
+                actionLabel = stringResource(R.string.funds_create),
+                onAction = onCreateFund,
+                modifier = Modifier.padding(padding),
             )
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize().padding(padding),
+                contentPadding = PaddingValues(spacing.lg),
+                verticalArrangement = Arrangement.spacedBy(spacing.md),
+            ) {
+                item { SummaryRow(state.summary) }
+                item { PillButton(stringResource(R.string.funds_create), onCreateFund, Modifier.fillMaxWidth(), PillStyle.TONAL, icon = AppIcons.Add) }
+                items(state.funds, key = { it.fund.id.value }) { overview ->
+                    FundProgressCard(
+                        name = overview.fund.name,
+                        allocated = overview.fund.allocated,
+                        spent = overview.detailedSpent + overview.fund.untrackedSpent,
+                        remaining = overview.estimatedRemaining,
+                        isClosed = overview.fund.status == FundStatus.CLOSED,
+                        onClick = { onOpenFund(overview.fund.id) },
+                    )
+                }
+            }
         }
     }
 }
 
 @Composable
 private fun SummaryRow(summary: FundSummary) {
-    Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-        Column {
-            Text(
-                stringResource(R.string.funds_summary_reserved),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            MoneyText(summary.reserved, style = MaterialTheme.typography.titleLarge)
+    val negative = summary.available.amountMinor < 0
+    Column(verticalArrangement = Arrangement.spacedBy(LocalSpacing.current.xs), modifier = Modifier.padding(horizontal = LocalSpacing.current.sm)) {
+        Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+            Column {
+                Text(
+                    stringResource(R.string.funds_summary_reserved),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                MoneyText(summary.reserved, style = MaterialTheme.typography.headlineMedium)
+            }
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    stringResource(R.string.funds_summary_available),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                MoneyText(summary.available, style = MaterialTheme.typography.headlineMedium, tone = MoneyTone.AUTO)
+            }
         }
-        Column(horizontalAlignment = androidx.compose.ui.Alignment.End) {
-            Text(
-                stringResource(R.string.funds_summary_available),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            MoneyText(summary.available, style = MaterialTheme.typography.titleLarge)
+        if (negative) {
+            Text(stringResource(R.string.funds_available_negative), style = MaterialTheme.typography.bodySmall, color = LocalFinanceColors.current.expense)
         }
     }
 }
@@ -128,13 +144,14 @@ private val previewState = run {
 
 @Preview(showBackground = true)
 @Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(showBackground = true, fontScale = 2f)
 @Composable
 private fun FundsContentPreview() {
-    CompositionLocalProvider(LocalHideAmounts provides false) { FundsContent(previewState, {}, {}) }
+    CompositionLocalProvider(LocalHideAmounts provides false) { MyfinancesTheme { FundsContent(previewState, {}, {}) } }
 }
 
 @Preview(showBackground = true)
 @Composable
 private fun FundsEmptyPreview() {
-    FundsContent(FundsUiState(loaded = true), {}, {})
+    MyfinancesTheme { FundsContent(FundsUiState(loaded = true), {}, {}) }
 }

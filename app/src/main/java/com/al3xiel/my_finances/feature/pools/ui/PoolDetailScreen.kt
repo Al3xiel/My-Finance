@@ -10,12 +10,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -26,10 +23,13 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.al3xiel.my_finances.R
+import com.al3xiel.my_finances.core.designsystem.AppIcons
 import com.al3xiel.my_finances.core.designsystem.EmptyState
 import com.al3xiel.my_finances.core.designsystem.MoneyText
 import com.al3xiel.my_finances.core.designsystem.NoticeDialog
-import com.al3xiel.my_finances.core.designsystem.dayText
+import com.al3xiel.my_finances.core.designsystem.PillButton
+import com.al3xiel.my_finances.core.designsystem.PillStyle
+import com.al3xiel.my_finances.core.designsystem.ScreenScaffold
 import com.al3xiel.my_finances.core.money.CurrencyCode
 import com.al3xiel.my_finances.core.money.Money
 import com.al3xiel.my_finances.domain.model.PersonId
@@ -41,6 +41,8 @@ import com.al3xiel.my_finances.feature.pools.domain.model.PoolDetail
 import com.al3xiel.my_finances.feature.pools.domain.model.PoolPeriod
 import com.al3xiel.my_finances.feature.pools.domain.rules.PoolPeriodStatus
 import com.al3xiel.my_finances.feature.pools.ui.components.PeriodCard
+import com.al3xiel.my_finances.ui.theme.LocalSpacing
+import com.al3xiel.my_finances.ui.theme.MyfinancesTheme
 import java.time.LocalDate
 
 /** S31: periodo actual, historial y acciones de un cúmulo. */
@@ -73,67 +75,70 @@ fun PoolDetailContent(
 ) {
     val detail = state.detail
     if (detail == null) {
-        if (state.notFound) EmptyState(title = stringResource(R.string.error_not_found), body = "", modifier = modifier)
+        ScreenScaffold(title = "", modifier = modifier) { padding ->
+            if (state.notFound) EmptyState(title = stringResource(R.string.error_not_found), body = "", modifier = Modifier.padding(padding))
+        }
         return
     }
     val pool = detail.pool
-    LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        item {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(pool.name, style = MaterialTheme.typography.titleLarge)
-                Text(
-                    stringResource(R.string.pool_responsible_kind, detail.responsibleAlias, stringResource(pool.kind.labelRes())),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Text(
-                    stringResource(R.string.pool_pending_total),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 8.dp),
-                )
-                MoneyText(detail.pendingTotal, style = MaterialTheme.typography.headlineMedium)
-            }
-        }
-        detail.currentPeriod?.let { period ->
-            item { PeriodCard(period, title = stringResource(R.string.pool_current_period)) }
-        }
-        if (!pool.isArchived) {
+    val spacing = LocalSpacing.current
+    ScreenScaffold(title = pool.name, modifier = modifier) { padding ->
+        LazyColumn(
+            modifier = Modifier.fillMaxSize().padding(padding),
+            contentPadding = PaddingValues(spacing.lg),
+            verticalArrangement = Arrangement.spacedBy(spacing.lg),
+        ) {
             item {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = { onAddExpense(pool.id) }, modifier = Modifier.fillMaxWidth()) {
-                        Text(stringResource(R.string.pool_add_expense))
-                    }
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                        OutlinedButton(onClick = { onSettle(pool.id) }, modifier = Modifier.weight(1f)) {
-                            Text(stringResource(R.string.pool_settle))
+                Column(modifier = Modifier.padding(horizontal = spacing.sm)) {
+                    Text(
+                        stringResource(R.string.pool_responsible_kind, detail.responsibleAlias, stringResource(pool.kind.labelRes())),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        stringResource(R.string.pool_pending_total),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = spacing.sm),
+                    )
+                    MoneyText(detail.pendingTotal, style = MaterialTheme.typography.displaySmall)
+                }
+            }
+            detail.currentPeriod?.let { period ->
+                item { PeriodCard(period, title = stringResource(R.string.pool_current_period)) }
+            }
+            if (!pool.isArchived) {
+                item {
+                    Column(verticalArrangement = Arrangement.spacedBy(spacing.sm)) {
+                        PillButton(stringResource(R.string.pool_add_expense), { onAddExpense(pool.id) }, Modifier.fillMaxWidth(), icon = AppIcons.Add)
+                        Row(horizontalArrangement = Arrangement.spacedBy(spacing.sm), modifier = Modifier.fillMaxWidth()) {
+                            PillButton(stringResource(R.string.pool_settle), { onSettle(pool.id) }, Modifier.weight(1f), PillStyle.TONAL)
+                            PillButton(
+                                stringResource(R.string.pool_receive_reimbursement),
+                                { onReceiveReimbursement(pool.responsiblePersonId, pool.id) },
+                                Modifier.weight(1f),
+                                PillStyle.TONAL,
+                            )
                         }
-                        OutlinedButton(
-                            onClick = { onReceiveReimbursement(pool.responsiblePersonId, pool.id) },
-                            modifier = Modifier.weight(1f),
-                        ) { Text(stringResource(R.string.pool_receive_reimbursement)) }
-                    }
-                    Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
-                        TextButton(onClick = { onEdit(pool.id) }) { Text(stringResource(R.string.pool_edit)) }
-                        TextButton(onClick = { onAction(PoolDetailUiAction.Archive) }) { Text(stringResource(R.string.pool_archive)) }
+                        Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
+                            PillButton(stringResource(R.string.pool_edit), { onEdit(pool.id) }, style = PillStyle.TEXT)
+                            PillButton(stringResource(R.string.pool_archive), { onAction(PoolDetailUiAction.Archive) }, style = PillStyle.TEXT)
+                        }
                     }
                 }
             }
-        }
-        val history = detail.periods.filter { it.closedOn != null }
-        if (history.isNotEmpty()) {
-            item {
-                Text(
-                    stringResource(R.string.pool_history),
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(top = 8.dp),
-                )
+            val history = detail.periods.filter { it.closedOn != null }
+            if (history.isNotEmpty()) {
+                item {
+                    Text(
+                        stringResource(R.string.pool_history),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(horizontal = spacing.lg),
+                    )
+                }
+                items(history, key = { it.id.value }) { period -> PeriodCard(period, title = null) }
             }
-            items(history, key = { it.id.value }) { period -> PeriodCard(period, title = null) }
         }
     }
     state.notice?.let { NoticeDialog(error = it, onDismiss = { onAction(PoolDetailUiAction.DismissNotice) }) }
@@ -164,7 +169,8 @@ private val previewState = run {
 
 @Preview(showBackground = true)
 @Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(showBackground = true, fontScale = 2f)
 @Composable
 private fun PoolDetailContentPreview() {
-    PoolDetailContent(previewState, {}, {}, {}, { _, _ -> }, {})
+    MyfinancesTheme { PoolDetailContent(previewState, {}, {}, {}, { _, _ -> }, {}) }
 }

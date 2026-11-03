@@ -9,10 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,7 +30,10 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.al3xiel.my_finances.R
 import com.al3xiel.my_finances.core.designsystem.EmptyState
-import com.al3xiel.my_finances.core.designsystem.MoneyText
+import com.al3xiel.my_finances.core.designsystem.PillButton
+import com.al3xiel.my_finances.core.designsystem.ScreenScaffold
+import com.al3xiel.my_finances.core.designsystem.SectionCard
+import com.al3xiel.my_finances.core.designsystem.SectionDivider
 import com.al3xiel.my_finances.core.designsystem.message
 import com.al3xiel.my_finances.core.designsystem.dayText
 import com.al3xiel.my_finances.core.money.CurrencyCode
@@ -48,6 +48,8 @@ import com.al3xiel.my_finances.feature.pools.domain.model.StatementLine
 import com.al3xiel.my_finances.feature.pools.ui.components.SettlementConfirmDialog
 import com.al3xiel.my_finances.feature.pools.ui.components.StatementLineRow
 import com.al3xiel.my_finances.feature.pools.ui.components.TotalRow
+import com.al3xiel.my_finances.ui.theme.LocalSpacing
+import com.al3xiel.my_finances.ui.theme.MyfinancesTheme
 import java.time.LocalDate
 
 /** S33 (D17): vista previa de la rendición, formato, aviso de cierre, y luego compartir como imagen o PDF. */
@@ -92,66 +94,74 @@ fun SettlementStatementScreenContent(
 ) {
     val content = state.content
     if (content == null) {
-        if (state.loaded) {
-            EmptyState(
-                title = state.error?.message() ?: stringResource(R.string.error_not_found),
-                body = "",
-                modifier = modifier,
-            )
+        ScreenScaffold(title = "", modifier = modifier) { padding ->
+            if (state.loaded) {
+                EmptyState(
+                    title = state.error?.message() ?: stringResource(R.string.error_not_found),
+                    body = "",
+                    modifier = Modifier.padding(padding),
+                )
+            }
         }
         return
     }
-    LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        item {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(content.poolName, style = MaterialTheme.typography.titleLarge)
-                Text(
-                    stringResource(R.string.statement_responsible, content.responsibleAlias),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Text(
-                    stringResource(R.string.statement_period, dayText(content.periodFrom), dayText(content.generatedOn)),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+    val spacing = LocalSpacing.current
+    ScreenScaffold(title = content.poolName, modifier = modifier) { padding ->
+        LazyColumn(
+            modifier = Modifier.fillMaxSize().padding(padding),
+            contentPadding = PaddingValues(spacing.lg),
+            verticalArrangement = Arrangement.spacedBy(spacing.lg),
+        ) {
+            item {
+                Column(modifier = Modifier.padding(horizontal = spacing.sm)) {
+                    Text(stringResource(R.string.statement_responsible, content.responsibleAlias), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        stringResource(R.string.statement_period, dayText(content.periodFrom), dayText(content.generatedOn)),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
-        }
-        items(content.lines, key = { it.partId.value }) { line -> StatementLineRow(line) }
-        item {
-            Column(modifier = Modifier.padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                HorizontalDivider()
-                TotalRow(stringResource(R.string.statement_period_pending), content.pendingTotal)
-                if (content.previousPending.isPositive) {
-                    TotalRow(stringResource(R.string.statement_previous_pending), content.previousPending)
+            // Lo que se ve aquí es lo que recibe la otra persona: el contenido de la imagen y del PDF no cambia.
+            item {
+                SectionCard {
+                    content.lines.forEachIndexed { index, line ->
+                        if (index > 0) SectionDivider()
+                        StatementLineRow(line)
+                    }
+                    SectionDivider()
+                    Column(modifier = Modifier.padding(spacing.lg), verticalArrangement = Arrangement.spacedBy(spacing.xs)) {
+                        TotalRow(stringResource(R.string.statement_period_pending), content.pendingTotal)
+                        if (content.previousPending.isPositive) {
+                            TotalRow(stringResource(R.string.statement_previous_pending), content.previousPending)
+                        }
+                        TotalRow(stringResource(R.string.statement_grand_total), content.grandTotal, emphasis = true)
+                    }
                 }
-                TotalRow(stringResource(R.string.statement_grand_total), content.grandTotal, emphasis = true)
             }
-        }
-        item {
-            Column(modifier = Modifier.padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(stringResource(R.string.statement_format), style = MaterialTheme.typography.labelLarge)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    StatementFormat.entries.forEach { format ->
-                        FilterChip(
-                            selected = state.format == format,
-                            onClick = { onAction(SettlementStatementUiAction.SelectFormat(format)) },
-                            label = { Text(stringResource(format.labelRes())) },
-                        )
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(spacing.sm)) {
+                    Text(
+                        stringResource(R.string.statement_format),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(horizontal = spacing.lg),
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(spacing.sm)) {
+                        StatementFormat.entries.forEach { format ->
+                            FilterChip(
+                                selected = state.format == format,
+                                onClick = { onAction(SettlementStatementUiAction.SelectFormat(format)) },
+                                label = { Text(stringResource(format.labelRes())) },
+                            )
+                        }
                     }
+                    if (state.generated == null) {
+                        PillButton(stringResource(R.string.statement_share), { onAction(SettlementStatementUiAction.AskConfirm) }, Modifier.fillMaxWidth())
+                    } else {
+                        PillButton(stringResource(R.string.statement_share_again), { onAction(SettlementStatementUiAction.ShareAgain) }, Modifier.fillMaxWidth())
+                    }
+                    state.error?.let { Text(it.message(), color = MaterialTheme.colorScheme.error) }
                 }
-                if (state.generated == null) {
-                    Button(onClick = { onAction(SettlementStatementUiAction.AskConfirm) }, modifier = Modifier.fillMaxWidth()) {
-                        Text(stringResource(R.string.statement_share))
-                    }
-                } else {
-                    Button(onClick = { onAction(SettlementStatementUiAction.ShareAgain) }, modifier = Modifier.fillMaxWidth()) {
-                        Text(stringResource(R.string.statement_share_again))
-                    }
-                }
-                state.error?.let { Text(it.message(), color = MaterialTheme.colorScheme.error) }
             }
         }
     }
@@ -182,16 +192,19 @@ private val previewContent = SettlementStatementContent(
 
 @Preview(showBackground = true)
 @Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(showBackground = true, fontScale = 2f)
 @Composable
 private fun SettlementStatementContentPreview() {
-    SettlementStatementScreenContent(SettlementStatementUiState(loaded = true, content = previewContent, kind = PoolKind.PERMANENT), {})
+    MyfinancesTheme { SettlementStatementScreenContent(SettlementStatementUiState(loaded = true, content = previewContent, kind = PoolKind.PERMANENT), {}) }
 }
 
 @Preview(showBackground = true)
 @Composable
 private fun SettlementStatementConfirmPreview() {
-    SettlementStatementScreenContent(
-        SettlementStatementUiState(loaded = true, content = previewContent, kind = PoolKind.PERMANENT, confirming = true),
-        {},
-    )
+    MyfinancesTheme {
+        SettlementStatementScreenContent(
+            SettlementStatementUiState(loaded = true, content = previewContent, kind = PoolKind.PERMANENT, confirming = true),
+            {},
+        )
+    }
 }

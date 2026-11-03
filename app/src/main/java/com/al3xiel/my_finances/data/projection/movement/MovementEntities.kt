@@ -9,7 +9,7 @@ import com.al3xiel.my_finances.domain.model.LedgerEntryKind
 import com.al3xiel.my_finances.domain.model.MovementStatus
 import com.al3xiel.my_finances.domain.model.MovementType
 import com.al3xiel.my_finances.domain.model.PartKind
-import com.al3xiel.my_finances.feature.pools.domain.rules.ReimbursementStatus
+import com.al3xiel.my_finances.domain.model.ReimbursementStatus
 
 @Entity(tableName = "movements", indices = [Index("account_id"), Index("occurred_on")])
 data class MovementEntity(

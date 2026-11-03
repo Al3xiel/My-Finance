@@ -27,6 +27,7 @@ data class LoanReceivable(
     val occurredOn: LocalDate,
 ) {
     val pending: Money get() = principal - repaid
+    val isPartlyRepaid: Boolean get() = repaid.isPositive
 }
 
 /** Lo que una persona debe: pendiente de sus cúmulos activos más sus deudas abiertas (sin movimientos anulados). */

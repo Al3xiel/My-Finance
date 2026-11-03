@@ -418,9 +418,11 @@
     <string name="fund_progress_allocated">Asignado</string>
     <string name="fund_progress_spent">Gastado</string>
     <string name="fund_progress_remaining_estimated">Restante estimado</string>
+    <string name="fund_overspent_warning">Gastaste más de lo asignado</string>
     <string name="funds_title">Fondos</string>
     <string name="funds_summary_reserved">Apartado</string>
     <string name="funds_summary_available">Disponible libre</string>
+    <string name="funds_available_negative">Lo apartado supera lo que tienes disponible.</string>
     <string name="funds_empty_title">Aún no tienes fondos</string>
     <string name="funds_empty_body">Aparta dinero para algo concreto, como los pasajes de la semana.</string>
     <string name="funds_create">Nuevo fondo</string>
@@ -871,4 +873,6 @@
     <string name="status_overdue">Vencido</string>
     <string name="status_needs_review">Necesita revisión</string>
     <string name="status_reconciled">Conciliado</string>
+    <string name="status_partial">Parcial</string>
+    <string name="status_reimbursed">Reembolsada</string>
 </resources>
