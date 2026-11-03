@@ -15,6 +15,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.al3xiel.my_finances.R
+import com.al3xiel.my_finances.core.designsystem.BadgeStatus
+import com.al3xiel.my_finances.core.designsystem.StatusBadge
 import com.al3xiel.my_finances.domain.model.ExpectedIncomeId
 import com.al3xiel.my_finances.domain.model.ReconciliationId
 import com.al3xiel.my_finances.feature.home.domain.model.HomeAlert
@@ -25,14 +27,20 @@ fun HomeAlertRow(alert: HomeAlert, onClick: () -> Unit, modifier: Modifier = Mod
     Card(
         onClick = onClick,
         modifier = modifier.fillMaxWidth().heightIn(min = 48.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
     ) {
-        Text(
-            text = stringResource(alert.messageRes()),
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.padding(16.dp),
-        )
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            StatusBadge(alert.status())
+            Text(text = stringResource(alert.messageRes()), style = MaterialTheme.typography.bodyMedium)
+        }
     }
+}
+
+private fun HomeAlert.status(): BadgeStatus = when (this) {
+    is HomeAlert.NeedsReview -> BadgeStatus.NEEDS_REVIEW
+    is HomeAlert.OpenReconciliation -> BadgeStatus.PENDING
+    is HomeAlert.OverdueIncome, HomeAlert.BackupOverdue -> BadgeStatus.OVERDUE
 }
 
 private fun HomeAlert.messageRes(): Int = when (this) {
