@@ -944,7 +944,8 @@ function planBranch(slug) {
 }
 
 function branchState(branch) {
-  const base = git(['rev-parse', '--verify', '-q', 'origin/main'], true) ? 'origin/main' : 'main';
+  const baseName = PROFILE.base || 'main';
+  const base = git(['rev-parse', '--verify', '-q', `origin/${baseName}`], true) ? `origin/${baseName}` : baseName;
   const merged = git(['log', base, '--merges', '--format=%s', '-n', '400'], true)?.split('\n')
     .some((s) => new RegExp(`from [^/]+/${branch.replace(/[/.-]/g, '\\$&')}$`).test(s));
   const local = git(['rev-parse', '--verify', '-q', branch], true) !== null;
@@ -998,7 +999,7 @@ function sessionOrder(name, s) {
   const st = branchState(next.branch);
   const shared = next.plans.length > 1;
   out.push('', `siguiente: paso ${next.n}`);
-  if (!st.exists) out.push(`  git switch main && git pull && git switch -c ${next.branch}`);
+  if (!st.exists) out.push(`  git switch ${PROFILE.base || 'main'} && git pull && git switch -c ${next.branch}`);
   else if (!st.local) out.push(`  git fetch && git switch ${next.branch}`);
   else out.push(`  git switch ${next.branch}`);
   for (const slug of next.plans) {

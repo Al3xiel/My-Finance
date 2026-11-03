@@ -5,7 +5,7 @@
  */
 export const PROFILE = {
   name: 'finanzas-personales',
-  base: 'main',
+  base: 'develop',
   appModule: 'app',
   /** Paquete propuesto en la guía (§4, H17). Si app/build.gradle.kts declara otro `namespace`, manda ese. */
   package: 'pe.gcasas.finanzas',
@@ -14,7 +14,7 @@ export const PROFILE = {
 };
 
 /** Features de la guía (§4). `core/*` y `data/eventstore` son transversales. */
-export const FEATURES = ['accounts', 'movements', 'categories', 'tags', 'people', 'pools', 'loans', 'funds', 'expectedincome', 'reports', 'privacy', 'backup'];
+export const FEATURES = ['home', 'onboarding', 'quickentry', 'accounts', 'reconciliation', 'diagnostics', 'movements', 'categories', 'tags', 'people', 'pools', 'loans', 'funds', 'expectedincome', 'reports', 'privacy', 'backup'];
 
 /** Docs del proyecto y qué cubre cada uno: `am.mjs docs` dice cuál leer y si quedó atrás del código. */
 export const DOCS = {
