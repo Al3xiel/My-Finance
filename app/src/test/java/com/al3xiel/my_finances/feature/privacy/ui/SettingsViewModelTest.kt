@@ -37,4 +37,21 @@ class SettingsViewModelTest {
         assertEquals(ThemeMode.DARK, repository.state.value)
         assertEquals(ThemeMode.DARK, vm.uiState.value.themeMode)
     }
+
+    @Test
+    fun theSystemColorIsOffByDefaultAndTheSwitchPersistsIt() = runTest {
+        val vm = SettingsViewModel(repository, SettingsSectionRegistry(emptySet()))
+        assertEquals(false, vm.uiState.value.dynamicColor)
+        vm.onAction(SettingsUiAction.SetDynamicColor(true))
+        assertEquals(true, repository.dynamic.value)
+        assertEquals(true, vm.uiState.value.dynamicColor)
+    }
+
+    @Test
+    fun pureDarkIsOfferedAsAThemeChoice() = runTest {
+        val vm = SettingsViewModel(repository, SettingsSectionRegistry(emptySet()))
+        vm.onAction(SettingsUiAction.SetThemeMode(ThemeMode.AMOLED))
+        assertEquals(ThemeMode.AMOLED, vm.uiState.value.themeMode)
+        assertEquals(true, vm.uiState.value.dynamicColor.not())
+    }
 }

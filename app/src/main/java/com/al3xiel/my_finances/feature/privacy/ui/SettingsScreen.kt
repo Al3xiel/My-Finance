@@ -7,10 +7,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import android.os.Build
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -40,6 +43,8 @@ fun SettingsContent(
     state: SettingsUiState,
     onAction: (SettingsUiAction) -> Unit,
     modifier: Modifier = Modifier,
+    /** El color del sistema existe desde Android 12; antes no se ofrece. */
+    dynamicColorSupported: Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S,
 ) {
     Column(modifier = modifier.padding(16.dp), verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
         Text(stringResource(R.string.settings_theme), style = MaterialTheme.typography.titleMedium)
@@ -60,6 +65,25 @@ fun SettingsContent(
                 }
             }
         }
+        if (dynamicColorSupported) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .toggleable(
+                        value = state.dynamicColor,
+                        onValueChange = { onAction(SettingsUiAction.SetDynamicColor(it)) },
+                        role = Role.Switch,
+                    )
+                    .padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(stringResource(R.string.settings_dynamic_color), style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(R.string.settings_dynamic_color_hint), style = MaterialTheme.typography.bodyMedium)
+                }
+                Switch(checked = state.dynamicColor, onCheckedChange = null)
+            }
+        }
         Text(stringResource(R.string.settings_currency), style = MaterialTheme.typography.titleMedium)
         Text(stringResource(R.string.settings_currency_value))
         Text(stringResource(R.string.settings_format), style = MaterialTheme.typography.titleMedium)
@@ -71,12 +95,13 @@ private fun ThemeMode.labelRes() = when (this) {
     ThemeMode.SYSTEM -> R.string.theme_system
     ThemeMode.LIGHT -> R.string.theme_light
     ThemeMode.DARK -> R.string.theme_dark
+    ThemeMode.AMOLED -> R.string.theme_amoled
 }
 
 @Preview(showBackground = true)
 @Composable
 private fun SettingsContentPreview() {
-    MyfinancesTheme { SettingsContent(SettingsUiState(ThemeMode.DARK), onAction = {}) }
+    MyfinancesTheme { SettingsContent(SettingsUiState(ThemeMode.AMOLED, dynamicColor = true), onAction = {}, dynamicColorSupported = true) }
 }
 
 @Preview(showBackground = true, uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)

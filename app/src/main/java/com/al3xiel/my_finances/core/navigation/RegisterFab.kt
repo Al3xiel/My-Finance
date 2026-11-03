@@ -6,10 +6,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import com.al3xiel.my_finances.R
+import com.al3xiel.my_finances.core.designsystem.AppIcons
 
 @Composable
 fun RegisterFab(onClick: () -> Unit) {
     FloatingActionButton(onClick = onClick) {
-        Icon(painter = painterResource(R.drawable.ic_add), contentDescription = stringResource(R.string.register_fab))
+        Icon(painter = painterResource(AppIcons.Add), contentDescription = stringResource(R.string.register_fab))
     }
 }

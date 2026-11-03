@@ -45,4 +45,24 @@ class DataStoreThemeRepositoryTest {
         store.edit { it[stringPreferencesKey("appearance.theme_mode")] = "SEPIA" }
         assertEquals(ThemeMode.SYSTEM, DataStoreThemeRepository(store).themeMode.first())
     }
+
+    @Test
+    fun amoledIsStoredByNameSoOlderKeysKeepWorking() = runTest {
+        val store = dataStore()
+        DataStoreThemeRepository(store).setThemeMode(ThemeMode.AMOLED)
+        assertEquals("AMOLED", store.data.first()[stringPreferencesKey("appearance.theme_mode")])
+        store.edit { it[stringPreferencesKey("appearance.theme_mode")] = "DARK" }
+        assertEquals(ThemeMode.DARK, DataStoreThemeRepository(store).themeMode.first())
+    }
+
+    @Test
+    fun theSystemColorIsOffByDefaultAndPersistsApartFromTheMode() = runTest {
+        val store = dataStore()
+        val repository = DataStoreThemeRepository(store)
+        assertEquals(false, repository.dynamicColor.first())
+        repository.setDynamicColor(true)
+        assertEquals(true, repository.dynamicColor.first())
+        assertEquals(true, store.data.first()[androidx.datastore.preferences.core.booleanPreferencesKey("appearance.dynamic_color")])
+        assertEquals(ThemeMode.SYSTEM, repository.themeMode.first())
+    }
 }
