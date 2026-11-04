@@ -120,9 +120,18 @@ dependencies {
     androidTestImplementation(libs.androidx.work.testing)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    androidTestImplementation(libs.androidx.compose.ui.test.accessibility)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.room.testing)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
+}
+
+// Guava (que trae el verificador de accesibilidad de las pruebas) declara un listenablefuture vacío 9999.0 que choca con el 1.0
+// fijado por la app; se unifica al 1.0 solo en las pruebas instrumentadas.
+configurations.matching { it.name.contains("AndroidTest", ignoreCase = true) }.configureEach {
+    resolutionStrategy.eachDependency {
+        if (requested.group == "com.google.guava" && requested.name == "listenablefuture") useVersion("1.0")
+    }
 }
