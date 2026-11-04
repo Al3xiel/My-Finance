@@ -1,5 +1,6 @@
 package com.al3xiel.my_finances.feature.diagnostics.domain.usecase
 
+import com.al3xiel.my_finances.core.io.readAtMost
 import com.al3xiel.my_finances.core.security.container.BackupPassword
 import com.al3xiel.my_finances.feature.backup.domain.repository.BackupFilePort
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.DiagnosticPackageFormat
@@ -35,7 +36,7 @@ class ApplyDictionaryUseCase @Inject constructor(
         val meta = workspace.meta() ?: return ApplyDictionaryResult.NoPackage
         val bytes = try {
             val input = files.openInput(uri) ?: return ApplyDictionaryResult.ReadFailed
-            input.use { it.readNBytes(MAX_BYTES + 1) }
+            input.use { it.readAtMost(MAX_BYTES + 1) }
         } catch (_: IOException) {
             return ApplyDictionaryResult.ReadFailed
         }
