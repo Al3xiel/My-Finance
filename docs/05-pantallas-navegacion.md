@@ -159,6 +159,8 @@ Orden de arranque: `AppLock` → `Onboarding` → `MainScaffold`. El flujo no ti
 | S64 | Espacio de diagnóstico | `DiagnosticWorkspace(packageId)` | Resumen del paquete · **reporte de diferencias** (primer `sequence` divergente, asientos lado a lado) · generar solicitud de diccionario · aplicar diccionario · borrar espacio | — (BD separada) |
 | S65 | Exportar diccionario | `DictionaryExport(exportId)` | Cargar solicitud (código o lista) · alcance parcial/completo · **lista exacta de lo que se revelará** · contraseña obligatoria | Exportar → selector `CreateDocument` → relee y verifica → `DiagnosticDictionaryExported` |
 
+> **Estado visual de S63–S65 y S70–S73.** Todas usan el marco compartido (barra compacta con volver, contenido en tarjetas agrupadas, acciones en píldoras). S70 muestra el último respaldo y la cadena con insignias (Sin respaldo / Al día / Vencido; Íntegro / Necesita revisión); S71 y S72 agrupan sus interruptores en tarjetas y «Borrar todos mis datos» es un botón de peligro cuya frase de confirmación explica por qué está bloqueado hasta escribirla; S63, S65 y S73 explican por qué «Exportar» o una herramienta están bloqueados; S73 dice «Aún no hay eventos registrados» cuando no los hay. Los avisos de seguridad conservan su texto.
+
 **Total MVP: 45 pantallas (49 rutas)**, incluidos editores y detalles.
 
 ---
@@ -290,7 +292,8 @@ Viven en `core/designsystem`. Los de marco y agrupación son el estilo One UI de
 |---|---|
 | `ScreenScaffold` | Encabezado grande que se contrae al desplazar, botón volver por `LocalNavigator` y acciones; versión sin volver para las pestañas. Es opt-in: una pantalla no migrada sigue funcionando (D71) |
 | `SectionCard` | Título de sección y tarjeta de esquinas 24 dp que agrupa filas con separadores finos |
-| `PillButton` | Botón en píldora: primario, tonal o texto; objetivo táctil ≥ 48 dp |
+| `PillButton` | Botón en píldora: primario, tonal, texto o **peligro** (lo que borra); objetivo táctil ≥ 48 dp. Con `loading` se bloquea y muestra un indicador junto a su texto; con `disabledReason` un lector de pantalla anuncia por qué está bloqueado |
+| `BlockedHint` | El motivo por el que un botón está bloqueado, escrito encima de él |
 | `IconBadge` | Icono dentro de un contenedor redondeado |
 | `StatusBadge` | Estado con icono, texto y color (pendiente, vencido, necesita revisión, conciliado, estimado); el color solo refuerza (D73). Un estado con nombre propio (Saldado, Rendido…) pasa su `label` y conserva icono y color del grupo |
 
@@ -301,7 +304,7 @@ Viven en `core/designsystem`. Los de marco y agrupación son el estilo One UI de
 | `MoneyText` | Monto formateado `es-PE` con cifras tabulares; variantes héroe, normal y pequeña; color semántico opcional; respeta "ocultar montos" |
 | `MoneyInput` | Monto grande con el teclado numérico del sistema, céntimos, sin decimales flotantes (D72) |
 | `EntityPicker` | Selector con búsqueda para cuenta, categoría, concepto, persona, cúmulo, fondo |
-| `EditorFooter` | Píldora principal fija y error de negocio del editor |
+| `EditorFooter` | Píldora principal fija y error de negocio del editor; mientras guarda dice "Guardando…" y queda bloqueada, y si está bloqueada por otra causa escribe el motivo encima |
 | `ReasonDialog` | Pide motivo para corregir o anular |
 | `ShareSheetLauncher` | Genera imagen/PDF y abre el Intent de compartir |
 
@@ -358,4 +361,12 @@ Material 3 con estilo One UI y turquesa como color principal. Solo cambia lo vis
 
 **Estilo One UI.** Encabezado grande que se contrae, contenido en tarjetas agrupadas, acciones en píldoras. Sin la fuente ni los iconos de Samsung.
 
-**Accesibilidad.** Contraste AA, objetivos táctiles ≥ 48 dp, gráficos con texto equivalente, previews en claro, oscuro y fuente grande. «Ocultar montos» cubre toda cifra nueva.
+**Accesibilidad.** Contraste AA, objetivos táctiles ≥ 48 dp, gráficos con texto equivalente, previews en claro, oscuro y fuente grande. «Ocultar montos» cubre toda cifra nueva y ningún color la delata (un saldo negativo oculto no se pinta de rojo).
+
+**Reglas de producto del estado final.**
+- **Encabezado:** título grande solo en las pestañas (Inicio, Movimientos, Por cobrar, Reportes, Más); detalles y editores usan una barra compacta de una línea con el botón volver, sin espacio en blanco encima del contenido.
+- **Lo creado aparece siempre:** cada lista muestra todo lo que el usuario creó, aunque no tenga datos (por ejemplo un cúmulo sin pendiente dice «Sin pendiente»); si la lista está vacía, lo dice y dónde crear lo que falta.
+- **Un botón bloqueado se ve bloqueado y explica por qué** (`BlockedHint` o `disabledReason`); mientras trabaja muestra su estado («Guardando…»).
+- **Un error nunca dice solo «No se encontró»:** dice qué falta elegir y dónde se crea.
+- **Cada pantalla tiene su propio estado:** al salir de una pantalla se descarta su ViewModel y al volver empieza de cero.
+- **Excepciones al marco** (escritas, no olvidadas): el primer uso (bienvenida, cuentas, seguridad, respaldo) y la pantalla de bloqueo son flujos sin barra de navegación; los recordatorios y «Acerca de» son secciones que viven dentro de Ajustes. Todo lo demás usa `ScreenScaffold` (o `CatalogScaffold`/`EditorLayout` encima de él).
