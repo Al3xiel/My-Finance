@@ -1,5 +1,14 @@
 package com.al3xiel.my_finances.feature.diagnostics.ui
 
+import com.al3xiel.my_finances.ui.theme.MyfinancesTheme
+import com.al3xiel.my_finances.ui.theme.LocalSpacing
+import com.al3xiel.my_finances.core.designsystem.BlockedHint
+import com.al3xiel.my_finances.core.designsystem.SectionRow
+import com.al3xiel.my_finances.core.designsystem.SectionDivider
+import com.al3xiel.my_finances.core.designsystem.SectionCard
+import com.al3xiel.my_finances.core.designsystem.ScreenScaffold
+import com.al3xiel.my_finances.core.designsystem.PillStyle
+import com.al3xiel.my_finances.core.designsystem.PillButton
 import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -8,9 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -46,32 +53,32 @@ fun DevToolsContent(
     prompt: AuthPrompt,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Text(stringResource(R.string.devtools_title), style = MaterialTheme.typography.titleLarge)
-        state.message?.let { Text(stringResource(it.textRes()), color = MaterialTheme.colorScheme.error) }
-        if (state.stage == DevToolsStage.LOCKED) {
-            OutlinedButton(onClick = { onAction(DevToolsUiAction.Authenticate(prompt)) }, modifier = Modifier.fillMaxWidth()) {
-                Text(stringResource(R.string.devtools_unlock))
+    val spacing = LocalSpacing.current
+    ScreenScaffold(title = stringResource(R.string.devtools_title), modifier = modifier) { padding ->
+        Column(
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(padding).padding(spacing.lg),
+            verticalArrangement = Arrangement.spacedBy(spacing.lg),
+        ) {
+            state.message?.let { Text(stringResource(it.textRes()), color = MaterialTheme.colorScheme.error) }
+            if (state.stage == DevToolsStage.LOCKED) {
+                PillButton(stringResource(R.string.devtools_unlock), { onAction(DevToolsUiAction.Authenticate(prompt)) }, Modifier.fillMaxWidth())
+                return@Column
             }
-            return@Column
+            val working = state.stage == DevToolsStage.WORKING
+            val enabled = state.stage == DevToolsStage.READY
+            BlockedHint(stringResource(R.string.devtools_working).takeIf { working })
+            SectionCard {
+                Column(Modifier.padding(spacing.lg), verticalArrangement = Arrangement.spacedBy(spacing.sm)) {
+                    PillButton(stringResource(R.string.devtools_verify_chain), { onAction(DevToolsUiAction.VerifyChain) }, Modifier.fillMaxWidth(), PillStyle.TONAL, enabled = enabled)
+                    state.chain?.let { Text(it.text()) }
+                    PillButton(stringResource(R.string.devtools_replay), { onAction(DevToolsUiAction.Replay) }, Modifier.fillMaxWidth(), PillStyle.TONAL, enabled = enabled)
+                    state.changes?.let { ChangesSection(it) }
+                    Text(stringResource(R.string.devtools_needs_review, state.needsReviewCount))
+                    PillButton(stringResource(R.string.devtools_open_package), onOpenPackage, Modifier.fillMaxWidth(), PillStyle.TONAL, enabled = enabled)
+                }
+            }
+            EventsSection(state, onAction)
         }
-        val enabled = state.stage == DevToolsStage.READY
-        Button(onClick = { onAction(DevToolsUiAction.VerifyChain) }, enabled = enabled, modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(R.string.devtools_verify_chain))
-        }
-        state.chain?.let { Text(it.text()) }
-        Button(onClick = { onAction(DevToolsUiAction.Replay) }, enabled = enabled, modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(R.string.devtools_replay))
-        }
-        state.changes?.let { ChangesSection(it) }
-        Text(stringResource(R.string.devtools_needs_review, state.needsReviewCount))
-        OutlinedButton(onClick = onOpenPackage, enabled = enabled, modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(R.string.devtools_open_package))
-        }
-        EventsSection(state, onAction)
     }
 }
 
@@ -99,12 +106,12 @@ private fun ChangesSection(changes: List<FingerprintChange>) {
 
 @Composable
 private fun EventsSection(state: DevToolsUiState, onAction: (DevToolsUiAction) -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text(stringResource(R.string.devtools_events_title), style = MaterialTheme.typography.titleMedium)
-        state.events.forEach { EventRow(it) }
-        if (state.hasMoreEvents) {
-            OutlinedButton(onClick = { onAction(DevToolsUiAction.LoadMoreEvents) }, modifier = Modifier.fillMaxWidth()) {
-                Text(stringResource(R.string.devtools_events_more))
+    SectionCard(title = stringResource(R.string.devtools_events_title)) {
+        Column(Modifier.padding(LocalSpacing.current.lg), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            if (state.events.isEmpty()) Text(stringResource(R.string.devtools_events_empty), color = MaterialTheme.colorScheme.onSurfaceVariant)
+            state.events.forEach { EventRow(it) }
+            if (state.hasMoreEvents) {
+                PillButton(stringResource(R.string.devtools_events_more), { onAction(DevToolsUiAction.LoadMoreEvents) }, Modifier.fillMaxWidth(), PillStyle.TONAL)
             }
         }
     }
