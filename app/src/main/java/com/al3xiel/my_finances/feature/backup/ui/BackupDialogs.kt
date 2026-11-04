@@ -1,12 +1,12 @@
 package com.al3xiel.my_finances.feature.backup.ui
 
+import com.al3xiel.my_finances.core.designsystem.PillStyle
+import com.al3xiel.my_finances.core.designsystem.PillButton
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -37,9 +37,7 @@ internal fun BackupDialogs(state: BackupUiState, prompt: AuthPrompt, onAction: (
             title = { Text(stringResource(R.string.backup_reminder_explanation_title)) },
             text = { Text(stringResource(R.string.backup_reminder_explanation)) },
             confirmButton = {
-                TextButton(onClick = { onAction(BackupUiAction.AcceptExplanation) }) {
-                    Text(stringResource(R.string.backup_reminder_explanation_ok))
-                }
+                PillButton(stringResource(R.string.backup_reminder_explanation_ok), { onAction(BackupUiAction.AcceptExplanation) }, style = PillStyle.TEXT)
             },
             dismissButton = { CancelButton { onAction(BackupUiAction.DismissExplanation) } },
         )
@@ -62,11 +60,11 @@ private fun CreatePasswordDialog(message: BackupMessage?, prompt: AuthPrompt, on
             }
         },
         confirmButton = {
-            Button(onClick = {
+            PillButton(stringResource(R.string.backup_password_ok), {
                 onAction(BackupUiAction.SubmitCreatePassword(password.toCharArray(), confirmation.toCharArray(), prompt))
                 password = ""
                 confirmation = ""
-            }) { Text(stringResource(R.string.backup_password_ok)) }
+            })
         },
         dismissButton = { CancelButton { onAction(BackupUiAction.Cancel) } },
     )
@@ -85,10 +83,10 @@ private fun RestorePasswordDialog(message: BackupMessage?, onAction: (BackupUiAc
             }
         },
         confirmButton = {
-            Button(onClick = {
+            PillButton(stringResource(R.string.backup_password_ok), {
                 onAction(BackupUiAction.SubmitRestorePassword(password.toCharArray()))
                 password = ""
-            }) { Text(stringResource(R.string.backup_password_ok)) }
+            })
         },
         dismissButton = { CancelButton { onAction(BackupUiAction.Cancel) } },
     )
@@ -112,7 +110,7 @@ private fun CreatedDialog(state: BackupUiState, onAction: (BackupUiAction) -> Un
             }
         },
         confirmButton = {
-            TextButton(onClick = { onAction(BackupUiAction.DismissCreated) }) { Text(stringResource(R.string.backup_ok)) }
+            PillButton(stringResource(R.string.backup_ok), { onAction(BackupUiAction.DismissCreated) }, style = PillStyle.TEXT)
         },
     )
 }
@@ -139,7 +137,7 @@ private fun ConfirmRestoreDialog(state: BackupUiState, onAction: (BackupUiAction
             }
         },
         confirmButton = {
-            Button(onClick = { onAction(BackupUiAction.ConfirmRestore) }) { Text(stringResource(R.string.backup_restore_confirm)) }
+            PillButton(stringResource(R.string.backup_restore_confirm), { onAction(BackupUiAction.ConfirmRestore) })
         },
         dismissButton = { CancelButton { onAction(BackupUiAction.Cancel) } },
     )
@@ -147,5 +145,5 @@ private fun ConfirmRestoreDialog(state: BackupUiState, onAction: (BackupUiAction
 
 @Composable
 private fun CancelButton(onClick: () -> Unit) {
-    TextButton(onClick = onClick) { Text(stringResource(R.string.backup_password_cancel)) }
+    PillButton(stringResource(R.string.backup_password_cancel), onClick, style = PillStyle.TEXT)
 }

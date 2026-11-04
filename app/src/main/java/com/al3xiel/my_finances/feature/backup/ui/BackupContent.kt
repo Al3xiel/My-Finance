@@ -1,5 +1,17 @@
 package com.al3xiel.my_finances.feature.backup.ui
 
+import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.layout.fillMaxSize
+import com.al3xiel.my_finances.ui.theme.LocalSpacing
+import com.al3xiel.my_finances.core.designsystem.StatusBadge
+import com.al3xiel.my_finances.core.designsystem.SectionRow
+import com.al3xiel.my_finances.core.designsystem.SectionDivider
+import com.al3xiel.my_finances.core.designsystem.SectionCard
+import com.al3xiel.my_finances.core.designsystem.ScreenScaffold
+import com.al3xiel.my_finances.core.designsystem.PillStyle
+import com.al3xiel.my_finances.core.designsystem.PillButton
+import com.al3xiel.my_finances.core.designsystem.BadgeStatus
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,13 +20,10 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,31 +48,36 @@ fun BackupContent(
     hasPermission: () -> Boolean,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier.verticalScroll(rememberScrollState()).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        StatusSection(state, onAction)
-        Text(stringResource(R.string.backup_explain), style = MaterialTheme.typography.bodyMedium)
-        state.message?.let { message ->
-            Text(stringResource(message.textRes()), color = MaterialTheme.colorScheme.error)
-        }
-        Button(onClick = { onAction(BackupUiAction.StartCreate) }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
-            Text(stringResource(R.string.backup_create))
-        }
-        OutlinedButton(
-            onClick = { onAction(BackupUiAction.StartRestore) },
-            enabled = state.canRestore == true,
-            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-        ) { Text(stringResource(R.string.backup_restore)) }
-        if (state.canRestore == false) {
-            Text(
-                stringResource(R.string.backup_restore_unavailable),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+    val spacing = LocalSpacing.current
+    ScreenScaffold(title = stringResource(R.string.backup_title), modifier = modifier) { padding ->
+        Column(
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(padding).padding(spacing.lg),
+            verticalArrangement = Arrangement.spacedBy(spacing.lg),
+        ) {
+            StatusSection(state, onAction)
+            Text(stringResource(R.string.backup_explain), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(horizontal = spacing.sm))
+            state.message?.let { message ->
+                Text(stringResource(message.textRes()), color = MaterialTheme.colorScheme.error)
+            }
+            PillButton(stringResource(R.string.backup_create), { onAction(BackupUiAction.StartCreate) }, Modifier.fillMaxWidth())
+            PillButton(
+                stringResource(R.string.backup_restore),
+                { onAction(BackupUiAction.StartRestore) },
+                Modifier.fillMaxWidth(),
+                PillStyle.TONAL,
+                enabled = state.canRestore == true,
+                disabledReason = stringResource(R.string.backup_restore_unavailable).takeIf { state.canRestore == false },
             )
+            if (state.canRestore == false) {
+                Text(
+                    stringResource(R.string.backup_restore_unavailable),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = spacing.sm),
+                )
+            }
+            ReminderSection(state, onAction, hasPermission)
         }
-        ReminderSection(state, onAction, hasPermission)
     }
     BackupDialogs(state, AuthPrompt(stringResource(R.string.backup_auth_title)), onAction)
 }
@@ -71,14 +85,36 @@ fun BackupContent(
 @Composable
 private fun StatusSection(state: BackupUiState, onAction: (BackupUiAction) -> Unit) {
     val status = state.status
-    Text(lastBackupText(status), style = MaterialTheme.typography.titleMedium)
-    if (status?.overdue == true) Text(stringResource(R.string.backup_overdue), color = MaterialTheme.colorScheme.error)
-    when (val chain = state.chain) {
-        ChainStatus.Unknown -> Text(stringResource(R.string.backup_chain_unknown))
-        is ChainStatus.Intact -> Text(stringResource(R.string.backup_chain_intact, chain.eventCount))
-        is ChainStatus.Broken -> {
-            Text(stringResource(R.string.backup_chain_broken), color = MaterialTheme.colorScheme.error)
-            TextButton(onClick = { onAction(BackupUiAction.RecheckChain) }) { Text(stringResource(R.string.backup_chain_check)) }
+    SectionCard {
+        SectionRow(
+            headline = lastBackupText(status),
+            trailing = {
+                when {
+                    status?.lastBackupAt == null -> StatusBadge(BadgeStatus.PENDING, label = stringResource(R.string.backup_badge_none))
+                    status.overdue -> StatusBadge(BadgeStatus.OVERDUE)
+                    else -> StatusBadge(BadgeStatus.RECONCILED, label = stringResource(R.string.backup_badge_current))
+                }
+            },
+        )
+        if (status?.overdue == true) {
+            SectionDivider()
+            SectionRow(headline = stringResource(R.string.backup_overdue))
+        }
+        SectionDivider()
+        when (val chain = state.chain) {
+            ChainStatus.Unknown -> SectionRow(headline = stringResource(R.string.backup_chain_unknown))
+            is ChainStatus.Intact -> SectionRow(
+                headline = stringResource(R.string.backup_chain_intact, chain.eventCount),
+                trailing = { StatusBadge(BadgeStatus.RECONCILED, label = stringResource(R.string.backup_chain_badge_ok)) },
+            )
+            is ChainStatus.Broken -> {
+                SectionRow(
+                    headline = stringResource(R.string.backup_chain_broken),
+                    trailing = { StatusBadge(BadgeStatus.NEEDS_REVIEW) },
+                )
+                SectionDivider()
+                SectionRow(headline = stringResource(R.string.backup_chain_check), onClick = { onAction(BackupUiAction.RecheckChain) })
+            }
         }
     }
 }
@@ -92,25 +128,40 @@ private fun lastBackupText(status: BackupStatus?): String {
 
 @Composable
 private fun ReminderSection(state: BackupUiState, onAction: (BackupUiAction) -> Unit, hasPermission: () -> Boolean) {
-    Text(stringResource(R.string.backup_reminder_section), style = MaterialTheme.typography.titleMedium)
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(stringResource(R.string.backup_reminder_switch), modifier = Modifier.weight(1f))
-        Switch(
-            checked = state.reminderEnabled,
-            onCheckedChange = { onAction(BackupUiAction.ToggleReminder(it, hasPermission())) },
+    val spacing = LocalSpacing.current
+    SectionCard(title = stringResource(R.string.backup_reminder_section)) {
+        SectionRow(
+            headline = stringResource(R.string.backup_reminder_switch),
+            modifier = Modifier.toggleable(
+                value = state.reminderEnabled,
+                onValueChange = { onAction(BackupUiAction.ToggleReminder(it, hasPermission())) },
+                role = Role.Switch,
+            ),
+            trailing = { Switch(checked = state.reminderEnabled, onCheckedChange = null) },
         )
-    }
-    if (state.permissionDenied) Text(stringResource(R.string.backup_reminder_denied), color = MaterialTheme.colorScheme.error)
-    if (state.reminderEnabled) {
-        Text(stringResource(R.string.backup_reminder_interval))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            INTERVAL_OPTIONS.forEach { days ->
-                FilterChip(
-                    selected = state.intervalDays == days,
-                    onClick = { onAction(BackupUiAction.SetIntervalDays(days)) },
-                    label = { Text(pluralStringResource(R.plurals.backup_reminder_days, days, days)) },
-                    modifier = Modifier.heightIn(min = 48.dp),
-                )
+        if (state.permissionDenied) {
+            SectionDivider()
+            Text(
+                stringResource(R.string.backup_reminder_denied),
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(spacing.lg),
+            )
+        }
+        if (state.reminderEnabled) {
+            SectionDivider()
+            Column(Modifier.padding(spacing.lg), verticalArrangement = Arrangement.spacedBy(spacing.sm)) {
+                Text(stringResource(R.string.backup_reminder_interval), style = MaterialTheme.typography.bodyLarge)
+                Row(horizontalArrangement = Arrangement.spacedBy(spacing.sm)) {
+                    INTERVAL_OPTIONS.forEach { days ->
+                        FilterChip(
+                            selected = state.intervalDays == days,
+                            onClick = { onAction(BackupUiAction.SetIntervalDays(days)) },
+                            label = { Text(pluralStringResource(R.plurals.backup_reminder_days, days, days)) },
+                            modifier = Modifier.heightIn(min = 48.dp),
+                        )
+                    }
+                }
             }
         }
     }
@@ -140,6 +191,7 @@ private fun BackupContentPreview() {
 }
 
 @Preview(showBackground = true, uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)
+@Preview(showBackground = true, fontScale = 2f)
 @Composable
 private fun BackupContentDarkPreview() {
     MyfinancesTheme { BackupContent(BackupUiState(canRestore = true, reminderEnabled = true), onAction = {}, hasPermission = { true }) }
