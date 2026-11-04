@@ -45,6 +45,30 @@ class RegisterExpenseUseCaseTest {
     }
 
     @Test
+    fun aPartDetailIsTrimmedAndRecordedWithItsPart() = runTest {
+        register(f.bbva, f.pen(300), listOf(f.input(200, note = "  Pastillas de Boby "), f.input(100)), null, f.today)
+
+        val parts = (f.store.events.single().event as ExpenseRegistered).parts
+        assertEquals(listOf<String?>("Pastillas de Boby", null), parts.map { it.note })
+    }
+
+    @Test
+    fun aBlankDetailIsNoDetail() = runTest {
+        register(f.bbva, f.pen(100), listOf(f.input(100, note = "   ")), null, f.today)
+
+        assertEquals(null, (f.store.events.single().event as ExpenseRegistered).parts.single().note)
+    }
+
+    @Test
+    fun aDetailOfEightyCharactersIsAllowedAndMoreIsRejectedWithoutEmitting() = runTest {
+        val limit = "a".repeat(80)
+        assertEquals(Outcome.Ok(MovementId("id-1")), register(f.bbva, f.pen(100), listOf(f.input(100, note = limit)), null, f.today))
+
+        assertEquals(failed(BusinessError.PartNoteTooLong), register(f.bbva, f.pen(100), listOf(f.input(100, note = limit + "a")), null, f.today))
+        assertEquals(1, f.store.events.size)
+    }
+
+    @Test
     fun todayIsAllowedButFutureIsNot() = runTest {
         assertEquals(Outcome.Ok(MovementId("id-1")), register(f.bbva, f.pen(100), listOf(f.input(100)), null, f.today))
         assertEquals(failed(BusinessError.FutureDate), register(f.bbva, f.pen(100), listOf(f.input(100)), null, f.today.plusDays(1)))

@@ -19,8 +19,8 @@ class FakeMovementDao : MovementDao {
 
     override suspend fun partIdsOf(movementId: String) = parts.values.filter { it.movementId == movementId }.map { it.id }
 
-    override suspend fun updatePartCore(id: String, amountMinor: Long, categoryId: String, poolId: String?, fundId: String?) {
-        parts[id]?.let { parts[id] = it.copy(amountMinor = amountMinor, categoryId = categoryId, poolId = poolId, fundId = fundId) }
+    override suspend fun updatePartCore(id: String, amountMinor: Long, categoryId: String, poolId: String?, fundId: String?, note: String?) {
+        parts[id]?.let { parts[id] = it.copy(amountMinor = amountMinor, categoryId = categoryId, poolId = poolId, fundId = fundId, note = note) }
     }
 
     override suspend fun deletePartsById(ids: List<String>) {

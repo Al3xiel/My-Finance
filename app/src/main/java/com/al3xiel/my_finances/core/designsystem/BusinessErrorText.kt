@@ -32,6 +32,7 @@ fun BusinessError.message(): String = when (this) {
     BusinessError.NoParts -> stringResource(R.string.error_no_parts)
     BusinessError.PartsMismatch -> stringResource(R.string.error_parts_mismatch)
     BusinessError.InvalidPart -> stringResource(R.string.error_invalid_part)
+    BusinessError.PartNoteTooLong -> stringResource(R.string.error_part_note_too_long)
     BusinessError.ReasonRequired -> stringResource(R.string.error_reason_required)
     BusinessError.ReconciliationAlreadyOpen -> stringResource(R.string.error_reconciliation_already_open)
     BusinessError.ReconciliationNotOpen -> stringResource(R.string.error_reconciliation_not_open)

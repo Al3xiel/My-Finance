@@ -76,6 +76,7 @@ class MovementRules @Inject constructor(
             checkMoney(part.amount)?.let { return it }
             // Una parte aparta dinero de un fondo o se le cobra a alguien por un cúmulo, no ambas cosas.
             if (part.poolId != null && part.fundId != null) return BusinessError.InvalidPart
+            if (normalizePartNote(part.note).orEmpty().length > PART_NOTE_MAX_LENGTH) return BusinessError.PartNoteTooLong
             checkCategory(part.categoryId, allowArchived = part.partId != null && unchanged.categories[part.partId] == part.categoryId)?.let { return it }
             for (tagId in part.tagIds) {
                 val tag = tags.find(tagId) ?: return BusinessError.NotFound
@@ -100,3 +101,9 @@ class MovementRules @Inject constructor(
         const val MAX_AMOUNT_MINOR = 99_999_999_999L
     }
 }
+
+/** Tope del detalle de una parte del gasto, en caracteres. */
+const val PART_NOTE_MAX_LENGTH = 80
+
+/** El detalle sin espacios sobrantes; vacío o en blanco es "sin detalle" (`null`). */
+fun normalizePartNote(raw: String?): String? = raw?.trim()?.takeIf { it.isNotEmpty() }

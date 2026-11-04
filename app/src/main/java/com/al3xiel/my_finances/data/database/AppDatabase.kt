@@ -56,7 +56,7 @@ import com.al3xiel.my_finances.data.projection.reconciliation.ReconciliationLink
 import com.al3xiel.my_finances.data.projection.reconciliation.ReconciliationQueryDao
 
 /** Versión del esquema; el manifiesto del respaldo la anota. */
-const val DATABASE_VERSION = 6
+const val DATABASE_VERSION = 7
 
 /** Base cifrada con SQLCipher. Cada versión nueva trae su `Migration` en `migration/`. */
 @Database(

@@ -19,8 +19,8 @@ interface MovementDao {
     @Query("SELECT id FROM movement_parts WHERE movement_id = :movementId") suspend fun partIdsOf(movementId: String): List<String>
 
     /** Solo lo que es de este proyector: el resto de las columnas lo escriben los de cúmulos y reembolsos. */
-    @Query("UPDATE movement_parts SET amount_minor = :amountMinor, category_id = :categoryId, pool_id = :poolId, fund_id = :fundId WHERE id = :id")
-    suspend fun updatePartCore(id: String, amountMinor: Long, categoryId: String, poolId: String?, fundId: String?)
+    @Query("UPDATE movement_parts SET amount_minor = :amountMinor, category_id = :categoryId, pool_id = :poolId, fund_id = :fundId, note = :note WHERE id = :id")
+    suspend fun updatePartCore(id: String, amountMinor: Long, categoryId: String, poolId: String?, fundId: String?, note: String?)
 
     @Query("DELETE FROM movement_parts WHERE id IN (:ids)") suspend fun deletePartsById(ids: List<String>)
 
