@@ -1,5 +1,6 @@
 package com.al3xiel.my_finances.feature.reconciliation.ui.components
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -75,20 +76,25 @@ private fun MovementLine(movement: ReconciliationMovement, actionLabel: String?,
 /** Corregir solo aplica a ingresos y gastos (D12, D25, D33). */
 internal fun ReconciliationMovement.isCorrectable() = type == MovementType.INCOME || type == MovementType.EXPENSE
 
-/** "Registrar movimiento olvidado" con el tipo a elegir; el editor se abre ya vinculado a la conciliación. */
+/**
+ * "Registrar movimiento olvidado" con el tipo a elegir; el editor se abre ya vinculado a la conciliación. El menú se ancla al
+ * contenedor del botón: sin él se ancla a la columna entera de la pantalla y aparece lejos, arriba.
+ */
 @Composable
 internal fun RegisterForgottenButton(onRegister: (MovementType) -> Unit, modifier: Modifier = Modifier) {
     var expanded by remember { mutableStateOf(false) }
-    PillButton(stringResource(R.string.reconciliation_register_forgotten), { expanded = true }, modifier.fillMaxWidth(), PillStyle.TONAL)
-    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-        listOf(MovementType.INCOME, MovementType.EXPENSE, MovementType.TRANSFER).forEach { type ->
-            DropdownMenuItem(
-                text = { Text(stringResource(type.labelRes())) },
-                onClick = {
-                    expanded = false
-                    onRegister(type)
-                },
-            )
+    Box(modifier.fillMaxWidth()) {
+        PillButton(stringResource(R.string.reconciliation_register_forgotten), { expanded = true }, Modifier.fillMaxWidth(), PillStyle.TONAL)
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            listOf(MovementType.INCOME, MovementType.EXPENSE, MovementType.TRANSFER).forEach { type ->
+                DropdownMenuItem(
+                    text = { Text(stringResource(type.labelRes())) },
+                    onClick = {
+                        expanded = false
+                        onRegister(type)
+                    },
+                )
+            }
         }
     }
 }
