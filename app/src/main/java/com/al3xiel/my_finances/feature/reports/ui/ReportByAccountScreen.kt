@@ -1,5 +1,7 @@
 package com.al3xiel.my_finances.feature.reports.ui
 
+import com.al3xiel.my_finances.ui.theme.MyfinancesTheme
+import com.al3xiel.my_finances.core.designsystem.SectionCard
 import android.content.res.Configuration
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -9,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -52,13 +53,14 @@ fun ReportByAccountContent(
     modifier: Modifier = Modifier,
 ) {
     ReportList(
+        title = stringResource(R.string.report_by_account_title),
         isEmpty = state.loaded && state.rows.isEmpty(),
         emptyTitle = stringResource(R.string.report_by_account_empty_title),
         emptyBody = stringResource(R.string.report_by_account_empty_body),
         modifier = modifier,
     ) {
         items(state.rows, key = { it.id }) { row ->
-            Card(Modifier.fillMaxWidth().clickable(role = Role.Button) { onOpenMovements(row.id) }) {
+            SectionCard(Modifier.clickable(role = Role.Button) { onOpenMovements(row.id) }) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(row.name, style = MaterialTheme.typography.titleMedium)
                     FlowLine(R.string.report_by_account_inflow, row.inflow, MoneySign.PLUS)
@@ -83,14 +85,15 @@ private fun FlowLine(label: Int, minor: Long, sign: MoneySign) {
 
 @Preview(showBackground = true)
 @Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(showBackground = true, fontScale = 2f)
 @Composable
 private fun ReportByAccountContentPreview() {
-    ReportByAccountContent(
+    MyfinancesTheme { ReportByAccountContent(
         state = ReportByAccountUiState(
             period = ReportPeriod.Month(YearMonth.of(2026, 10)),
             rows = listOf(AccountFlowRowUi("bbva", "BBVA", 500_000, 120_000, -10_000), AccountFlowRowUi("cash", "Efectivo", 0, 5_000, 10_000)),
             loaded = true,
         ),
         onOpenMovements = {},
-    )
+    ) }
 }

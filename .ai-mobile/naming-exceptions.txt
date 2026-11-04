@@ -94,3 +94,4 @@ app/src/main/java/com/al3xiel/my_finances/ui/theme/FinanceColors.kt  # tokens de
 app/src/main/java/com/al3xiel/my_finances/ui/theme/Shape.kt  # tokens del sistema visual junto a Color/Type/Theme existentes en ui/theme: ubicación fijada en plan ui-foundation (T3)
 app/src/main/java/com/al3xiel/my_finances/ui/theme/Spacing.kt  # tokens del sistema visual junto a Color/Type/Theme existentes en ui/theme: ubicación fijada en plan ui-foundation (T3)
 app/src/main/java/com/al3xiel/my_finances/ui/theme/ThemePreviews.kt  # tokens del sistema visual junto a Color/Type/Theme existentes en ui/theme: ubicación fijada en plan ui-foundation (T7)
+app/src/main/java/com/al3xiel/my_finances/ui/theme/ChartColors.kt  # tokens de color del tema, junto a Color.kt y FinanceColors.kt: ubicación fijada en plan ui-reports (T2)

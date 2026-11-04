@@ -121,10 +121,10 @@ Orden de arranque: `AppLock` → `Onboarding` → `MainScaffold`. El flujo no ti
 | ID | Pantalla | Ruta | Contenido |
 |---|---|---|---|
 | S40 | Resumen | `Reports` | Selector de periodo (mes, año o rango; nunca futuro, D36) · ingresos vs. gastos propios · gasto por otros (reembolsable) · línea "No identificado" · acceso a S44 |
-| S41 | Por categoría | `Reports.ByCategory` | Torta/barras que **suman 100%** · tocar → movimientos filtrados |
+| S41 | Por categoría | `Reports.ByCategory` | Torta/barras que **suman 100%**, con **etiqueta directa** (nombre y porcentaje) en cada tramo ancho y la lista con monto debajo como alternativa en texto · tocar un tramo, su etiqueta o su fila → movimientos filtrados |
 | S42 | Por concepto | `Reports.ByTag` | Total **por concepto por separado** (sin torta comparativa) · cruce con categoría |
 | S43 | Por cuenta | `Reports.ByAccount` | Entradas, salidas y transferencias por cuenta |
-| S44 | Origen del dinero | `Reports.Origin` | Composición por fuente en cada cuenta · "¿en qué se gastó lo de X?" · Sankey fuentes → cuentas → categorías · rotulado **estimado** · nota de que los fondos no se rastrean por fuente · aviso de cuenta con faltante (`UNKNOWN_ADJUSTMENT` negativa) |
+| S44 | Origen del dinero | `Reports.Origin` | Composición por fuente en cada cuenta · "¿en qué se gastó lo de X?" · Sankey fuentes → cuentas → categorías · **tabla equivalente** de cada flujo con su monto · rotulado **estimado** · nota de que los fondos no se rastrean por fuente · aviso de cuenta con faltante (`UNKNOWN_ADJUSTMENT` negativa) |
 | S45 | Exportar reporte | `Reports.Export` | CSV/PDF del periodo y filtros actuales, con aviso "no cifrado"; el PDF suma la composición actual por cuenta y el gasto de cada fuente, rotulados *estimado* |
 
 ### 3.6 Más
@@ -312,6 +312,8 @@ Viven en `core/designsystem`. Los de marco y agrupación son el estilo One UI de
 | `IndicatorCard` | Cada uno de los 4 indicadores de Inicio |
 | `AccountCard` | Saldo y tipo de cuenta |
 | `FundProgressCard` | Barra asignado/gastado/estimado |
+| `PieChart` | Torta con etiqueta directa (nombre y porcentaje) en los tramos de 6 % o más; los angostos quedan en la lista y en la descripción accesible; tocar el anillo o una etiqueta avisa qué tramo es |
+| `SankeyDiagram` | Flujos fuentes → cuentas → categorías con la paleta del tema y la tabla equivalente de cada flujo |
 | `MovementRow` | Fila de la lista de movimientos |
 | `ExpensePartEditor` | Una parte del gasto (monto, categoría, conceptos, cúmulo/fondo) |
 | `EstimatedBadge` | Etiqueta "estimado" (un `StatusBadge`); todo número de origen la lleva y no depende solo del color |
@@ -349,6 +351,7 @@ Material 3 con estilo One UI y turquesa como color principal. Solo cambia lo vis
 | Color del sistema | Apagado por defecto; interruptor en Ajustes | Solo con Android 12+ (API 31) |
 | Colores de finanzas (`FinanceColors`) | Ingreso, gasto, advertencia, estimado y neutro, cada uno con contenedor y `on-` | El ingreso (verde) no se confunde con el turquesa; el estado nunca se comunica solo con color (texto o icono acompañan) |
 | Tipografía | Inter (OFL) empaquetada en la app; escala M3 completa | Cifras tabulares (`tnum`) en estilos numéricos; la fuente escala hasta 200 % |
+| Colores de gráficos (`ChartColors`) | Doce tonos categóricos, uno por tramo, en paleta clara y oscura (la oscura sirve también para AMOLED) | Cada color contra el fondo ≥ 3:1 (objetos gráficos, WCAG 1.4.11); vecinos distinguibles y ningún par casi igual; el color solo refuerza: cada tramo lleva nombre y porcentaje, y el gráfico tiene siempre su texto o tabla equivalente |
 | Formas | 8 / 12 / 16 / 24 / 28 dp | Tarjetas 24, botones en píldora, diálogos 28 |
 | Espaciado | Rejilla de 4 dp | `Spacing` por `CompositionLocal` |
 | Iconos | Vectores Material Symbols Rounded (Apache 2.0), solo los usados, índice `AppIcons` | Sin `material-icons-extended` |

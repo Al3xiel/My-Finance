@@ -1,5 +1,7 @@
 package com.al3xiel.my_finances.feature.reports.ui
 
+import com.al3xiel.my_finances.ui.theme.MyfinancesTheme
+import com.al3xiel.my_finances.core.designsystem.SectionCard
 import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -8,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Card
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -63,6 +64,7 @@ fun ReportOriginContent(
     modifier: Modifier = Modifier,
 ) {
     ReportList(
+        title = stringResource(R.string.report_origin_title),
         isEmpty = state.loaded && state.accounts.isEmpty() && state.sankey.links.isEmpty(),
         emptyTitle = stringResource(R.string.report_origin_empty_title),
         emptyBody = stringResource(R.string.report_origin_empty_body),
@@ -96,7 +98,7 @@ private fun SectionTitle(text: String) = Text(text, style = MaterialTheme.typogr
 @Composable
 private fun AccountCard(account: OriginAccountUi) {
     val palette = chartPalette()
-    Card(Modifier.fillMaxWidth()) {
+    SectionCard {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Text(account.name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
@@ -178,8 +180,12 @@ private fun nodeKey(node: SankeyNode) = "${node.kind}:${node.id}"
 
 @Preview(showBackground = true)
 @Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(showBackground = true, fontScale = 2f)
 @Composable
-private fun ReportOriginContentPreview() {
+private fun ReportOriginContentPreview() = MyfinancesTheme { ReportOriginPreviewBody() }
+
+@Composable
+private fun ReportOriginPreviewBody() {
     val source = SankeyNode(SankeyNodeKind.SOURCE, "s1")
     val account = SankeyNode(SankeyNodeKind.ACCOUNT, "bbva")
     val category = SankeyNode(SankeyNodeKind.CATEGORY, "food")

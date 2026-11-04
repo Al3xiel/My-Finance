@@ -1,5 +1,6 @@
 package com.al3xiel.my_finances.feature.reports.ui
 
+import com.al3xiel.my_finances.ui.theme.MyfinancesTheme
 import android.content.res.Configuration
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -57,6 +58,7 @@ fun ReportByCategoryContent(
 ) {
     val palette = chartPalette()
     ReportList(
+        title = stringResource(R.string.report_by_category_title),
         isEmpty = state.loaded && state.rows.isEmpty(),
         emptyTitle = stringResource(R.string.report_by_category_empty_title),
         emptyBody = stringResource(R.string.report_by_category_empty_body),
@@ -64,7 +66,11 @@ fun ReportByCategoryContent(
     ) {
         item {
             Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                PieChart(state.rows.mapIndexed { i, r -> ChartSlice(r.name, r.basisPoints, palette[i % palette.size]) })
+                PieChart(
+                    slices = state.rows.mapIndexed { i, r -> ChartSlice(r.name, r.basisPoints, palette[i % palette.size]) },
+                    modifier = Modifier.fillMaxWidth(),
+                    onSliceClick = { index -> state.rows.getOrNull(index)?.let { onOpenMovements(it.id) } },
+                )
                 Text(stringResource(R.string.report_by_category_total), style = MaterialTheme.typography.labelLarge)
                 MoneyText(reportMoney(state.total), style = MaterialTheme.typography.headlineSmall)
             }
@@ -107,9 +113,10 @@ fun ReportByCategoryContent(
 
 @Preview(showBackground = true)
 @Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(showBackground = true, fontScale = 2f)
 @Composable
 private fun ReportByCategoryContentPreview() {
-    ReportByCategoryContent(
+    MyfinancesTheme { ReportByCategoryContent(
         state = ReportByCategoryUiState(
             period = ReportPeriod.Month(YearMonth.of(2026, 10)),
             rows = listOf(
@@ -119,5 +126,5 @@ private fun ReportByCategoryContentPreview() {
             total = 100_000, expandedId = "food", loaded = true,
         ),
         onAction = {}, onOpenMovements = {},
-    )
+    ) }
 }
