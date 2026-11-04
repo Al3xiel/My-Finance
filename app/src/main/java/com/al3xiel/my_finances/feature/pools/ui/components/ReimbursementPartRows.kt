@@ -63,6 +63,7 @@ private fun PendingPartRow(row: ReimbursementLineUi, manual: Boolean, onAction: 
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
         Column(modifier = Modifier.weight(1f)) {
             Text((listOf(line.categoryName) + line.tagNames).joinToString(" · "), style = MaterialTheme.typography.bodyLarge)
+            line.note?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
             Text(
                 "${line.poolName} · ${dayText(line.occurredOn)}",
                 style = MaterialTheme.typography.bodySmall,

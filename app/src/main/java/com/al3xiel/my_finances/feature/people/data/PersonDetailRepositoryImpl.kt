@@ -54,7 +54,7 @@ class PersonDetailRepositoryImpl @Inject constructor(
                 parts = parts.map {
                     PersonPartLine(
                         PartId(it.partId), it.poolName, LocalDate.parse(it.occurredOn), it.categoryName,
-                        tags[it.partId].orEmpty(), pen(it.amount), pen(it.pending),
+                        tags[it.partId].orEmpty(), pen(it.amount), pen(it.pending), it.note,
                     )
                 },
             )

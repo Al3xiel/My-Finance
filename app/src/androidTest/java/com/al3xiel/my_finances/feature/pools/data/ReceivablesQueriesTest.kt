@@ -86,7 +86,7 @@ class ReceivablesQueriesTest {
     private fun pen(minor: Long) = Money(minor, CurrencyCode.PEN)
 
     private fun part(id: String, minor: Long, pool: PoolId) =
-        ExpensePartData(PartId(id), pen(minor), pets, if (id == "p4") listOf(dogTag) else emptyList(), pool, null)
+        ExpensePartData(PartId(id), pen(minor), pets, if (id == "p4") listOf(dogTag) else emptyList(), pool, null, if (id == "p4") "Comida de noviembre" else null)
 
     private val script: List<Pair<DomainEvent, LocalDate>> = listOf(
         PersonCreated(mom, "Mamá") to LocalDate.of(2026, 9, 1),
@@ -196,6 +196,16 @@ class ReceivablesQueriesTest {
         assertEquals(6_000L, parts.single().pending.amountMinor)
         assertEquals(5_000L, pools.pendingBefore(current.id))
         assertNull(pools.currentPeriod(PoolId("ghost")))
+    }
+
+    @Test
+    fun aPartDetailReachesThePendingLinesAndThePersonsExpenses() = runBlocking {
+        val lines = pools.pendingPartLines(mom, null)
+        assertEquals(listOf<String?>(null, "Comida de noviembre"), lines.map { it.note })
+
+        val parts = people.observePersonDetail(mom).first()!!.parts
+        assertEquals("Comida de noviembre", parts.first { it.partId == PartId("p4") }.note)
+        assertEquals(null, parts.first { it.partId == PartId("p2") }.note)
     }
 
     @Test

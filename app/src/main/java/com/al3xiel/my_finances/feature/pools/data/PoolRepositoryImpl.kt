@@ -51,7 +51,7 @@ class PoolRepositoryImpl @Inject constructor(
         return queries.pendingPartLines(personId.value, poolId?.value).map {
             PendingPartLine(
                 PartId(it.partId), PoolId(it.poolId), it.poolName, LocalDate.parse(it.occurredOn), it.createdSequence,
-                it.categoryName, tags[it.partId].orEmpty(), pen(it.pending),
+                it.categoryName, tags[it.partId].orEmpty(), pen(it.pending), it.note,
             )
         }
     }

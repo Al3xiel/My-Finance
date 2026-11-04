@@ -29,6 +29,8 @@ data class PendingPartLineRow(
     @ColumnInfo(name = "created_sequence") val createdSequence: Long,
     @ColumnInfo(name = "category_name") val categoryName: String,
     val pending: Long,
+    /** Detalle de la parte (nombre o nota del usuario), si lo tiene. */
+    val note: String? = null,
 )
 
 data class StatementPartRow(
@@ -101,7 +103,8 @@ interface PoolQueryDao {
     @Query(
         """
         SELECT p.id AS part_id, pl.id AS pool_id, pl.name AS pool_name, m.occurred_on AS occurred_on,
-               p.created_sequence AS created_sequence, c.name AS category_name, p.amount_minor - p.reimbursed_minor AS pending
+               p.created_sequence AS created_sequence, c.name AS category_name, p.amount_minor - p.reimbursed_minor AS pending,
+               p.note AS note
         FROM movement_parts p
         JOIN movements m ON m.id = p.movement_id
         JOIN pools pl ON pl.id = p.pool_id

@@ -1,5 +1,6 @@
 package com.al3xiel.my_finances.feature.movements.ui
 
+import com.al3xiel.my_finances.feature.movements.domain.rules.PART_NOTE_MAX_LENGTH
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.al3xiel.my_finances.core.designsystem.EntityOption
@@ -118,7 +119,7 @@ class ExpenseEditorViewModel @AssistedInject constructor(
             linkedToReconciliation = reconciliationId != null,
             loaded = form.loaded,
             notFound = form.notFound,
-            totalText = form.totalText,
+            totalText = if (form.parts.size >= 2) MoneyInputFilter.fromMinor(partsTotalMinor(form.parts)) else form.totalText,
             accountId = form.accountId,
             occurredOn = form.occurredOn,
             today = today,
@@ -131,8 +132,7 @@ class ExpenseEditorViewModel @AssistedInject constructor(
                 .map { EntityOption(it.id.value, it.name) },
             fundOptions = fundList.filter { it.fund.status == FundStatus.ACTIVE || form.parts.any { part -> part.fundId == it.fund.id } }
                 .map { EntityOption(it.fund.id.value, it.fund.name) },
-            overspentFunds = overspent(form, fundList),
-            unassignedMinor = unassigned(form),
+            overspentFunds = overspentFundNames(form.parts, form.totalText, form.originalMinor, fundList),
             error = form.error,
             negativeWarning = form.negativeWarning,
             showReasonDialog = form.showReasonDialog,
@@ -175,7 +175,7 @@ class ExpenseEditorViewModel @AssistedInject constructor(
             occurredOn = movement.occurredOn,
             note = movement.note.orEmpty(),
             parts = parts.mapIndexed { i, part ->
-                PartDraft(i, MoneyInputFilter.fromMinor(part.amount.amountMinor), part.categoryId, part.tagIds.toSet(), part.id, part.poolId, part.fundId)
+                PartDraft(i, MoneyInputFilter.fromMinor(part.amount.amountMinor), part.categoryId, part.tagIds.toSet(), part.id, part.poolId, part.fundId, part.note.orEmpty())
             },
             originalMinor = parts.associate { it.id to it.amount.amountMinor },
             nextKey = parts.size,
@@ -184,12 +184,14 @@ class ExpenseEditorViewModel @AssistedInject constructor(
 
     fun onAction(action: ExpenseEditorUiAction) {
         when (action) {
-            is ExpenseEditorUiAction.EditTotal -> edit { copy(totalText = MoneyInputFilter.sanitize(action.text)) }
+            // Con dos o más partes el total es la suma de ellas: no se teclea.
+            is ExpenseEditorUiAction.EditTotal -> edit { if (parts.size >= 2) this else copy(totalText = MoneyInputFilter.sanitize(action.text)) }
             is ExpenseEditorUiAction.SelectAccount -> edit { copy(accountId = action.id) }
             is ExpenseEditorUiAction.SelectOccurredOn -> edit { copy(occurredOn = action.occurredOn) }
             is ExpenseEditorUiAction.EditNote -> edit { copy(note = action.text) }
             is ExpenseEditorUiAction.EditPartAmount ->
                 editPart(action.key) { copy(amountText = MoneyInputFilter.sanitize(action.text)) }
+            is ExpenseEditorUiAction.EditPartNote -> editPart(action.key) { copy(note = action.text.take(PART_NOTE_MAX_LENGTH)) }
             is ExpenseEditorUiAction.SelectPartCategory -> editPart(action.key) { copy(categoryId = action.id) }
             is ExpenseEditorUiAction.TogglePartTag -> editPart(action.key) {
                 copy(tagIds = if (action.id in tagIds) tagIds - action.id else tagIds + action.id)
@@ -203,7 +205,10 @@ class ExpenseEditorViewModel @AssistedInject constructor(
                 copy(parts = seeded + PartDraft(key = nextKey, categoryId = parts.lastOrNull()?.categoryId), nextKey = nextKey + 1)
             }
             is ExpenseEditorUiAction.RemovePart -> edit {
-                if (parts.size > 1) copy(parts = parts.filterNot { it.key == action.key }) else this
+                if (parts.size <= 1) return@edit this
+                val rest = parts.filterNot { it.key == action.key }
+                // Al volver a una sola parte, su monto pasa a ser el total.
+                copy(parts = rest, totalText = if (rest.size == 1) rest.single().amountText else totalText)
             }
             ExpenseEditorUiAction.Save -> save()
             is ExpenseEditorUiAction.ConfirmReason -> {
@@ -244,7 +249,8 @@ class ExpenseEditorViewModel @AssistedInject constructor(
     private fun submit(confirmNegative: Boolean) {
         val current = form.value
         if (current.submitting) return
-        val total = MoneyInputFilter.toMinor(current.totalText)?.let { Money(it, CurrencyCode.PEN) }
+        val total = effectiveTotalMinor(current.parts, current.totalText).takeIf { current.parts.size >= 2 || MoneyInputFilter.toMinor(current.totalText) != null }
+            ?.let { Money(it, CurrencyCode.PEN) }
         val account = current.accountId
         val inputs = partInputs(current)
         if (total == null) return fail(BusinessError.InvalidAmount)
@@ -279,23 +285,6 @@ class ExpenseEditorViewModel @AssistedInject constructor(
 
     private fun partInputs(form: Form): List<ExpensePartInput>? = form.parts.map { part ->
         val category = part.categoryId ?: return null
-        ExpensePartInput(part.partId, Money(amountMinor(form, part), CurrencyCode.PEN), category, part.tagIds.toList(), part.poolId, part.fundId)
-    }
-
-    private fun amountMinor(form: Form, part: PartDraft): Long = // una sola parte lleva el total
-        MoneyInputFilter.toMinor(if (form.parts.size == 1) form.totalText else part.amountText) ?: 0L
-
-    /** Fondos a los que el gasto les suma más de lo que les queda; `originalMinor` (partes ya guardadas) ya está en su gastado. */
-    private fun overspent(form: Form, fundList: List<FundOverview>): List<String> =
-        fundList.filter { overview ->
-            val parts = form.parts.filter { it.fundId == overview.fund.id }
-            val extra = parts.sumOf { amountMinor(form, it) } - parts.sumOf { form.originalMinor[it.partId] ?: 0L }
-            parts.isNotEmpty() && extra > overview.estimatedRemaining.amountMinor.coerceAtLeast(0)
-        }.map { it.fund.name }
-
-    private fun unassigned(form: Form): Long {
-        if (form.parts.size < 2) return 0
-        val total = MoneyInputFilter.toMinor(form.totalText) ?: 0L
-        return total - form.parts.sumOf { MoneyInputFilter.toMinor(it.amountText) ?: 0L }
+        ExpensePartInput(part.partId, Money(partAmountMinor(form.parts, form.totalText, part), CurrencyCode.PEN), category, part.tagIds.toList(), part.poolId, part.fundId, part.note)
     }
 }

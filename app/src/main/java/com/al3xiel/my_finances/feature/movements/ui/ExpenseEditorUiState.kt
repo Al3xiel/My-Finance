@@ -22,6 +22,8 @@ data class PartDraft(
     val partId: PartId? = null,
     val poolId: PoolId? = null,
     val fundId: FundId? = null,
+    /** Detalle opcional de la parte (hasta 80 caracteres); vacío = sin detalle. */
+    val note: String = "",
 )
 
 /** Sin cúmulo conserva lo elegido; con cúmulo toma su categoría y suma sus conceptos por defecto (el usuario puede cambiarlos). */
@@ -58,8 +60,6 @@ data class ExpenseEditorUiState(
     val fundOptions: List<EntityOption> = emptyList(),
     /** Nombres de los fondos a los que este gasto les pasa lo que les queda (avisa, no bloquea). */
     val overspentFunds: List<String> = emptyList(),
-    /** Total menos lo repartido entre las partes (solo con 2 o más partes): > 0 falta, < 0 sobra. */
-    val unassignedMinor: Long = 0,
     val error: BusinessError? = null,
     val negativeWarning: BusinessError.WouldGoNegative? = null,
     val showReasonDialog: Boolean = false,

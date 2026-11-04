@@ -1,5 +1,7 @@
 package com.al3xiel.my_finances.feature.people.ui
 
+import com.al3xiel.my_finances.domain.model.PartId
+import com.al3xiel.my_finances.feature.people.domain.model.PersonPartLine
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -54,6 +56,16 @@ class PersonDetailScreenTest {
         rule.onNodeWithText("Abierta").assertIsDisplayed()
         rule.onNodeWithText("Parcial").assertIsDisplayed()
         rule.onNodeWithText("Pagada").assertIsDisplayed()
+    }
+
+    @Test fun aPartOfTheirPoolsShowsItsDetail() {
+        val withPart = state.copy(
+            detail = state.detail!!.copy(
+                parts = listOf(PersonPartLine(PartId("p4"), "Perros", LocalDate.of(2026, 11, 2), "Mascotas", emptyList(), pen(6_000), pen(6_000), "Pastillas de Boby")),
+            ),
+        )
+        rule.setContent { MyfinancesTheme { PersonDetailContent(withPart, {}, {}, {}, {}) } }
+        rule.onNodeWithText("Pastillas de Boby", substring = true).assertIsDisplayed()
     }
 
     @Test fun receivingAReimbursementReportsThePerson() {

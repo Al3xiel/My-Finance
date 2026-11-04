@@ -24,6 +24,8 @@ data class PersonPartLine(
     val tagNames: List<String>,
     val amount: Money,
     val pending: Money,
+    /** Detalle de la parte (nombre o nota del usuario), si lo tiene. */
+    val note: String? = null,
 )
 
 data class PersonLoanLine(
