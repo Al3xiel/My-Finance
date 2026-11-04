@@ -26,7 +26,8 @@ class ReceivablesRepositoryImpl @Inject constructor(
 ) : ReceivablesRepository {
     override fun observeReceivables(): Flow<Receivables> =
         combine(queries.observePoolsPending(), queries.observeOpenLoans()) { poolRows, loanRows ->
-            val pools = poolRows.filter { it.totalPending > 0 }.map { it.toReceivable() }
+            // Todo cúmulo activo aparece, también el que no tiene pendiente: la pantalla lo rotula "Sin pendiente".
+            val pools = poolRows.map { it.toReceivable() }
             val loans = loanRows.map { it.toReceivable() }
             val people = buildPeople(pools, loans)
             Receivables(pen(people.sumOf { it.total.amountMinor }), people, pools, loans)

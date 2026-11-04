@@ -233,6 +233,14 @@ class QuickEntryViewModel @Inject constructor(
             sourceOptions = options(EntityKind.INCOME_SOURCE),
             canSave = form.line.isNotBlank() && form.ambiguities.isEmpty() && form.conflicts.isEmpty() &&
                 !form.submitting && draftOf(form) != null,
+            saveBlock = when {
+                form.submitting -> SaveBlock.SAVING
+                form.line.isBlank() -> SaveBlock.EMPTY_LINE
+                form.ambiguities.isNotEmpty() -> SaveBlock.AMBIGUOUS
+                form.conflicts.isNotEmpty() -> SaveBlock.CONFLICT
+                draftOf(form) == null -> SaveBlock.MISSING_DATA
+                else -> null
+            },
             error = form.error,
             negativeWarning = form.negativeWarning,
             saved = form.saved,

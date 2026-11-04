@@ -137,6 +137,7 @@ class ExpenseEditorViewModel @AssistedInject constructor(
             negativeWarning = form.negativeWarning,
             showReasonDialog = form.showReasonDialog,
             saved = form.saved,
+            saving = form.submitting,
         )
     }.stateIn(viewModelScope, SharingStarted.Eagerly, ExpenseEditorUiState(occurredOn = today, today = today))
 
@@ -247,7 +248,8 @@ class ExpenseEditorViewModel @AssistedInject constructor(
         val account = current.accountId
         val inputs = partInputs(current)
         if (total == null) return fail(BusinessError.InvalidAmount)
-        if (account == null || inputs == null) return fail(BusinessError.NotFound)
+        if (account == null) return fail(BusinessError.AccountRequired)
+        if (inputs == null) return fail(BusinessError.CategoryRequired)
 
         form.update { it.copy(submitting = true) }
         viewModelScope.launch {

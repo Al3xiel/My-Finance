@@ -136,7 +136,7 @@ class LoanDetailViewModel @AssistedInject constructor(
         if (local.value.submitting) return
         val amount = MoneyInputFilter.toMinor(dialog.amountText)?.let { Money(it, CurrencyCode.PEN) }
             ?: return payError(BusinessError.InvalidAmount)
-        val account = dialog.accountId ?: return payError(BusinessError.NotFound)
+        val account = dialog.accountId ?: return payError(BusinessError.AccountRequired)
         local.update { it.copy(submitting = true) }
         viewModelScope.launch {
             val error = attempt { receivePayment(loanId, account, amount, today) }.errorOrNull()

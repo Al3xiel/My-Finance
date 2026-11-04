@@ -141,7 +141,11 @@ private fun LazyListScope.receivablesSections(
                         detailLabel = stringResource(R.string.receivables_pool_period),
                         detailAmount = pool.periodPending,
                         onClick = { onOpenPool(pool.poolId) },
-                        status = if (pool.periodPending.isPositive) ReceivableStatus(BadgeStatus.PENDING) else null,
+                        status = when {
+                            pool.periodPending.isPositive -> ReceivableStatus(BadgeStatus.PENDING)
+                            pool.totalPending.isPositive -> null
+                            else -> ReceivableStatus(BadgeStatus.RECONCILED, R.string.receivables_pool_clear)
+                        },
                     )
                 }
             }

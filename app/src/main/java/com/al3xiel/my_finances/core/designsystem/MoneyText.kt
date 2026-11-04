@@ -16,6 +16,7 @@ import com.al3xiel.my_finances.R
 import com.al3xiel.my_finances.core.money.CurrencyCode
 import com.al3xiel.my_finances.core.money.Money
 import com.al3xiel.my_finances.core.money.MoneyFormatter
+import com.al3xiel.my_finances.ui.theme.FinanceColors
 import com.al3xiel.my_finances.ui.theme.LocalFinanceColors
 import com.al3xiel.my_finances.ui.theme.NumericStyles
 
@@ -50,6 +51,19 @@ internal fun moneyDisplayText(money: Money, hidden: Boolean, sign: MoneySign = M
     }
 }
 
+/**
+ * Color que sugiere el tono de un monto. Con "ocultar montos" no hay color: el rojo de un saldo negativo contaría lo que el
+ * texto esconde, así que oculto siempre queda neutro.
+ */
+internal fun moneyToneColor(tone: MoneyTone, money: Money, hidden: Boolean, finance: FinanceColors): Color {
+    if (hidden) return Color.Unspecified
+    return when (tone.resolve(money)) {
+        MoneyTone.INCOME -> finance.income
+        MoneyTone.EXPENSE -> finance.expense
+        else -> Color.Unspecified
+    }
+}
+
 /** Todo monto de la app se pinta con esto: respeta "ocultar montos" (`LocalHideAmounts`) en un solo lugar. */
 @Composable
 fun MoneyText(
@@ -63,12 +77,8 @@ fun MoneyText(
     tone: MoneyTone = MoneyTone.NONE,
 ) {
     val finance = LocalFinanceColors.current
-    val toneColor = when (tone.resolve(money)) {
-        MoneyTone.INCOME -> finance.income
-        MoneyTone.EXPENSE -> finance.expense
-        else -> Color.Unspecified
-    }
     val hidden = LocalHideAmounts.current
+    val toneColor = moneyToneColor(tone, money, hidden, finance)
     val hiddenDescription = stringResource(R.string.money_hidden_description)
     Text(
         text = moneyDisplayText(money, hidden, sign),

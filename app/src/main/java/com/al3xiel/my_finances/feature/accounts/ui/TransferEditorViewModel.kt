@@ -52,6 +52,7 @@ data class TransferEditorUiState(
     val error: BusinessError? = null,
     val negativeWarning: BusinessError.WouldGoNegative? = null,
     val saved: Boolean = false,
+    val saving: Boolean = false,
 )
 
 sealed interface TransferEditorUiAction {
@@ -117,6 +118,7 @@ class TransferEditorViewModel @AssistedInject constructor(
             error = form.error,
             negativeWarning = form.negativeWarning,
             saved = form.saved,
+            saving = form.submitting,
         )
     }.stateIn(viewModelScope, SharingStarted.Eagerly, TransferEditorUiState(occurredOn = today, today = today))
 
@@ -155,8 +157,8 @@ class TransferEditorViewModel @AssistedInject constructor(
         if (current.submitting) return
         val amount = MoneyInputFilter.toMinor(current.amountText)?.let { Money(it, CurrencyCode.PEN) }
             ?: return fail(BusinessError.InvalidAmount)
-        val from = current.fromId ?: return fail(BusinessError.NotFound)
-        val to = current.toId ?: return fail(BusinessError.NotFound)
+        val from = current.fromId ?: return fail(BusinessError.AccountRequired)
+        val to = current.toId ?: return fail(BusinessError.DestinationAccountRequired)
         // Sin texto de comisión no hay comisión; con texto (aunque sea 0) el caso de uso valida el monto.
         val fee = MoneyInputFilter.toMinor(current.feeText)?.let { FeeData(Money(it, CurrencyCode.PEN), SystemCatalog.feeCategoryId) }
 

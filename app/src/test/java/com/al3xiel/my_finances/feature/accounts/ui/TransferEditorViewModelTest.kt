@@ -45,6 +45,18 @@ class TransferEditorViewModelTest {
     }
 
     @Test
+    fun withASingleAccountSavingAsksForTheDestinationInsteadOfSayingNotFound() {
+        f.accounts.accounts.remove(f.cash)
+        val vm = viewModel()
+        vm.onAction(TransferEditorUiAction.EditAmount("3"))
+
+        vm.onAction(TransferEditorUiAction.Save)
+
+        assertEquals(BusinessError.DestinationAccountRequired, vm.uiState.value.error)
+        assertEquals(0, f.store.events.size)
+    }
+
+    @Test
     fun theLabelFollowsTheAccountTypes() {
         val vm = viewModel()
         vm.onAction(TransferEditorUiAction.SelectFrom(f.cash))

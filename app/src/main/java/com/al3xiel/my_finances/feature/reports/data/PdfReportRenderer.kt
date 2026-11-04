@@ -7,6 +7,21 @@ import com.al3xiel.my_finances.feature.reports.domain.model.PdfReportData
 import java.io.OutputStream
 
 /**
+ * Ancho de cada columna numérica (todas menos la primera): lo que mide su texto más ancho, encabezado en negrita incluido,
+ * más un hueco, y nunca menos que `minWidth`. Así un encabezado largo no invade a la columna de al lado.
+ */
+internal fun numericColumnWidths(
+    columns: List<String>,
+    rows: List<List<String>>,
+    measure: (text: String, bold: Boolean) -> Float,
+    minWidth: Float,
+    gap: Float,
+): List<Float> = (1 until columns.size).map { i ->
+    val widest = maxOf(measure(columns[i], true), rows.maxOfOrNull { row -> row.getOrNull(i)?.let { measure(it, false) } ?: 0f } ?: 0f)
+    maxOf(minWidth, widest + gap)
+}
+
+/**
  * Dibuja el reporte del periodo con `PdfDocument` (D38): título, aviso de que el archivo no está cifrado y una tabla por
  * sección. La primera columna va a la izquierda y las demás alineadas a la derecha; sigue en otra página al llenarse.
  */
@@ -47,11 +62,18 @@ class PdfReportRenderer {
             newPageIfNeeded(lineHeight * 3)
             page.canvas.drawText(section.heading, margin, y, heading)
             y += lineHeight
-            drawRow(page, y, section.columns, bold)
+            val widths = numericColumnWidths(
+                section.columns,
+                section.rows,
+                { text, isBold -> (if (isBold) bold else body).measureText(text) },
+                minWidth = 90f,
+                gap = 12f,
+            )
+            drawRow(page, y, section.columns, bold, widths)
             y += lineHeight
             for (row in section.rows) {
                 newPageIfNeeded(lineHeight)
-                drawRow(page, y, row, body)
+                drawRow(page, y, row, body, widths)
                 y += lineHeight
             }
             y += lineHeight
@@ -62,17 +84,16 @@ class PdfReportRenderer {
         out.flush()
     }
 
-    private fun drawRow(page: PdfDocument.Page, y: Float, cells: List<String>, paint: Paint) {
+    private fun drawRow(page: PdfDocument.Page, y: Float, cells: List<String>, paint: Paint, widths: List<Float>) {
         val right = pageWidth - margin
-        val columnWidth = 90f
-        val numeric = cells.size - 1
-        val labelWidth = right - margin - columnWidth * numeric - 8f
+        val labelWidth = right - margin - widths.sum() - 8f
         cells.forEachIndexed { i, cell ->
             if (i == 0) {
                 val fit = paint.breakText(cell, true, labelWidth, null)
                 page.canvas.drawText(cell, 0, fit, margin, y, paint)
             } else {
-                val edge = right - columnWidth * (numeric - i)
+                // El borde derecho de la columna i es la suma de lo que ocupan las que van después de ella.
+                val edge = right - widths.drop(i).sum()
                 page.canvas.drawText(cell, edge - paint.measureText(cell), y, paint)
             }
         }

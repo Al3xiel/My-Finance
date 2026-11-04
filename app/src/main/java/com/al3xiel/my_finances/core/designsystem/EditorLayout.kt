@@ -25,6 +25,8 @@ fun EditorLayout(
     onSave: () -> Unit,
     modifier: Modifier = Modifier,
     saveEnabled: Boolean = true,
+    saving: Boolean = false,
+    disabledReason: String? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Column(modifier = modifier.fillMaxSize().imePadding()) {
@@ -37,6 +39,8 @@ fun EditorLayout(
             error = error,
             onSave = onSave,
             enabled = saveEnabled,
+            saving = saving,
+            disabledReason = disabledReason,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
         )
     }

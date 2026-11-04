@@ -47,7 +47,21 @@ fun QuickEntryContent(
 ) {
     val focus = remember { FocusRequester() }
     LaunchedEffect(Unit) { focus.requestFocus() }
-    EditorLayout(error = state.error, onSave = { onAction(QuickEntryUiAction.Save) }, saveEnabled = state.canSave, modifier = modifier) {
+    val blockReason = when (state.saveBlock) {
+        SaveBlock.EMPTY_LINE -> stringResource(R.string.quick_entry_block_empty)
+        SaveBlock.AMBIGUOUS -> stringResource(R.string.quick_entry_block_ambiguous)
+        SaveBlock.CONFLICT -> stringResource(R.string.quick_entry_block_conflict)
+        SaveBlock.MISSING_DATA -> stringResource(R.string.quick_entry_block_missing)
+        SaveBlock.SAVING, null -> null
+    }
+    EditorLayout(
+        error = state.error,
+        onSave = { onAction(QuickEntryUiAction.Save) },
+        saveEnabled = state.canSave,
+        saving = state.saveBlock == SaveBlock.SAVING,
+        disabledReason = blockReason,
+        modifier = modifier,
+    ) {
         Text(stringResource(R.string.quick_entry_title), style = MaterialTheme.typography.titleLarge)
         OutlinedTextField(
             value = state.line,

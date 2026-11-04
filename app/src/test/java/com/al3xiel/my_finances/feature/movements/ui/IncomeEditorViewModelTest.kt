@@ -53,6 +53,19 @@ class IncomeEditorViewModelTest {
     }
 
     @Test
+    fun withoutAnyRegularSourceSavingAsksToCreateOneInsteadOfSayingNotFound() {
+        f.sources.sources.clear()
+        val vm = viewModel()
+        vm.onAction(IncomeEditorUiAction.EditAmount("1500"))
+
+        assertTrue(vm.uiState.value.sourceOptions.isEmpty())
+        vm.onAction(IncomeEditorUiAction.Save)
+
+        assertEquals(BusinessError.IncomeSourceRequired, vm.uiState.value.error)
+        assertEquals(0, f.store.events.size)
+    }
+
+    @Test
     fun savesAnIncomeAndFinishes() {
         val vm = viewModel()
         vm.onAction(IncomeEditorUiAction.EditAmount("1500.5"))

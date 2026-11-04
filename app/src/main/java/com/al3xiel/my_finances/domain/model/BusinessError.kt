@@ -5,6 +5,12 @@ sealed interface BusinessError {
     data object BlankName : BusinessError
     data object DuplicateName : BusinessError
     data object NotFound : BusinessError
+
+    /** Falta elegir algo antes de guardar: cada uno dice qué, en vez del genérico `NotFound`. */
+    data object AccountRequired : BusinessError
+    data object DestinationAccountRequired : BusinessError
+    data object CategoryRequired : BusinessError
+    data object IncomeSourceRequired : BusinessError
     data object AlreadyArchived : BusinessError
     data object BalanceNotZero : BusinessError
     data object PersonRequired : BusinessError

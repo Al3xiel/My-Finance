@@ -16,9 +16,20 @@ import androidx.compose.ui.unit.dp
 import com.al3xiel.my_finances.R
 import com.al3xiel.my_finances.domain.model.BusinessError
 
-/** Cierre común de los editores: el error de negocio que rechazó el guardado, si lo hay, y el botón Guardar. */
+/**
+ * Cierre común de los editores: el error de negocio que rechazó el guardado, si lo hay, y el botón Guardar. Mientras guarda
+ * (`saving`) el botón lo dice ("Guardando…") y queda bloqueado; si está bloqueado por otra causa, `disabledReason` la escribe
+ * encima del botón en vez de dejarlo apagado sin explicación.
+ */
 @Composable
-fun EditorFooter(error: BusinessError?, onSave: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
+fun EditorFooter(
+    error: BusinessError?,
+    onSave: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    saving: Boolean = false,
+    disabledReason: String? = null,
+) {
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         error?.let {
             Text(
@@ -27,7 +38,17 @@ fun EditorFooter(error: BusinessError?, onSave: () -> Unit, modifier: Modifier =
                 modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
             )
         }
-        PillButton(text = stringResource(R.string.editor_save), onClick = onSave, enabled = enabled, modifier = Modifier.fillMaxWidth())
+        if (!enabled && !saving && disabledReason != null) {
+            Text(disabledReason, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        PillButton(
+            text = stringResource(if (saving) R.string.editor_saving else R.string.editor_save),
+            onClick = onSave,
+            enabled = enabled,
+            modifier = Modifier.fillMaxWidth(),
+            loading = saving,
+            disabledReason = disabledReason,
+        )
     }
 }
 

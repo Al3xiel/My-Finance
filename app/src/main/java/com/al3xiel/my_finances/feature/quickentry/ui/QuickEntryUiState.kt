@@ -27,6 +27,8 @@ data class QuickEntryUiState(
     val fundOptions: List<EntityOption> = emptyList(),
     val sourceOptions: List<EntityOption> = emptyList(),
     val canSave: Boolean = false,
+    /** Por qué Guardar está bloqueado; `null` cuando se puede guardar. */
+    val saveBlock: SaveBlock? = null,
     val error: BusinessError? = null,
     val negativeWarning: BusinessError.WouldGoNegative? = null,
     val saved: Boolean = false,
@@ -34,3 +36,6 @@ data class QuickEntryUiState(
     /** Hay algo escrito que interpretar; sin eso la vista previa no se muestra. */
     val hasLine: Boolean get() = line.isNotBlank()
 }
+
+/** La causa por la que Registro rápido no deja guardar; la pantalla la escribe encima del botón. */
+enum class SaveBlock { EMPTY_LINE, AMBIGUOUS, CONFLICT, MISSING_DATA, SAVING }

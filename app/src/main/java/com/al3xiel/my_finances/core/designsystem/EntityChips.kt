@@ -14,7 +14,8 @@ import androidx.compose.ui.unit.dp
 
 /**
  * Selector de una entidad del catálogo en chips que se acomodan en varias líneas (sin desplazamiento horizontal).
- * `onSelect` también se llama al tocar el chip ya elegido; quien lo usa decide si eso deselecciona.
+ * `onSelect` también se llama al tocar el chip ya elegido; quien lo usa decide si eso deselecciona. `emptyHint` se muestra
+ * cuando no hay ninguna opción.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -24,9 +25,14 @@ fun EntityChips(
     selectedId: String?,
     onSelect: (String) -> Unit,
     modifier: Modifier = Modifier,
+    emptyHint: String? = null,
 ) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        // Sin opciones el selector no puede quedar mudo: dice que está vacío y dónde se crea lo que falta.
+        if (options.isEmpty() && emptyHint != null) {
+            Text(emptyHint, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)
+        }
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             options.forEach { option ->
                 FilterChip(
