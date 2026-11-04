@@ -41,7 +41,7 @@ class DiagnosticEventsCodecTest {
     fun typesAreRegisteredAndEncodingIsDeterministic() {
         assertTrue(EventCodec.types.containsAll(samples.map { it.type }.toSet()))
         samples.forEach { assertEquals(EventCodec.encode(it), EventCodec.encode(it)) }
-        assertTrue(samples.all { it.schemaVersion == 1 })
+        assertTrue(samples.all { it.schemaVersion == DomainEvent.CURRENT_SCHEMA_VERSION })
     }
 
     @Test

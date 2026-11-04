@@ -134,6 +134,29 @@ class EventAnonymizerTest {
     }
 
     @Test
+    fun aPartDetailIsRemovedFromTheExportedDiagnostic() {
+        val parts = listOf(
+            ExpensePartData(PartId("x1"), Money(300, pen), CategoryId("c1"), emptyList(), null, null, "Pastillas de Boby"),
+            ExpensePartData(PartId("x2"), Money(200, pen), CategoryId("c1"), emptyList(), null, null, null),
+        )
+        val result = anonymizer.anonymize(stored(ExpenseRegistered(MovementId("m1"), AccountId("a1"), Money(500, pen), parts, null, null)))
+
+        val payload = payloadOf(result, 1)
+        assertFalse(payload.contains("Boby"))
+        assertFalse(payload.contains("Pastillas"))
+        assertTrue(result.altered.isNotEmpty())
+    }
+
+    @Test
+    fun aPartDetailInsideACorrectionSnapshotIsRemovedToo() {
+        val parts = listOf(ExpensePartData(PartId("x1"), Money(300, pen), CategoryId("c1"), emptyList(), null, null, "Pastillas de Boby"))
+        val snapshot = MovementSnapshot.Expense(AccountId("a1"), Money(300, pen), parts, null)
+        val result = anonymizer.anonymize(stored(MovementCorrected(MovementId("m1"), snapshot, "monto mal", null)))
+
+        assertFalse(payloadOf(result, 1).contains("Boby"))
+    }
+
+    @Test
     fun amountsDatesIdsAndEnumsTravelUntouched() {
         val events = stored(account("a1", "BBVA"))
         val result = anonymizer.anonymize(events)

@@ -21,6 +21,8 @@ data class ExpensePartData(
     val tagIds: List<TagId>,
     val poolId: PoolId?,
     val fundId: FundId?,
+    /** Detalle de la parte (nombre o nota, hasta 80 caracteres) para saber a qué se refiere; lo agrega la `schemaVersion` 2. */
+    val note: String? = null,
 )
 
 /** Comisión de una transferencia: genera un gasto aparte en la cuenta origen (D11). */

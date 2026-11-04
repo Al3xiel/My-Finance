@@ -10,6 +10,7 @@ sealed interface DomainEvent {
     val schemaVersion: Int get() = CURRENT_SCHEMA_VERSION
 
     companion object {
-        const val CURRENT_SCHEMA_VERSION = 1
+        /** Una sola versión para todos los eventos; los tipos que no cambiaron en una versión pasan sin upcaster. La 2 agrega `ExpensePartData.note`. */
+        const val CURRENT_SCHEMA_VERSION = 2
     }
 }

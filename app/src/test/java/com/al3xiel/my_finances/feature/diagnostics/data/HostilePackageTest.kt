@@ -1,5 +1,6 @@
 package com.al3xiel.my_finances.feature.diagnostics.data
 
+import com.al3xiel.my_finances.domain.model.event.DomainEvent
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.DiagnosticPackageException
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.DiagnosticPackageException.Reason
 import com.al3xiel.my_finances.feature.diagnostics.domain.model.DiagnosticPackageFormat
@@ -118,7 +119,7 @@ class HostilePackageTest {
     @Test
     fun aNewerEventSchemaIsRejected() {
         val events = String(entries().getValue("events.jsonl"), Charsets.UTF_8)
-        val newer = events.replaceFirst("\"schemaVersion\":1", "\"schemaVersion\":9")
+        val newer = events.replaceFirst("\"schemaVersion\":${DomainEvent.CURRENT_SCHEMA_VERSION}", "\"schemaVersion\":9")
         assertEquals(Reason.UNKNOWN_EVENT, reject(rebuild("events.jsonl", newer.toByteArray())))
     }
 

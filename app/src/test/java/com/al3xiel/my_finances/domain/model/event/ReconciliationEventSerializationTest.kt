@@ -43,7 +43,7 @@ class ReconciliationEventSerializationTest {
     fun aggregateIsTheReconciliation() {
         reconciliationSamples.forEach {
             assertEquals(AggregateType.RECONCILIATION, it.aggregateType)
-            assertEquals(1, it.schemaVersion)
+            assertEquals(DomainEvent.CURRENT_SCHEMA_VERSION, it.schemaVersion)
         }
         assertEquals("r1", reconciliationSamples.first().aggregateId)
     }

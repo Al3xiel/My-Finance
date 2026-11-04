@@ -55,7 +55,7 @@ class ExpectedIncomeEventSerializationTest {
     fun theyBelongToTheExpectedIncomeAggregate() {
         expectedIncomeSamples.forEach {
             assertEquals(AggregateType.EXPECTED_INCOME, it.aggregateType)
-            assertEquals(1, it.schemaVersion)
+            assertEquals(DomainEvent.CURRENT_SCHEMA_VERSION, it.schemaVersion)
         }
         assertFalse(expectedIncomeSamples.isEmpty())
     }
