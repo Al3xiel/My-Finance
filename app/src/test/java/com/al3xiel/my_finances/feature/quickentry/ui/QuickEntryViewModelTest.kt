@@ -77,6 +77,25 @@ class QuickEntryViewModelTest {
         assertTrue(s.canSave)
     }
 
+    @Test fun `a blocked save always says why and a savable one says nothing`() {
+        val vm = viewModel()
+        assertEquals(SaveBlock.EMPTY_LINE, vm.uiState.value.saveBlock)
+
+        vm.type("45 bbva")
+        assertEquals(SaveBlock.MISSING_DATA, vm.uiState.value.saveBlock)
+
+        vm.onAction(QuickEntryUiAction.SelectCategory("food"))
+        assertNull(vm.uiState.value.saveBlock)
+    }
+
+    @Test fun `a conflict and an ambiguity each name their own block`() {
+        val vm = viewModel()
+        vm.type("45 bbva efectivo comida")
+        assertEquals(SaveBlock.CONFLICT, vm.uiState.value.saveBlock)
+        vm.onAction(QuickEntryUiAction.SelectAccount("cash"))
+        assertNull(vm.uiState.value.saveBlock)
+    }
+
     @Test fun `without a category suggestion it cannot be saved until one is picked`() {
         val vm = viewModel()
         vm.type("45 bbva")

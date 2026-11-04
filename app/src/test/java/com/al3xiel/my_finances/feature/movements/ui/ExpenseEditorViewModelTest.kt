@@ -255,6 +255,33 @@ class ExpenseEditorViewModelTest {
     }
 
     @Test
+    fun whileSavingTheStateSaysSoAndFinishesWhenItIsDone() {
+        val vm = viewModel()
+        vm.onAction(ExpenseEditorUiAction.EditTotal("3"))
+        val gate = kotlinx.coroutines.CompletableDeferred<Unit>()
+        f.accounts.gate = gate
+
+        vm.onAction(ExpenseEditorUiAction.Save)
+        assertTrue(vm.uiState.value.saving)
+
+        gate.complete(Unit)
+        assertFalse(vm.uiState.value.saving)
+        assertTrue(vm.uiState.value.saved)
+    }
+
+    @Test
+    fun withoutAnyCategorySavingAsksForOneInsteadOfSayingNotFound() {
+        f.categories.categories.clear()
+        val vm = viewModel()
+        vm.onAction(ExpenseEditorUiAction.EditTotal("3"))
+
+        vm.onAction(ExpenseEditorUiAction.Save)
+
+        assertEquals(BusinessError.CategoryRequired, vm.uiState.value.error)
+        assertEquals(0, f.store.events.size)
+    }
+
+    @Test
     fun offersTheActivePoolsAsOptions() {
         pool(dogs); pool(cats, archived = true)
 

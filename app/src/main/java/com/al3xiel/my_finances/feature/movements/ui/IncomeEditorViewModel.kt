@@ -74,6 +74,7 @@ data class IncomeEditorUiState(
     val negativeWarning: BusinessError.WouldGoNegative? = null,
     val showReasonDialog: Boolean = false,
     val saved: Boolean = false,
+    val saving: Boolean = false,
 )
 
 /** S23: registra un ingreso nuevo, o corrige uno existente (con motivo) si recibe su id. */
@@ -163,6 +164,7 @@ class IncomeEditorViewModel @AssistedInject constructor(
             negativeWarning = form.negativeWarning,
             showReasonDialog = form.showReasonDialog,
             saved = form.saved,
+            saving = form.submitting,
         )
     }.stateIn(viewModelScope, SharingStarted.Eagerly, IncomeEditorUiState(occurredOn = today, today = today))
 
@@ -256,8 +258,8 @@ class IncomeEditorViewModel @AssistedInject constructor(
         if (current.submitting) return
         val amount = MoneyInputFilter.toMinor(current.amountText)?.let { Money(it, CurrencyCode.PEN) }
             ?: return fail(BusinessError.InvalidAmount)
-        val account = current.accountId ?: return fail(BusinessError.NotFound)
-        val source = current.sourceId ?: return fail(BusinessError.NotFound)
+        val account = current.accountId ?: return fail(BusinessError.AccountRequired)
+        val source = current.sourceId ?: return fail(BusinessError.IncomeSourceRequired)
         val topUpFund = current.topUpFundId
         val topUp = topUpFund?.let { MoneyInputFilter.toMinor(current.topUpText)?.let { minor -> Money(minor, CurrencyCode.PEN) } ?: return fail(BusinessError.InvalidAmount) }
 

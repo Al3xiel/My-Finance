@@ -52,7 +52,7 @@ fun TransferEditorContent(
     onAction: (TransferEditorUiAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    EditorLayout(error = state.error, onSave = { onAction(TransferEditorUiAction.Save) }, modifier = modifier) {
+    EditorLayout(error = state.error, onSave = { onAction(TransferEditorUiAction.Save) }, saving = state.saving, modifier = modifier) {
         Text(stringResource(R.string.transfer_title), style = MaterialTheme.typography.titleLarge)
         Text(stringResource(state.label.labelRes()), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
         EntityChips(

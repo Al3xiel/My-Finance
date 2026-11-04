@@ -93,6 +93,12 @@
     <string name="error_blank_name">Escribe un nombre</string>
     <string name="error_duplicate_name">Ya existe uno con ese nombre</string>
     <string name="error_not_found">No se encontró</string>
+    <string name="error_account_required">Elige la cuenta del movimiento.</string>
+    <string name="error_destination_account_required">Elige la cuenta de destino de la transferencia.</string>
+    <string name="error_category_required">Elige una categoría para el gasto. Si aún no tienes, créala en Más → Categorías.</string>
+    <string name="error_income_source_required">Elige una fuente de ingreso. Si aún no tienes, créala en Más → Fuentes de ingreso.</string>
+    <string name="hint_no_income_sources">Aún no tienes fuentes de ingreso. Créala en Más → Fuentes de ingreso.</string>
+    <string name="hint_no_categories">Aún no tienes categorías. Créala en Más → Categorías.</string>
     <string name="error_already_archived">Ya está archivado</string>
     <string name="error_balance_not_zero">El saldo debe ser 0 para archivar la cuenta</string>
     <string name="error_person_required">Elige una persona activa</string>
@@ -169,6 +175,7 @@
     <string name="receivables_loans">Deudas abiertas</string>
     <string name="receivables_pool_subtitle">Responsable: %1$s</string>
     <string name="receivables_pool_period">Periodo actual:</string>
+    <string name="receivables_pool_clear">Sin pendiente</string>
     <string name="receivables_empty_title">Nadie te debe nada</string>
     <string name="receivables_empty_body">Los gastos de un cúmulo y los préstamos aparecerán aquí hasta que te los devuelvan.</string>
     <string name="pool_kind_permanent">Permanente</string>
@@ -378,6 +385,11 @@
     <string name="editor_date">Fecha</string>
     <string name="editor_note">Nota (opcional)</string>
     <string name="editor_save">Guardar</string>
+    <string name="editor_saving">Guardando…</string>
+    <string name="quick_entry_block_empty">Escribe qué quieres registrar.</string>
+    <string name="quick_entry_block_ambiguous">Elige una opción en lo que marcamos como dudoso.</string>
+    <string name="quick_entry_block_conflict">Hay datos que se contradicen: elige cuál usar.</string>
+    <string name="quick_entry_block_missing">Faltan datos: revisa la cuenta, la categoría o la fuente.</string>
     <string name="editor_negative_title">Saldo negativo</string>
     <string name="editor_negative_confirm">Guardar de todos modos</string>
     <string name="editor_not_found">No se puede editar este movimiento</string>

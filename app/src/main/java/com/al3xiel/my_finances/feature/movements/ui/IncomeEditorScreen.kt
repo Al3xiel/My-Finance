@@ -66,7 +66,7 @@ fun IncomeEditorContent(
         EmptyState(title = stringResource(R.string.editor_not_found), body = "", modifier = modifier)
         return
     }
-    EditorLayout(error = state.error, onSave = { onAction(IncomeEditorUiAction.Save) }, modifier = modifier) {
+    EditorLayout(error = state.error, onSave = { onAction(IncomeEditorUiAction.Save) }, saving = state.saving, modifier = modifier) {
         Text(
             stringResource(if (state.isCorrection) R.string.income_correct_title else R.string.income_new_title),
             style = MaterialTheme.typography.titleLarge,
@@ -91,6 +91,7 @@ fun IncomeEditorContent(
             selectedId = state.sourceId?.value,
             onSelect = { onAction(IncomeEditorUiAction.SelectSource(IncomeSourceId(it))) },
             modifier = Modifier.fillMaxWidth(),
+            emptyHint = stringResource(R.string.hint_no_income_sources),
         )
         state.selectedExpected?.let { selected ->
             Card(modifier = Modifier.fillMaxWidth()) {

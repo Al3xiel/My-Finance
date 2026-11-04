@@ -82,7 +82,7 @@ fun ExpenseEditorContent(
         EmptyState(title = stringResource(R.string.editor_not_found), body = "", modifier = modifier)
         return
     }
-    EditorLayout(error = state.error, onSave = { onAction(ExpenseEditorUiAction.Save) }, modifier = modifier) {
+    EditorLayout(error = state.error, onSave = { onAction(ExpenseEditorUiAction.Save) }, saving = state.saving, modifier = modifier) {
         Text(
             stringResource(if (state.isCorrection) R.string.expense_correct_title else R.string.expense_new_title),
             style = MaterialTheme.typography.titleLarge,

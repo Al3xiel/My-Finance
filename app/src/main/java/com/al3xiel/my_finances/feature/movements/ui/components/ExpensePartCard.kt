@@ -49,6 +49,7 @@ fun ExpensePartCard(number: Int, part: PartDraft, state: ExpenseEditorUiState, o
                 selectedId = part.categoryId?.value,
                 onSelect = { onAction(ExpenseEditorUiAction.SelectPartCategory(part.key, CategoryId(it))) },
                 modifier = Modifier.fillMaxWidth(),
+                emptyHint = stringResource(R.string.hint_no_categories),
             )
             if (state.poolOptions.isNotEmpty()) {
                 PartPoolPicker(

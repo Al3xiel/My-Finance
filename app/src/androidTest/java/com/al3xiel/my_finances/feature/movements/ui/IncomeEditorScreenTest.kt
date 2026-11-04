@@ -38,4 +38,29 @@ class IncomeEditorScreenTest {
             actions,
         )
     }
+
+    @Test
+    fun withoutSourcesTheEditorSaysSoAndWhereToCreateOne() {
+        val state = IncomeEditorUiState(
+            loaded = true,
+            accountId = AccountId("a"),
+            accountOptions = listOf(EntityOption("a", "BBVA")),
+            sourceOptions = emptyList(),
+        )
+        rule.setContent { MyfinancesTheme { IncomeEditorContent(state, {}) } }
+        rule.onNodeWithText("Aún no tienes fuentes de ingreso. Créala en Más → Fuentes de ingreso.").assertIsDisplayed()
+    }
+
+    @Test
+    fun withSourcesNoEmptyHintIsShown() {
+        val state = IncomeEditorUiState(
+            loaded = true,
+            accountId = AccountId("a"),
+            sourceId = IncomeSourceId("s"),
+            accountOptions = listOf(EntityOption("a", "BBVA")),
+            sourceOptions = listOf(EntityOption("s", "Sueldo")),
+        )
+        rule.setContent { MyfinancesTheme { IncomeEditorContent(state, {}) } }
+        rule.onNodeWithText("Aún no tienes fuentes de ingreso. Créala en Más → Fuentes de ingreso.").assertDoesNotExist()
+    }
 }

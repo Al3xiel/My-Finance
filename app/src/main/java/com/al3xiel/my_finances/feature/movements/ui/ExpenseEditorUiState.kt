@@ -64,6 +64,8 @@ data class ExpenseEditorUiState(
     val negativeWarning: BusinessError.WouldGoNegative? = null,
     val showReasonDialog: Boolean = false,
     val saved: Boolean = false,
+    /** Hay un guardado en curso: el botón lo dice y no deja tocar otra vez. */
+    val saving: Boolean = false,
 )
 
 /** Las categorías activas con su padre delante (`Comida › Almuerzo`), como las elige el usuario. */

@@ -133,7 +133,7 @@ class LoanEditorViewModel @AssistedInject constructor(
         if (current.submitting) return
         val person = current.personId ?: return fail(BusinessError.PersonRequired)
         val amount = MoneyInputFilter.toMinor(current.amountText)?.let { Money(it, CurrencyCode.PEN) } ?: return fail(BusinessError.InvalidAmount)
-        val account = current.accountId ?: return fail(BusinessError.NotFound)
+        val account = current.accountId ?: return fail(BusinessError.AccountRequired)
         form.update { it.copy(submitting = true) }
         viewModelScope.launch {
             val note = current.note.trim().ifEmpty { null }
