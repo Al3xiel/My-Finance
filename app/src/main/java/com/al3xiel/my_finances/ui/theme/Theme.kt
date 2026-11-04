@@ -1,5 +1,6 @@
 package com.al3xiel.my_finances.ui.theme
 
+import androidx.annotation.RequiresApi
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
@@ -48,7 +49,8 @@ fun MyfinancesTheme(
     content: @Composable () -> Unit,
 ) {
     val kind = schemeKindFor(themeMode, isSystemInDarkTheme(), dynamicColor, Build.VERSION.SDK_INT)
-    val colorScheme = staticSchemeFor(kind) ?: dynamicScheme(kind)
+    // Los esquemas dinámicos existen desde Android 12; `schemeKindFor` ya no los pide antes, pero la guardia va aquí también.
+    val colorScheme = staticSchemeFor(kind) ?: if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) dynamicScheme(kind) else LightColors
     CompositionLocalProvider(
         LocalFinanceColors provides financeColorsFor(kind),
         LocalChartColors provides chartColorsFor(kind),
@@ -67,6 +69,7 @@ fun MyfinancesTheme(
     MyfinancesTheme(themeMode = if (darkTheme) ThemeMode.DARK else ThemeMode.LIGHT, dynamicColor = false, content = content)
 }
 
+@RequiresApi(Build.VERSION_CODES.S)
 @Composable
 private fun dynamicScheme(kind: SchemeKind): ColorScheme {
     val context = LocalContext.current
