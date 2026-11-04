@@ -8,6 +8,8 @@ import androidx.compose.material3.Text
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.al3xiel.my_finances.feature.backup.ui.BackupContent
+import com.al3xiel.my_finances.feature.backup.ui.BackupUiState
 import com.al3xiel.my_finances.feature.privacy.ui.PrivacyContent
 import com.al3xiel.my_finances.feature.privacy.ui.PrivacyUiState
 import androidx.compose.runtime.Composable
@@ -55,6 +57,14 @@ class AccessibilityAuditTest {
     @Test fun privacyLight() = audit(ThemeMode.LIGHT) { privacy() }
     @Test fun privacyDark() = audit(ThemeMode.DARK) { privacy() }
     @Test fun privacyAmoled() = audit(ThemeMode.AMOLED) { privacy() }
+
+    @Composable
+    private fun backup(canRestore: Boolean) = BackupContent(BackupUiState(canRestore = canRestore), onAction = {}, hasPermission = { true })
+
+    @Test fun backupLight() = audit(ThemeMode.LIGHT) { backup(canRestore = true) }
+    @Test fun backupDark() = audit(ThemeMode.DARK) { backup(canRestore = true) }
+    @Test fun backupAmoled() = audit(ThemeMode.AMOLED) { backup(canRestore = true) }
+    @Test fun backupWithRestoreBlockedAmoled() = audit(ThemeMode.AMOLED) { backup(canRestore = false) }
 
     /** Control: la auditoría de verdad detecta un objetivo táctil pequeño y sin etiqueta. */
     @Test fun theAuditCatchesATinyUnlabelledClickable() {
