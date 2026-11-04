@@ -101,6 +101,7 @@
 | Estrategia de asignación | `AllocationStrategy` | enum: `OLDEST_FIRST`, `MANUAL` | |
 | Estado de reembolso de un gasto | `ReimbursementStatus` | enum: `PENDING`, `PARTIALLY_REIMBURSED`, `REIMBURSED` | |
 | Reembolso de una parte | `PartReimbursement` | Vista de solo lectura del detalle de movimiento: por cada parte con cúmulo, el cúmulo, lo reembolsado, lo pendiente y su `ReimbursementStatus`. Sale de `movement_parts`; no es evento ni tabla | |
+| Detalle de la parte | `ExpensePartData.note` | Texto opcional (≤ 80 caracteres) que dice a qué se refiere una parte del gasto, p. ej. "Pastillas de Boby". Va en el evento (`schemaVersion` 2) y en `movement_parts.note`; no sale a otra persona | |
 | Formato de rendición | `StatementFormat` | enum: `IMAGE`, `PDF` | Archivo en que se comparte la rendición. |
 | Parte pendiente | `PendingPart` | valor de dominio | Parte de un gasto en cúmulo con lo que falta reembolsar; entrada del reparto. |
 | Reparto del más antiguo primero | `OldestFirstAllocator` | regla de dominio | Calcula las asignaciones de `OLDEST_FIRST`. |
