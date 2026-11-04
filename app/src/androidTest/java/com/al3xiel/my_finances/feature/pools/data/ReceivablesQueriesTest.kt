@@ -211,10 +211,13 @@ class ReceivablesQueriesTest {
     }
 
     @Test
-    fun receivablesListPoolsWithPendingAndOpenLoans() = runBlocking {
+    fun receivablesListEveryActivePoolEvenWithNothingPendingAndTheOpenLoans() = runBlocking {
         val result = receivables.observeReceivables().first()
 
-        val pool = result.pools.single()
+        // "Viaje" quedó sin gastos vigentes (el único se anuló): aparece igual, con cero pendiente.
+        assertEquals(listOf(dogs, trip), result.pools.map { it.poolId })
+        assertEquals(0L, result.pools.first { it.poolId == trip }.totalPending.amountMinor)
+        val pool = result.pools.first { it.poolId == dogs }
         assertEquals(dogs, pool.poolId)
         assertEquals(6_000L, pool.periodPending.amountMinor)
         assertEquals(11_000L, pool.totalPending.amountMinor)

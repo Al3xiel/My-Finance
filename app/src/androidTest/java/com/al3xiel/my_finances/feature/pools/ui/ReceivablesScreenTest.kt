@@ -30,7 +30,7 @@ class ReceivablesScreenTest {
         people = listOf(PersonReceivable(PersonId("mom"), "Mamá", pen(11_000), pen(0))),
         pools = listOf(
             PoolReceivable(PoolId("dogs"), "Perros", PoolKind.PERMANENT, PersonId("mom"), "Mamá", pen(6_000), pen(11_000)),
-            PoolReceivable(PoolId("trip"), "Viaje", PoolKind.EVENT, PersonId("mom"), "Mamá", pen(0), pen(2_000)),
+            PoolReceivable(PoolId("trip"), "Viaje", PoolKind.EVENT, PersonId("mom"), "Mamá", pen(0), pen(0)),
         ),
         loans = listOf(
             LoanReceivable(LoanId("l1"), PersonId("pepe"), "Pepe", pen(5_000), pen(2_000), LocalDate.of(2026, 11, 4)),
@@ -55,6 +55,13 @@ class ReceivablesScreenTest {
     @Test fun aPoolWithSomethingPendingInThePeriodCarriesTheStatusInText() {
         show()
         rule.onNodeWithText("Pendiente").assertIsDisplayed()
+    }
+
+    @Test fun aPoolWithNothingPendingStillShowsAndSaysSo() {
+        show()
+        // "Viaje" no tiene pendiente: se ve en la lista y lo dice, en vez de desaparecer.
+        rule.onNodeWithText("Viaje").assertIsDisplayed()
+        rule.onNodeWithText("Sin pendiente").assertIsDisplayed()
     }
 
     @Test fun aLoanSaysWhetherItIsPartlyRepaidOrJustOpen() {
