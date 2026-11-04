@@ -1,5 +1,7 @@
 package com.al3xiel.my_finances.feature.home.ui
 
+import androidx.compose.foundation.layout.Box
+import com.al3xiel.my_finances.core.designsystem.ScreenScaffold
 import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -76,35 +78,35 @@ fun HomeContent(
     onOpenNextIncome: (ExpectedIncomeId) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier.fillMaxSize()) {
-        HomeHeader(state.hideAmounts, onToggle = { onAction(HomeUiAction.ToggleHideAmounts) })
+    ScreenScaffold(
+        title = stringResource(R.string.home_title),
+        showBack = false,
+        modifier = modifier,
+        actions = { HideAmountsAction(state.hideAmounts, onToggle = { onAction(HomeUiAction.ToggleHideAmounts) }) },
+    ) { padding ->
         val summary = state.summary
         if (summary == null) {
             val loading = stringResource(R.string.home_loading)
-            CircularProgressIndicator(
-                modifier = Modifier.padding(32.dp).align(Alignment.CenterHorizontally).semantics { contentDescription = loading },
-            )
+            Box(Modifier.fillMaxSize().padding(padding)) {
+                CircularProgressIndicator(
+                    modifier = Modifier.padding(32.dp).align(Alignment.TopCenter).semantics { contentDescription = loading },
+                )
+            }
         } else {
-            HomeList(summary, onOpenAccount, onOpenFund, onOpenAlert, onOpenNextIncome)
+            HomeList(summary, onOpenAccount, onOpenFund, onOpenAlert, onOpenNextIncome, Modifier.padding(padding))
         }
     }
 }
 
+/** El ojo que oculta o muestra los montos, en el encabezado de la pestaña. */
 @Composable
-private fun HomeHeader(hidden: Boolean, onToggle: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(stringResource(R.string.home_title), style = MaterialTheme.typography.headlineMedium)
-        IconButton(onClick = onToggle) {
-            val label = stringResource(if (hidden) R.string.home_show_amounts else R.string.home_hide_amounts)
-            androidx.compose.material3.Icon(
-                painter = painterResource(if (hidden) AppIcons.VisibilityOff else AppIcons.Visibility),
-                contentDescription = label,
-            )
-        }
+private fun HideAmountsAction(hidden: Boolean, onToggle: () -> Unit) {
+    IconButton(onClick = onToggle) {
+        val label = stringResource(if (hidden) R.string.home_show_amounts else R.string.home_hide_amounts)
+        androidx.compose.material3.Icon(
+            painter = painterResource(if (hidden) AppIcons.VisibilityOff else AppIcons.Visibility),
+            contentDescription = label,
+        )
     }
 }
 
@@ -115,9 +117,10 @@ private fun HomeList(
     onOpenFund: (FundId) -> Unit,
     onOpenAlert: (HomeAlert) -> Unit,
     onOpenNextIncome: (ExpectedIncomeId) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     LazyColumn(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
