@@ -29,10 +29,11 @@ class PillButtonTest {
                     PillButton("Primario", onClick = {}, style = PillStyle.PRIMARY)
                     PillButton("Tonal", onClick = {}, style = PillStyle.TONAL)
                     PillButton("Texto", onClick = {}, style = PillStyle.TEXT)
+                    PillButton("Peligro", onClick = {}, style = PillStyle.DANGER)
                 }
             }
         }
-        listOf("Primario", "Tonal", "Texto").forEach { label ->
+        listOf("Primario", "Tonal", "Texto", "Peligro").forEach { label ->
             rule.onNodeWithText(label).assertHeightIsAtLeast(48.dp).assertWidthIsAtLeast(48.dp)
         }
     }
