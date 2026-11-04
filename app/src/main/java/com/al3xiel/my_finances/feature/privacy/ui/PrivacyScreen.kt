@@ -1,5 +1,16 @@
 package com.al3xiel.my_finances.feature.privacy.ui
 
+import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.fillMaxSize
+import com.al3xiel.my_finances.ui.theme.LocalSpacing
+import com.al3xiel.my_finances.core.designsystem.SectionRow
+import com.al3xiel.my_finances.core.designsystem.SectionDivider
+import com.al3xiel.my_finances.core.designsystem.SectionCard
+import com.al3xiel.my_finances.core.designsystem.ScreenScaffold
+import com.al3xiel.my_finances.core.designsystem.PillStyle
+import com.al3xiel.my_finances.core.designsystem.PillButton
 import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
@@ -13,7 +24,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -88,48 +98,70 @@ fun PrivacyContent(
     onBackupFirst: () -> Unit = {},
 ) {
     val prompt = AuthPrompt(title = stringResource(R.string.privacy_auth_title))
-    Column(
-        modifier = modifier.verticalScroll(rememberScrollState()).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Text(stringResource(R.string.privacy_what_is_stored_title), style = MaterialTheme.typography.titleMedium)
-        Text(stringResource(R.string.privacy_what_is_stored))
-
-        SwitchRow(
-            label = stringResource(R.string.privacy_lock),
-            checked = state.settings.lockEnabled,
-            onCheckedChange = { onAction(PrivacyUiAction.SetLockEnabled(it, prompt)) },
-        )
-        if (!state.canEnableLock) Text(stringResource(R.string.privacy_no_credential), color = MaterialTheme.colorScheme.error)
-        if (state.settings.lockEnabled) {
-            Text(stringResource(R.string.privacy_auto_lock))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                SecuritySettings.AUTO_LOCK_OPTIONS.forEach { minutes ->
-                    FilterChip(
-                        selected = state.settings.autoLockMinutes == minutes,
-                        onClick = { onAction(PrivacyUiAction.SetAutoLockMinutes(minutes)) },
-                        label = { Text(autoLockLabel(minutes)) },
+    val spacing = LocalSpacing.current
+    ScreenScaffold(title = stringResource(R.string.more_entry_privacy), modifier = modifier) { padding ->
+        Column(
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(padding).padding(spacing.lg),
+            verticalArrangement = Arrangement.spacedBy(spacing.lg),
+        ) {
+            SectionCard(title = stringResource(R.string.privacy_what_is_stored_title)) {
+                Text(
+                    stringResource(R.string.privacy_what_is_stored),
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(spacing.lg),
+                )
+            }
+            SectionCard {
+                SwitchRow(
+                    label = stringResource(R.string.privacy_lock),
+                    checked = state.settings.lockEnabled,
+                    onCheckedChange = { onAction(PrivacyUiAction.SetLockEnabled(it, prompt)) },
+                )
+                if (!state.canEnableLock) {
+                    SectionDivider()
+                    Text(
+                        stringResource(R.string.privacy_no_credential),
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(spacing.lg),
                     )
                 }
+                if (state.settings.lockEnabled) {
+                    SectionDivider()
+                    Column(Modifier.padding(spacing.lg), verticalArrangement = Arrangement.spacedBy(spacing.sm)) {
+                        Text(stringResource(R.string.privacy_auto_lock), style = MaterialTheme.typography.bodyLarge)
+                        Row(horizontalArrangement = Arrangement.spacedBy(spacing.sm)) {
+                            SecuritySettings.AUTO_LOCK_OPTIONS.forEach { minutes ->
+                                FilterChip(
+                                    selected = state.settings.autoLockMinutes == minutes,
+                                    onClick = { onAction(PrivacyUiAction.SetAutoLockMinutes(minutes)) },
+                                    label = { Text(autoLockLabel(minutes)) },
+                                    modifier = Modifier.heightIn(min = 48.dp),
+                                )
+                            }
+                        }
+                    }
+                }
             }
-        }
-        SwitchRow(
-            label = stringResource(R.string.privacy_secure_screen),
-            checked = state.settings.secureScreen,
-            onCheckedChange = { onAction(PrivacyUiAction.SetSecureScreen(it)) },
-        )
-        SwitchRow(
-            label = stringResource(R.string.privacy_hide_amounts),
-            checked = state.settings.hideAmounts,
-            onCheckedChange = { onAction(PrivacyUiAction.SetHideAmounts(it)) },
-        )
+            SectionCard {
+                SwitchRow(
+                    label = stringResource(R.string.privacy_secure_screen),
+                    checked = state.settings.secureScreen,
+                    onCheckedChange = { onAction(PrivacyUiAction.SetSecureScreen(it)) },
+                )
+                SectionDivider()
+                SwitchRow(
+                    label = stringResource(R.string.privacy_hide_amounts),
+                    checked = state.settings.hideAmounts,
+                    onCheckedChange = { onAction(PrivacyUiAction.SetHideAmounts(it)) },
+                )
+            }
 
-        state.message?.let { message ->
-            Text(stringResource(message.textRes()), color = MaterialTheme.colorScheme.error)
-        }
+            state.message?.let { message ->
+                Text(stringResource(message.textRes()), color = MaterialTheme.colorScheme.error)
+            }
 
-        OutlinedButton(onClick = { onAction(PrivacyUiAction.StartWipe) }, modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(R.string.privacy_wipe), color = MaterialTheme.colorScheme.error)
+            PillButton(stringResource(R.string.privacy_wipe), { onAction(PrivacyUiAction.StartWipe) }, Modifier.fillMaxWidth(), PillStyle.DANGER)
         }
     }
     WipeDialogs(state = state, prompt = prompt, onAction = onAction, onBackupFirst = onBackupFirst)
@@ -142,14 +174,11 @@ private fun autoLockLabel(minutes: Int) =
 
 @Composable
 private fun SwitchRow(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Text(label, modifier = Modifier.weight(1f))
-        Switch(checked = checked, onCheckedChange = onCheckedChange)
-    }
+    SectionRow(
+        headline = label,
+        modifier = Modifier.toggleable(value = checked, onValueChange = onCheckedChange, role = Role.Switch),
+        trailing = { Switch(checked = checked, onCheckedChange = null) },
+    )
 }
 
 @Composable
@@ -183,10 +212,12 @@ private fun WipeDialogs(
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(stringResource(R.string.privacy_wipe_phrase, WIPE_CONFIRMATION_PHRASE))
+                    val matches = state.typedPhrase.trim().equals(WIPE_CONFIRMATION_PHRASE, ignoreCase = true)
                     OutlinedTextField(
                         value = state.typedPhrase,
                         onValueChange = { onAction(PrivacyUiAction.PhraseChanged(it)) },
                         singleLine = true,
+                        supportingText = if (matches) null else ({ Text(stringResource(R.string.privacy_wipe_phrase_hint)) }),
                     )
                 }
             },
@@ -231,6 +262,7 @@ private fun PrivacyContentPreview() {
 }
 
 @Preview(showBackground = true, uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)
+@Preview(showBackground = true, fontScale = 2f)
 @Composable
 private fun PrivacyContentDarkPreview() {
     MyfinancesTheme { PrivacyContent(PrivacyUiState(canEnableLock = false, wipeStage = WipeStage.WARNING), onAction = {}) }

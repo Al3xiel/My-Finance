@@ -1,5 +1,14 @@
 package com.al3xiel.my_finances.feature.diagnostics.ui
 
+import com.al3xiel.my_finances.ui.theme.MyfinancesTheme
+import com.al3xiel.my_finances.ui.theme.LocalSpacing
+import com.al3xiel.my_finances.core.designsystem.BlockedHint
+import com.al3xiel.my_finances.core.designsystem.SectionRow
+import com.al3xiel.my_finances.core.designsystem.SectionDivider
+import com.al3xiel.my_finances.core.designsystem.SectionCard
+import com.al3xiel.my_finances.core.designsystem.ScreenScaffold
+import com.al3xiel.my_finances.core.designsystem.PillStyle
+import com.al3xiel.my_finances.core.designsystem.PillButton
 import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -9,13 +18,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,28 +37,36 @@ fun DiagnosticWorkspaceContent(
     onAction: (DiagnosticWorkspaceUiAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Text(stringResource(R.string.diagnostic_workspace_title), style = MaterialTheme.typography.titleLarge)
-        Text(stringResource(R.string.diagnostic_workspace_privacy_note), color = MaterialTheme.colorScheme.onSurfaceVariant)
-        state.message?.let { Text(stringResource(it.textRes()), color = MaterialTheme.colorScheme.error) }
-        val summary = state.summary
-        when {
-            state.stage == WorkspaceStage.LOCKED -> Unit
-            state.stage == WorkspaceStage.LOADING || state.stage == WorkspaceStage.WORKING -> BusyRow()
-            summary == null -> EmptySection(onAction)
-            else -> {
-                SummarySection(summary)
-                state.report?.let { ReportSection(it) }
-                RequestSection(summary, state, onAction)
-                OutlinedButton(onClick = { onAction(DiagnosticWorkspaceUiAction.ApplyDictionary) }, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.diagnostic_workspace_dictionary_apply))
-                }
-                if (state.names.isNotEmpty()) NamesSection(state.names)
-                TextButton(onClick = { onAction(DiagnosticWorkspaceUiAction.AskDelete) }, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.diagnostic_workspace_delete), color = MaterialTheme.colorScheme.error)
+    val spacing = LocalSpacing.current
+    ScreenScaffold(title = stringResource(R.string.diagnostic_workspace_title), modifier = modifier) { padding ->
+        Column(
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(padding).padding(spacing.lg),
+            verticalArrangement = Arrangement.spacedBy(spacing.lg),
+        ) {
+            Text(stringResource(R.string.diagnostic_workspace_privacy_note), color = MaterialTheme.colorScheme.onSurfaceVariant)
+            state.message?.let { Text(stringResource(it.textRes()), color = MaterialTheme.colorScheme.error) }
+            val summary = state.summary
+            when {
+                state.stage == WorkspaceStage.LOCKED -> Unit
+                state.stage == WorkspaceStage.LOADING || state.stage == WorkspaceStage.WORKING -> BusyRow()
+                summary == null -> EmptySection(onAction)
+                else -> {
+                    SummarySection(summary)
+                    state.report?.let { ReportSection(it) }
+                    RequestSection(summary, state, onAction)
+                    PillButton(
+                        stringResource(R.string.diagnostic_workspace_dictionary_apply),
+                        { onAction(DiagnosticWorkspaceUiAction.ApplyDictionary) },
+                        Modifier.fillMaxWidth(),
+                        PillStyle.TONAL,
+                    )
+                    if (state.names.isNotEmpty()) NamesSection(state.names)
+                    PillButton(
+                        stringResource(R.string.diagnostic_workspace_delete),
+                        { onAction(DiagnosticWorkspaceUiAction.AskDelete) },
+                        Modifier.fillMaxWidth(),
+                        PillStyle.DANGER,
+                    )
                 }
             }
         }
@@ -71,54 +85,59 @@ private fun BusyRow() {
 @Composable
 private fun EmptySection(onAction: (DiagnosticWorkspaceUiAction) -> Unit) {
     Text(stringResource(R.string.diagnostic_workspace_empty))
-    Button(onClick = { onAction(DiagnosticWorkspaceUiAction.OpenPackage) }, modifier = Modifier.fillMaxWidth()) {
-        Text(stringResource(R.string.diagnostic_workspace_open))
-    }
+    PillButton(stringResource(R.string.diagnostic_workspace_open), { onAction(DiagnosticWorkspaceUiAction.OpenPackage) }, Modifier.fillMaxWidth())
 }
 
 @Composable
 private fun SummarySection(summary: WorkspaceSummary) {
-    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        Text(stringResource(R.string.diagnostic_workspace_summary_title), style = MaterialTheme.typography.titleMedium)
-        Text(stringResource(R.string.diagnostic_workspace_summary_scope, summary.scope, summary.eventCount))
-        Text(stringResource(R.string.diagnostic_workspace_summary_version, summary.appVersion, summary.androidVersion))
-        Text(stringResource(R.string.diagnostic_workspace_summary_exported, summary.exportedAt))
-        Text(stringResource(R.string.diagnostic_workspace_summary_hash, summary.packageHashPrefix))
-        Text(
-            if (summary.anonymized) stringResource(R.string.diagnostic_workspace_summary_anonymized, summary.alteredEventCount)
-            else stringResource(R.string.diagnostic_workspace_summary_not_anonymized),
-        )
+    SectionCard(title = stringResource(R.string.diagnostic_workspace_summary_title)) {
+        Column(Modifier.padding(LocalSpacing.current.lg), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(stringResource(R.string.diagnostic_workspace_summary_scope, summary.scope, summary.eventCount))
+            Text(stringResource(R.string.diagnostic_workspace_summary_version, summary.appVersion, summary.androidVersion))
+            Text(stringResource(R.string.diagnostic_workspace_summary_exported, summary.exportedAt))
+            Text(stringResource(R.string.diagnostic_workspace_summary_hash, summary.packageHashPrefix))
+            Text(
+                if (summary.anonymized) stringResource(R.string.diagnostic_workspace_summary_anonymized, summary.alteredEventCount)
+                else stringResource(R.string.diagnostic_workspace_summary_not_anonymized),
+            )
+        }
     }
 }
 
 @Composable
 private fun RequestSection(summary: WorkspaceSummary, state: DiagnosticWorkspaceUiState, onAction: (DiagnosticWorkspaceUiAction) -> Unit) {
     if (summary.pseudonyms.isEmpty()) return
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(stringResource(R.string.diagnostic_workspace_request_title), style = MaterialTheme.typography.titleMedium)
-        Text(stringResource(R.string.diagnostic_workspace_request_hint), color = MaterialTheme.colorScheme.onSurfaceVariant)
-        summary.pseudonyms.forEach { pseudonym ->
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Checkbox(
-                    checked = pseudonym in state.requestSelection,
-                    onCheckedChange = { onAction(DiagnosticWorkspaceUiAction.ToggleRequestPseudonym(pseudonym)) },
-                )
-                Text(state.names[pseudonym]?.let { "$pseudonym → $it" } ?: pseudonym)
+    val spacing = LocalSpacing.current
+    SectionCard(title = stringResource(R.string.diagnostic_workspace_request_title)) {
+        Column(Modifier.padding(spacing.lg), verticalArrangement = Arrangement.spacedBy(spacing.sm)) {
+            Text(stringResource(R.string.diagnostic_workspace_request_hint), color = MaterialTheme.colorScheme.onSurfaceVariant)
+            summary.pseudonyms.forEach { pseudonym ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(
+                        checked = pseudonym in state.requestSelection,
+                        onCheckedChange = { onAction(DiagnosticWorkspaceUiAction.ToggleRequestPseudonym(pseudonym)) },
+                    )
+                    Text(state.names[pseudonym]?.let { "$pseudonym → $it" } ?: pseudonym)
+                }
             }
+            val blocked = state.requestSelection.isEmpty()
+            BlockedHint(stringResource(R.string.diagnostic_workspace_request_blocked).takeIf { blocked })
+            PillButton(
+                stringResource(R.string.diagnostic_workspace_request_create),
+                { onAction(DiagnosticWorkspaceUiAction.CreateRequest) },
+                Modifier.fillMaxWidth(),
+                enabled = !blocked,
+            )
         }
-        Button(
-            onClick = { onAction(DiagnosticWorkspaceUiAction.CreateRequest) },
-            enabled = state.requestSelection.isNotEmpty(),
-            modifier = Modifier.fillMaxWidth(),
-        ) { Text(stringResource(R.string.diagnostic_workspace_request_create)) }
     }
 }
 
 @Composable
 private fun NamesSection(names: Map<String, String>) {
-    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        Text(stringResource(R.string.diagnostic_workspace_dictionary_names), style = MaterialTheme.typography.titleMedium)
-        names.toSortedMap().forEach { (pseudonym, alias) -> Text("$pseudonym → $alias") }
+    SectionCard(title = stringResource(R.string.diagnostic_workspace_dictionary_names)) {
+        Column(Modifier.padding(LocalSpacing.current.lg), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            names.toSortedMap().forEach { (pseudonym, alias) -> Text("$pseudonym → $alias") }
+        }
     }
 }
 

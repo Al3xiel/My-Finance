@@ -1,5 +1,7 @@
 package com.al3xiel.my_finances.feature.home.ui
 
+import com.al3xiel.my_finances.core.designsystem.SCREEN_SCAFFOLD_BAR_TAG
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -54,6 +56,20 @@ class HomeScreenTest {
         CompositionLocalProvider(LocalHideAmounts provides state.hideAmounts) {
             HomeContent(state, onAction, onOpenAccount = onOpenAccount, onOpenFund = {}, onOpenAlert = {}, onOpenNextIncome = {})
         }
+    }
+
+    @Test
+    fun theHeaderIsTheSharedTabHeaderWithTheHideAmountsAction() {
+        show(HomeUiState(summary = summary(withAccount = true)))
+        rule.onNodeWithTag(SCREEN_SCAFFOLD_BAR_TAG).assertExists()
+        rule.onNodeWithText(string(R.string.home_title)).assertIsDisplayed()
+        rule.onNodeWithContentDescription(string(R.string.home_hide_amounts)).assertIsDisplayed()
+    }
+
+    @Test
+    fun whileLoadingTheHeaderIsStillThere() {
+        show(HomeUiState(summary = null))
+        rule.onNodeWithTag(SCREEN_SCAFFOLD_BAR_TAG).assertExists()
     }
 
     @Test

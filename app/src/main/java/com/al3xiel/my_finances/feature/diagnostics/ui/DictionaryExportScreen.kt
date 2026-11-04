@@ -1,5 +1,14 @@
 package com.al3xiel.my_finances.feature.diagnostics.ui
 
+import com.al3xiel.my_finances.ui.theme.MyfinancesTheme
+import com.al3xiel.my_finances.ui.theme.LocalSpacing
+import com.al3xiel.my_finances.core.designsystem.BlockedHint
+import com.al3xiel.my_finances.core.designsystem.SectionRow
+import com.al3xiel.my_finances.core.designsystem.SectionDivider
+import com.al3xiel.my_finances.core.designsystem.SectionCard
+import com.al3xiel.my_finances.core.designsystem.ScreenScaffold
+import com.al3xiel.my_finances.core.designsystem.PillStyle
+import com.al3xiel.my_finances.core.designsystem.PillButton
 import android.content.res.Configuration
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -11,7 +20,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -70,52 +78,64 @@ fun DictionaryExportContent(
     val prompt = AuthPrompt(stringResource(R.string.dictionary_export_auth_title), stringResource(R.string.dictionary_export_auth_subtitle))
     val busy = state.stage != DictionaryStage.FORM
 
-    Column(
-        modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Text(stringResource(R.string.dictionary_export_title), style = MaterialTheme.typography.titleLarge)
-        Text(stringResource(R.string.dictionary_export_intro), color = MaterialTheme.colorScheme.onSurfaceVariant)
-        if (state.stage == DictionaryStage.DONE) {
-            Text(stringResource(R.string.dictionary_export_done_title), style = MaterialTheme.typography.titleMedium)
-            state.created?.let { Text(stringResource(R.string.dictionary_export_done_body, it.revealedPseudonyms, it.revealedNotes)) }
-            Button(onClick = onFinished, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.dictionary_export_done_ok)) }
-            return@Column
+    val spacing = LocalSpacing.current
+    ScreenScaffold(title = stringResource(R.string.dictionary_export_title), modifier = modifier) { padding ->
+        Column(
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(padding).padding(spacing.lg),
+            verticalArrangement = Arrangement.spacedBy(spacing.lg),
+        ) {
+            Text(stringResource(R.string.dictionary_export_intro), color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (state.stage == DictionaryStage.DONE) {
+                SectionCard {
+                    Column(Modifier.padding(spacing.lg), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(stringResource(R.string.dictionary_export_done_title), style = MaterialTheme.typography.titleMedium)
+                        state.created?.let { Text(stringResource(R.string.dictionary_export_done_body, it.revealedPseudonyms, it.revealedNotes)) }
+                    }
+                }
+                PillButton(stringResource(R.string.dictionary_export_done_ok), onFinished, Modifier.fillMaxWidth())
+                return@Column
+            }
+            OutlinedTextField(
+                value = state.requestCode,
+                onValueChange = { onAction(DictionaryExportUiAction.SetRequestCode(it)) },
+                label = { Text(stringResource(R.string.dictionary_export_code_label)) },
+                enabled = !busy,
+                shape = MaterialTheme.shapes.medium,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(spacing.sm)) {
+                FilterChip(state.scope == DictionaryScope.PARTIAL, { onAction(DictionaryExportUiAction.SetScope(DictionaryScope.PARTIAL)) }, { Text(stringResource(R.string.dictionary_export_scope_partial)) }, enabled = !busy)
+                FilterChip(state.scope == DictionaryScope.FULL, { onAction(DictionaryExportUiAction.SetScope(DictionaryScope.FULL)) }, { Text(stringResource(R.string.dictionary_export_scope_full)) }, enabled = !busy)
+            }
+            state.preview?.let { PreviewSection(it) }
+            PasswordField(password, R.string.dictionary_export_password_label, Modifier.fillMaxWidth()) { password = it }
+            PasswordField(confirmation, R.string.dictionary_export_password_confirm_label, Modifier.fillMaxWidth()) { confirmation = it }
+            state.message?.let { Text(stringResource(it.textRes()), color = MaterialTheme.colorScheme.error) }
+            val blocked = !busy && state.preview == null
+            BlockedHint(stringResource(R.string.dictionary_export_blocked_preview).takeIf { blocked })
+            PillButton(
+                text = stringResource(if (state.stage == DictionaryStage.WRITING) R.string.dictionary_export_writing else R.string.dictionary_export_button),
+                onClick = {
+                    onAction(DictionaryExportUiAction.Submit(password.toCharArray(), confirmation.toCharArray(), prompt))
+                    password = ""
+                    confirmation = ""
+                },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !busy && state.preview != null,
+                loading = state.stage == DictionaryStage.WRITING,
+            )
         }
-        OutlinedTextField(
-            value = state.requestCode,
-            onValueChange = { onAction(DictionaryExportUiAction.SetRequestCode(it)) },
-            label = { Text(stringResource(R.string.dictionary_export_code_label)) },
-            enabled = !busy,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FilterChip(state.scope == DictionaryScope.PARTIAL, { onAction(DictionaryExportUiAction.SetScope(DictionaryScope.PARTIAL)) }, { Text(stringResource(R.string.dictionary_export_scope_partial)) }, enabled = !busy)
-            FilterChip(state.scope == DictionaryScope.FULL, { onAction(DictionaryExportUiAction.SetScope(DictionaryScope.FULL)) }, { Text(stringResource(R.string.dictionary_export_scope_full)) }, enabled = !busy)
-        }
-        state.preview?.let { PreviewSection(it) }
-        PasswordField(password, R.string.dictionary_export_password_label, Modifier.fillMaxWidth()) { password = it }
-        PasswordField(confirmation, R.string.dictionary_export_password_confirm_label, Modifier.fillMaxWidth()) { confirmation = it }
-        state.message?.let { Text(stringResource(it.textRes()), color = MaterialTheme.colorScheme.error) }
-        Button(
-            onClick = {
-                onAction(DictionaryExportUiAction.Submit(password.toCharArray(), confirmation.toCharArray(), prompt))
-                password = ""
-                confirmation = ""
-            },
-            enabled = !busy && state.preview != null,
-            modifier = Modifier.fillMaxWidth(),
-        ) { Text(stringResource(if (state.stage == DictionaryStage.WRITING) R.string.dictionary_export_writing else R.string.dictionary_export_button)) }
     }
 }
 
 @Composable
 private fun PreviewSection(preview: DictionaryPreview) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(stringResource(R.string.dictionary_export_preview_title), style = MaterialTheme.typography.titleMedium)
-        Text(stringResource(R.string.dictionary_export_preview_pseudonyms, preview.pseudonyms.size, preview.pseudonyms.joinToString(", ")))
-        if (preview.noteEventIds.isNotEmpty()) Text(stringResource(R.string.dictionary_export_preview_notes, preview.noteEventIds.size))
-        if (preview.unknown > 0) Text(stringResource(R.string.dictionary_export_preview_unknown, preview.unknown), color = MaterialTheme.colorScheme.onSurfaceVariant)
+    SectionCard(title = stringResource(R.string.dictionary_export_preview_title)) {
+        Column(Modifier.padding(LocalSpacing.current.lg), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(stringResource(R.string.dictionary_export_preview_pseudonyms, preview.pseudonyms.size, preview.pseudonyms.joinToString(", ")))
+            if (preview.noteEventIds.isNotEmpty()) Text(stringResource(R.string.dictionary_export_preview_notes, preview.noteEventIds.size))
+            if (preview.unknown > 0) Text(stringResource(R.string.dictionary_export_preview_unknown, preview.unknown), color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
     }
 }
 
@@ -140,7 +160,8 @@ private val previewState = DictionaryExportUiState(
 
 @Preview(showBackground = true)
 @Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(showBackground = true, fontScale = 2f)
 @Composable
 private fun DictionaryExportContentPreview() {
-    DictionaryExportContent(previewState, {}, {})
+    MyfinancesTheme { DictionaryExportContent(previewState, {}, {}) }
 }

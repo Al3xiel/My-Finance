@@ -1,5 +1,7 @@
 package com.al3xiel.my_finances.core.designsystem
 
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.material3.CircularProgressIndicator
@@ -24,7 +26,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.al3xiel.my_finances.ui.theme.MyfinancesTheme
 
-enum class PillStyle { PRIMARY, TONAL, TEXT }
+/** `DANGER` es para lo que borra o no se puede deshacer: el color de error con su texto, nunca solo rojo sobre fondo. */
+enum class PillStyle { PRIMARY, TONAL, TEXT, DANGER }
 
 private val PillShape = RoundedCornerShape(percent = 50)
 private val PillPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp)
@@ -68,6 +71,10 @@ fun PillButton(
     when (style) {
         PillStyle.PRIMARY -> Button(onClick, sized, active, shape = PillShape, contentPadding = PillPadding) { label() }
         PillStyle.TONAL -> FilledTonalButton(onClick, sized, active, shape = PillShape, contentPadding = PillPadding) { label() }
+        PillStyle.DANGER -> Button(
+            onClick, sized, active, shape = PillShape, contentPadding = PillPadding,
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error, contentColor = MaterialTheme.colorScheme.onError),
+        ) { label() }
         PillStyle.TEXT -> TextButton(onClick, sized, active, shape = PillShape, contentPadding = PillPadding) { label() }
     }
 }

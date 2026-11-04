@@ -1,5 +1,13 @@
 package com.al3xiel.my_finances.feature.privacy.ui
 
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.ColumnScope
+import com.al3xiel.my_finances.ui.theme.LocalSpacing
+import com.al3xiel.my_finances.core.designsystem.SectionRow
+import com.al3xiel.my_finances.core.designsystem.SectionDivider
+import com.al3xiel.my_finances.core.designsystem.SectionCard
+import com.al3xiel.my_finances.core.designsystem.ScreenScaffold
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -32,12 +40,15 @@ import com.al3xiel.my_finances.ui.theme.MyfinancesTheme
 @Composable
 fun SettingsScreen(modifier: Modifier = Modifier, viewModel: SettingsViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    Column(modifier = modifier.verticalScroll(rememberScrollState())) {
-        SettingsContent(state = state, onAction = viewModel::onAction)
-        viewModel.sections.forEach { section -> key(section.id) { section.content() } }
-    }
+    SettingsContent(
+        state = state,
+        onAction = viewModel::onAction,
+        modifier = modifier,
+        sections = { viewModel.sections.forEach { section -> key(section.id) { section.content() } } },
+    )
 }
 
+/** Ajustes: tema, color del sistema, moneda y formato; debajo, las secciones que aportan otras features. */
 @Composable
 fun SettingsContent(
     state: SettingsUiState,
@@ -45,49 +56,51 @@ fun SettingsContent(
     modifier: Modifier = Modifier,
     /** El color del sistema existe desde Android 12; antes no se ofrece. */
     dynamicColorSupported: Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S,
+    sections: @Composable ColumnScope.() -> Unit = {},
 ) {
-    Column(modifier = modifier.padding(16.dp), verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
-        Text(stringResource(R.string.settings_theme), style = MaterialTheme.typography.titleMedium)
-        Column(modifier = Modifier.selectableGroup()) {
-            ThemeMode.entries.forEach { mode ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .selectable(
-                            selected = state.themeMode == mode,
-                            onClick = { onAction(SettingsUiAction.SetThemeMode(mode)) },
-                            role = Role.RadioButton,
+    val spacing = LocalSpacing.current
+    ScreenScaffold(title = stringResource(R.string.more_entry_settings), modifier = modifier) { padding ->
+        Column(
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(padding).padding(spacing.lg),
+            verticalArrangement = Arrangement.spacedBy(spacing.lg),
+        ) {
+            SectionCard(title = stringResource(R.string.settings_theme)) {
+                Column(modifier = Modifier.selectableGroup()) {
+                    ThemeMode.entries.forEachIndexed { index, mode ->
+                        if (index > 0) SectionDivider()
+                        SectionRow(
+                            headline = stringResource(mode.labelRes()),
+                            modifier = Modifier.selectable(
+                                selected = state.themeMode == mode,
+                                onClick = { onAction(SettingsUiAction.SetThemeMode(mode)) },
+                                role = Role.RadioButton,
+                            ),
+                            leading = { RadioButton(selected = state.themeMode == mode, onClick = null) },
+                        )
+                    }
+                }
+            }
+            if (dynamicColorSupported) {
+                SectionCard {
+                    SectionRow(
+                        headline = stringResource(R.string.settings_dynamic_color),
+                        supporting = stringResource(R.string.settings_dynamic_color_hint),
+                        modifier = Modifier.toggleable(
+                            value = state.dynamicColor,
+                            onValueChange = { onAction(SettingsUiAction.SetDynamicColor(it)) },
+                            role = Role.Switch,
                         ),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    RadioButton(selected = state.themeMode == mode, onClick = null)
-                    Text(stringResource(mode.labelRes()), modifier = Modifier.padding(start = 12.dp, top = 12.dp, bottom = 12.dp))
-                }
-            }
-        }
-        if (dynamicColorSupported) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .toggleable(
-                        value = state.dynamicColor,
-                        onValueChange = { onAction(SettingsUiAction.SetDynamicColor(it)) },
-                        role = Role.Switch,
+                        trailing = { Switch(checked = state.dynamicColor, onCheckedChange = null) },
                     )
-                    .padding(vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(stringResource(R.string.settings_dynamic_color), style = MaterialTheme.typography.titleMedium)
-                    Text(stringResource(R.string.settings_dynamic_color_hint), style = MaterialTheme.typography.bodyMedium)
                 }
-                Switch(checked = state.dynamicColor, onCheckedChange = null)
             }
+            SectionCard {
+                SectionRow(headline = stringResource(R.string.settings_currency), trailing = { Text(stringResource(R.string.settings_currency_value)) })
+                SectionDivider()
+                SectionRow(headline = stringResource(R.string.settings_format), trailing = { Text(stringResource(R.string.settings_format_value)) })
+            }
+            sections()
         }
-        Text(stringResource(R.string.settings_currency), style = MaterialTheme.typography.titleMedium)
-        Text(stringResource(R.string.settings_currency_value))
-        Text(stringResource(R.string.settings_format), style = MaterialTheme.typography.titleMedium)
-        Text(stringResource(R.string.settings_format_value))
     }
 }
 
@@ -105,6 +118,7 @@ private fun SettingsContentPreview() {
 }
 
 @Preview(showBackground = true, uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)
+@Preview(showBackground = true, fontScale = 2f)
 @Composable
 private fun SettingsContentDarkPreview() {
     MyfinancesTheme { SettingsContent(SettingsUiState(), onAction = {}) }

@@ -66,7 +66,7 @@ fun ReminderSettingsContent(
     hasPermission: () -> Boolean,
     modifier: Modifier = Modifier,
 ) {
-    SectionCard(title = stringResource(R.string.settings_reminders), modifier = modifier.padding(16.dp)) {
+    SectionCard(title = stringResource(R.string.settings_reminders), modifier = modifier) {
         SectionRow(
             headline = stringResource(R.string.settings_reminders_switch),
             supporting = stringResource(R.string.settings_reminders_hint),

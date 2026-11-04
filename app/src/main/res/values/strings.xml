@@ -29,6 +29,7 @@
     <string name="privacy_wipe_continue">Continuar</string>
     <string name="privacy_wipe_phrase_title">Confirmar borrado</string>
     <string name="privacy_wipe_phrase">Escribe %1$s para confirmar.</string>
+    <string name="privacy_wipe_phrase_hint">Escribe la frase exacta para activar el botón.</string>
     <string name="privacy_wipe_confirm">Borrar</string>
     <string name="privacy_wipe_running">Borrando…</string>
     <string name="privacy_wipe_incomplete_title">Borrado incompleto</string>
@@ -627,6 +628,9 @@
     <string name="more_entry_backup">Respaldo</string>
     <string name="backup_title">Respaldo</string>
     <string name="backup_last_none">Todavía no hiciste un respaldo.</string>
+    <string name="backup_badge_none">Sin respaldo</string>
+    <string name="backup_badge_current">Al día</string>
+    <string name="backup_chain_badge_ok">Íntegro</string>
     <plurals name="backup_last_days">
         <item quantity="one">Último respaldo: hace %d día</item>
         <item quantity="other">Último respaldo: hace %d días</item>
@@ -712,6 +716,7 @@
     <string name="diagnostic_export_password_label">Contraseña</string>
     <string name="diagnostic_export_password_confirm_label">Repite la contraseña</string>
     <string name="diagnostic_export_button">Exportar</string>
+    <string name="diagnostic_export_blocked_preview">Preparando la vista previa de lo que se exportará…</string>
     <string name="diagnostic_export_writing">Guardando…</string>
     <string name="diagnostic_export_auth_title">Confirma que eres tú</string>
     <string name="diagnostic_export_auth_subtitle">Vas a sacar datos de tu historial del teléfono</string>
@@ -756,6 +761,7 @@
     <string name="diagnostic_workspace_request_title">Pedir nombres</string>
     <string name="diagnostic_workspace_request_hint">Elige qué seudónimos quieres conocer y envía el código a quien exportó.</string>
     <string name="diagnostic_workspace_request_create">Generar solicitud</string>
+    <string name="diagnostic_workspace_request_blocked">Marca al menos un seudónimo para generar la solicitud.</string>
     <string name="diagnostic_workspace_request_code">Código de solicitud</string>
     <string name="diagnostic_workspace_request_close">Cerrar</string>
     <string name="diagnostic_workspace_dictionary_apply">Aplicar diccionario</string>
@@ -791,6 +797,7 @@
     <string name="dictionary_export_password_label">Contraseña</string>
     <string name="dictionary_export_password_confirm_label">Repite la contraseña</string>
     <string name="dictionary_export_button">Exportar</string>
+    <string name="dictionary_export_blocked_preview">Pega un código de solicitud válido para ver qué se revelará.</string>
     <string name="dictionary_export_writing">Guardando…</string>
     <string name="dictionary_export_auth_title">Confirma que eres tú</string>
     <string name="dictionary_export_auth_subtitle">Vas a revelar nombres reales</string>
@@ -832,6 +839,8 @@
     <string name="devtools_open_package">Abrir paquete de diagnóstico</string>
     <string name="devtools_events_title">Eventos</string>
     <string name="devtools_events_more">Cargar más</string>
+    <string name="devtools_events_empty">Aún no hay eventos registrados.</string>
+    <string name="devtools_working">Trabajando…</string>
     <string name="devtools_error_auth">No se pudo confirmar tu identidad.</string>
     <string name="devtools_error_no_credential">Configura un bloqueo de pantalla en el teléfono para usar estas herramientas.</string>
     <string name="devtools_error_unexpected">Algo salió mal. Inténtalo de nuevo.</string>
