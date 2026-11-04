@@ -1,5 +1,6 @@
 package com.al3xiel.my_finances.feature.diagnostics.data
 
+import java.time.ZoneId
 import com.al3xiel.my_finances.core.security.container.BackupPassword
 import com.al3xiel.my_finances.core.security.container.ContainerHeader
 import com.al3xiel.my_finances.core.security.container.EncryptedContainerWriter
@@ -59,7 +60,10 @@ class DiagnosticPackageBuilder(private val iterations: Int) : DiagnosticPackageW
             zip.setLevel(Deflater.DEFAULT_COMPRESSION)
             for ((name, bytes) in entries) {
                 val entry = ZipEntry(name)
-                entry.setTimeLocal(LocalDateTime.of(DiagnosticPackageFormat.ENTRY_YEAR, 1, 1, 0, 0, 0))
+                // `setTimeLocal` no existe antes de Android 15. `setTime` convierte los milisegundos con la zona del teléfono, así que se le
+                // pasa el instante que en esa zona es siempre la misma hora local fija: el zip sale idéntico en cualquier zona.
+                entry.time = LocalDateTime.of(DiagnosticPackageFormat.ENTRY_YEAR, 1, 1, 0, 0, 0)
+                    .atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
                 zip.putNextEntry(entry)
                 zip.write(bytes)
                 zip.closeEntry()

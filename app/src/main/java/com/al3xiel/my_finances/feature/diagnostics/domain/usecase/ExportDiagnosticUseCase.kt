@@ -1,5 +1,6 @@
 package com.al3xiel.my_finances.feature.diagnostics.domain.usecase
 
+import com.al3xiel.my_finances.core.io.readAtMost
 import com.al3xiel.my_finances.core.id.IdGenerator
 import com.al3xiel.my_finances.core.security.container.EncryptedContainerReader
 import com.al3xiel.my_finances.domain.model.Outcome
@@ -148,7 +149,7 @@ class ExportDiagnosticUseCase @Inject constructor(
             input?.close()
             false
         } else {
-            val bytes = input.use { it.readNBytes(expected + 1) }
+            val bytes = input.use { it.readAtMost(expected + 1) }
             bytes.contentEquals(built.file) && (password == null || opensToExpectedZip(bytes, built, password))
         }
     } catch (_: IOException) {

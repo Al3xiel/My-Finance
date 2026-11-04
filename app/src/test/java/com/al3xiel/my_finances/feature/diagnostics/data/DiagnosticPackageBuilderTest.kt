@@ -125,6 +125,21 @@ class DiagnosticPackageBuilderTest {
     }
 
     @Test
+    fun thePackageBytesDoNotDependOnTheDeviceTimeZone() {
+        val original = java.util.TimeZone.getDefault()
+        try {
+            val zones = listOf("UTC", "America/Lima", "Pacific/Kiritimati", "Asia/Kolkata").map { id ->
+                java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone(id))
+                builder.build(input(), null)
+            }
+            zones.drop(1).forEach { assertTrue(zones.first().zip.contentEquals(it.zip)) }
+            assertEquals(1, zones.map { it.packageHash }.toSet().size)
+        } finally {
+            java.util.TimeZone.setDefault(original)
+        }
+    }
+
+    @Test
     fun aDifferentEventChangesBothHashes() {
         val first = builder.build(input(), null)
         val changed = anonymized.events.map { if (it.source.sequence == 3L) it.copy(payload = it.payload.replace("5000", "5001")) else it }

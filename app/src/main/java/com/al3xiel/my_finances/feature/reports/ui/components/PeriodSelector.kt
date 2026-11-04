@@ -1,5 +1,6 @@
 package com.al3xiel.my_finances.feature.reports.ui.components
 
+import androidx.compose.ui.platform.LocalConfiguration
 import com.al3xiel.my_finances.ui.theme.MyfinancesTheme
 import androidx.compose.foundation.layout.padding
 import com.al3xiel.my_finances.ui.theme.LocalSpacing
@@ -71,7 +72,7 @@ fun PeriodSelector(
                 enabled = previous != null,
                 modifier = Modifier.heightIn(min = 48.dp).widthIn(min = 48.dp).semantics { contentDescription = previousDescription },
             ) { Text(stringResource(R.string.report_period_previous_glyph), style = MaterialTheme.typography.titleLarge) }
-            Text(periodLabel(period, Locale.getDefault()), style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f, fill = false))
+            Text(periodLabel(period, LocalConfiguration.current.locales[0]), style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f, fill = false))
             val nextDescription = stringResource(R.string.report_period_next)
             TextButton(
                 onClick = { next?.let(onPeriodChange) },

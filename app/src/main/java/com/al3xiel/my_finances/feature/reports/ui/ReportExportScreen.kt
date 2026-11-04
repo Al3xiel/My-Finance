@@ -1,5 +1,6 @@
 package com.al3xiel.my_finances.feature.reports.ui
 
+import androidx.compose.ui.platform.LocalConfiguration
 import com.al3xiel.my_finances.ui.theme.MyfinancesTheme
 import com.al3xiel.my_finances.ui.theme.LocalSpacing
 import com.al3xiel.my_finances.core.designsystem.SectionRow
@@ -70,7 +71,7 @@ fun ReportExportScreen(
 @Composable
 private fun rememberExportTexts(period: ReportPeriod) = ReportExportTexts(
     title = stringResource(R.string.report_export_pdf_title),
-    periodLabel = periodLabel(period, Locale.getDefault()),
+    periodLabel = periodLabel(period, LocalConfiguration.current.locales[0]),
     notice = stringResource(R.string.report_export_pdf_notice),
     summaryHeading = stringResource(R.string.report_export_pdf_summary),
     categoryHeading = stringResource(R.string.report_summary_by_category),
@@ -109,7 +110,7 @@ fun ReportExportContent(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(padding).padding(spacing.lg),
             verticalArrangement = Arrangement.spacedBy(spacing.lg),
         ) {
-            Text(periodLabel(state.period, Locale.getDefault()), style = MaterialTheme.typography.titleMedium)
+            Text(periodLabel(state.period, LocalConfiguration.current.locales[0]), style = MaterialTheme.typography.titleMedium)
             Text(stringResource(R.string.report_export_format), style = MaterialTheme.typography.labelLarge)
             Row(horizontalArrangement = Arrangement.spacedBy(spacing.sm)) {
                 FilterChip(

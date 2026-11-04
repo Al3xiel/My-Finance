@@ -1,5 +1,6 @@
 package com.al3xiel.my_finances.feature.diagnostics.domain.usecase
 
+import com.al3xiel.my_finances.core.io.readAtMost
 import com.al3xiel.my_finances.core.id.IdGenerator
 import com.al3xiel.my_finances.core.security.container.BackupPassword
 import com.al3xiel.my_finances.core.security.container.ContainerHeader
@@ -174,7 +175,7 @@ class ExportDictionaryUseCase internal constructor(
         if (input == null) {
             false
         } else {
-            val bytes = input.use { it.readNBytes(expected.size + 1) }
+            val bytes = input.use { it.readAtMost(expected.size + 1) }
             bytes.contentEquals(expected) && DictionaryFormat.read(bytes, password) == file
         }
     } catch (_: IOException) {
