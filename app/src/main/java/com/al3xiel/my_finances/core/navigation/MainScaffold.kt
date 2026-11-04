@@ -21,6 +21,8 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.entryProvider
+import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 
 @Composable
@@ -77,6 +79,8 @@ fun MainScaffoldContent(
             NavDisplay(
                 backStack = state.stacks.activeStack,
                 onBack = { onAction(MainScaffoldUiAction.Back) },
+                // Cada pantalla con su ViewModel: se descarta al salir y al volver empieza de cero.
+                entryDecorators = listOf(rememberSaveableStateHolderNavEntryDecorator(), rememberViewModelStoreNavEntryDecorator()),
                 entryProvider = { route ->
                     if (route == More) {
                         NavEntry(route) {
