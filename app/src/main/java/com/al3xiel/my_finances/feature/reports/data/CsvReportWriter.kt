@@ -15,7 +15,7 @@ object CsvReportWriter {
 
     fun write(out: OutputStream, rows: List<CsvReportRow>, includeNotes: Boolean) {
         val text = StringBuilder()
-        text.append('﻿')
+        text.append('\uFEFF')
         val header = HEADER.toMutableList()
         if (includeNotes) header += "Nota"
         text.append(header.joinToString(",") { cell(it) }).append(EOL)
