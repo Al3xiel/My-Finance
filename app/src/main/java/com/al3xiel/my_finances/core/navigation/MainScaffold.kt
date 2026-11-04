@@ -1,5 +1,6 @@
 package com.al3xiel.my_finances.core.navigation
 
+import androidx.compose.foundation.layout.consumeWindowInsets
 import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.padding
@@ -90,7 +91,9 @@ fun MainScaffoldContent(
                         entryProvider(route)
                     }
                 },
-                modifier = Modifier.padding(padding),
+                // Los insets que ya descuenta `padding` (barra inferior) se declaran consumidos: sin esto un editor con el teclado
+                // abierto sumaba la altura de la barra inferior otra vez y dejaba un hueco en blanco sobre el teclado.
+                modifier = Modifier.padding(padding).consumeWindowInsets(padding),
             )
         }
     }
