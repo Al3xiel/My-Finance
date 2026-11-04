@@ -1,5 +1,8 @@
 package com.al3xiel.my_finances.core.designsystem
 
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -46,7 +49,11 @@ class ScreenScaffoldTest {
 
     private fun string(id: Int) = InstrumentationRegistry.getInstrumentation().targetContext.getString(id)
 
+    /** Lo que mide la barra de estado del dispositivo: es parte del encabezado pero no del diseño. */
+    private var statusBar = 0.dp
+
     private fun show(navigator: Navigator = RecordingNavigator(), fontScale: Float = 1f, showBack: Boolean = true) = rule.setContent {
+        statusBar = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
         CompositionLocalProvider(
             LocalNavigator provides navigator,
             LocalDensity provides Density(LocalDensity.current.density, fontScale),
@@ -78,8 +85,21 @@ class ScreenScaffoldTest {
         rule.onNodeWithContentDescription(string(R.string.scaffold_back)).assertDoesNotExist()
     }
 
+    @Test fun detailsAndEditorsUseACompactBarWithoutBlankSpace() {
+        show(showBack = true)
+        val height = rule.onNodeWithTag(SCREEN_SCAFFOLD_BAR_TAG).getUnclippedBoundsInRoot().height - statusBar
+        assertTrue("la barra de un detalle debía ser compacta: $height", height <= 72.dp)
+    }
+
+    @Test fun theTabsKeepALargeTitleThatReservesLessBlankSpaceThanBefore() {
+        show(showBack = false)
+        val height = rule.onNodeWithTag(SCREEN_SCAFFOLD_BAR_TAG).getUnclippedBoundsInRoot().height - statusBar
+        assertTrue("el encabezado de una pestaña ocupaba demasiado: $height", height <= 120.dp)
+        assertTrue("sigue siendo un título grande: $height", height > 72.dp)
+    }
+
     @Test fun theHeaderCollapsesWhenTheContentScrolls() {
-        show()
+        show(showBack = false)
         val expanded = rule.onNodeWithTag(SCREEN_SCAFFOLD_BAR_TAG).getUnclippedBoundsInRoot().height
         rule.onNodeWithTag("content").performTouchInput { swipeUp() }
         rule.waitForIdle()
