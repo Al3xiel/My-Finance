@@ -18,6 +18,8 @@ data class ExpensePartInput(
     val tagIds: List<TagId>,
     val poolId: PoolId? = null,
     val fundId: FundId? = null,
+    /** Detalle opcional de la parte; el caso de uso lo recorta y lo deja nulo si queda vacío. */
+    val note: String? = null,
 )
 
 /** Lo que el usuario deja tras corregir un movimiento; el tipo no cambia (D15). */

@@ -1,5 +1,9 @@
 package com.al3xiel.my_finances.feature.movements.ui
 
+import com.al3xiel.my_finances.core.designsystem.LocalHideAmounts
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -56,5 +60,49 @@ class ExpenseEditorScreenTest {
         show(actions::add)
         rule.onNodeWithText(string(R.string.editor_save)).assertIsDisplayed().performClick()
         assertEquals(listOf<ExpenseEditorUiAction>(ExpenseEditorUiAction.Save), actions)
+    }
+
+    private fun withParts(vararg amounts: String) = state.copy(
+        totalText = if (amounts.size > 1) amounts.sumOf { it.toLong() }.toString() + ".00" else amounts.single(),
+        parts = amounts.mapIndexed { i, amount -> PartDraft(i, amount, CategoryId("c1")) },
+    )
+
+    @Test
+    fun eachPartHasAnOptionalDetailThatDispatchesWhatIsTyped() {
+        val actions = mutableListOf<ExpenseEditorUiAction>()
+        rule.setContent { MyfinancesTheme { ExpenseEditorContent(withParts("10"), actions::add) } }
+        rule.onNodeWithText("Detalle (opcional)").performTextInput("Pastillas")
+        assertEquals(listOf<ExpenseEditorUiAction>(ExpenseEditorUiAction.EditPartNote(0, "Pastillas")), actions)
+    }
+
+    @Test
+    fun severalPartsEachGetTheirOwnDetailField() {
+        rule.setContent { MyfinancesTheme { ExpenseEditorContent(withParts("6", "4"), {}) } }
+        assertEquals(2, rule.onAllNodesWithText("Detalle (opcional)").fetchSemanticsNodes().size)
+    }
+
+    @Test
+    fun withSeveralPartsTheTotalIsTheirSumAndHasNoField() {
+        rule.setContent {
+            CompositionLocalProvider(LocalHideAmounts provides false) { MyfinancesTheme { ExpenseEditorContent(withParts("6", "4"), {}) } }
+        }
+        rule.onNodeWithText("Total (suma de las partes)").assertIsDisplayed()
+        rule.onNodeWithText("S/ 10.00").assertIsDisplayed()
+        rule.onNodeWithText(string(R.string.editor_total)).assertDoesNotExist()
+    }
+
+    @Test
+    fun withOnePartTheTotalIsStillTypedDirectly() {
+        rule.setContent { MyfinancesTheme { ExpenseEditorContent(withParts("10"), {}) } }
+        rule.onNodeWithText(string(R.string.editor_total)).assertIsDisplayed()
+        rule.onNodeWithText("Total (suma de las partes)").assertDoesNotExist()
+    }
+
+    @Test
+    fun theCalculatedTotalRespectsHiddenAmounts() {
+        rule.setContent {
+            CompositionLocalProvider(LocalHideAmounts provides true) { MyfinancesTheme { ExpenseEditorContent(withParts("6", "4"), {}) } }
+        }
+        rule.onNodeWithText("S/ 10.00").assertDoesNotExist()
     }
 }

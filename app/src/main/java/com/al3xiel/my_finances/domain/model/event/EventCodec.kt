@@ -4,24 +4,46 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonArray
 
-/** Sube el payload de una versión antigua a la siguiente; uno por (tipo, versión de origen). Vacío en la v1. */
+/** Sube el payload de una versión antigua a la siguiente; uno por (tipo, versión de origen) que cambió en esa versión. */
 fun interface Upcaster {
     fun upcast(payload: JsonObject): JsonObject
 }
 
 object UpcasterRegistry {
-    private val upcasters = emptyMap<Pair<String, Int>, Upcaster>()
+    /**
+     * Solo los tipos cuyo payload cambió. La versión es una sola para todos los eventos: un tipo sin upcaster para ese paso no
+     * cambió y su payload pasa igual. v1 → v2: las partes de un gasto ganan `note` (nulo), en el gasto y en la corrección.
+     */
+    private val upcasters: Map<Pair<String, Int>, Upcaster> = mapOf(
+        ("ExpenseRegistered" to 1) to Upcaster { payload -> payload.withPartNotes() },
+        ("MovementCorrected" to 1) to Upcaster { payload ->
+            val snapshot = payload["snapshot"] as? JsonObject
+            if (snapshot == null || (snapshot["type"] as? JsonPrimitive)?.content != "EXPENSE") {
+                payload
+            } else {
+                JsonObject(payload + ("snapshot" to snapshot.withPartNotes()))
+            }
+        },
+    )
 
     fun upcast(type: String, schemaVersion: Int, payload: JsonObject): JsonObject {
         var version = schemaVersion
         var current = payload
         while (version < DomainEvent.CURRENT_SCHEMA_VERSION) {
-            val step = upcasters[type to version] ?: error("no upcaster for $type v$version")
-            current = step.upcast(current)
+            current = upcasters[type to version]?.upcast(current) ?: current
             version++
         }
         return current
+    }
+
+    private fun JsonObject.withPartNotes(): JsonObject {
+        val parts = this["parts"] as? JsonArray ?: return this
+        val upgraded = parts.map { part -> if (part is JsonObject && "note" !in part) JsonObject(part + ("note" to JsonNull)) else part }
+        return JsonObject(this + ("parts" to JsonArray(upgraded)))
     }
 }
 

@@ -26,7 +26,7 @@ class BackupEventsCodecTest {
         samples.forEach {
             assertEquals(AggregateType.BACKUP, it.aggregateType)
             assertEquals("b1", it.aggregateId)
-            assertEquals(1, it.schemaVersion)
+            assertEquals(DomainEvent.CURRENT_SCHEMA_VERSION, it.schemaVersion)
         }
     }
 

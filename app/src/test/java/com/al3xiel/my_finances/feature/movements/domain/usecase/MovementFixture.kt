@@ -108,8 +108,8 @@ class MovementFixture {
     fun account(id: AccountId, name: String, archived: Boolean = false) =
         Account(id, name, AccountType.BANK, CurrencyCode.PEN, null, archived)
 
-    fun input(minor: Long, partId: PartId? = null, category: CategoryId = food, tags: List<TagId> = emptyList()) =
-        ExpensePartInput(partId, pen(minor), category, tags)
+    fun input(minor: Long, partId: PartId? = null, category: CategoryId = food, tags: List<TagId> = emptyList(), note: String? = null) =
+        ExpensePartInput(partId, pen(minor), category, tags, note = note)
 
     fun expenseMovement(id: String, account: AccountId, vararg parts: Pair<String, Long>, status: MovementStatus = MovementStatus.ACTIVE) =
         Movement(

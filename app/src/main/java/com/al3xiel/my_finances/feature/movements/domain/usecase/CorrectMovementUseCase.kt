@@ -1,5 +1,6 @@
 package com.al3xiel.my_finances.feature.movements.domain.usecase
 
+import com.al3xiel.my_finances.feature.movements.domain.rules.normalizePartNote
 import com.al3xiel.my_finances.core.id.IdGenerator
 import com.al3xiel.my_finances.domain.model.AccountId
 import com.al3xiel.my_finances.domain.model.BusinessError
@@ -123,7 +124,7 @@ class CorrectMovementUseCase @Inject constructor(
         }
 
         val parts = draft.parts.map {
-            ExpensePartData(it.partId ?: PartId(ids.newId()), it.amount, it.categoryId, it.tagIds, it.poolId, it.fundId)
+            ExpensePartData(it.partId ?: PartId(ids.newId()), it.amount, it.categoryId, it.tagIds, it.poolId, it.fundId, normalizePartNote(it.note))
         }
         return Outcome.Ok(MovementSnapshot.Expense(draft.accountId, draft.total, parts, draft.note))
     }

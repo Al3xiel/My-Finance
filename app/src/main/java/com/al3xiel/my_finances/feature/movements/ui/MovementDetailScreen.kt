@@ -188,7 +188,7 @@ private fun PartRow(part: MovementPart, currency: CurrencyCode, names: CatalogNa
     val sub = if (part.kind == PartKind.FEE) category else part.tagIds.joinToString(", ") { names.tags[it.value].orEmpty() }
     SectionRow(
         headline = title,
-        supporting = listOfNotNull(sub.ifEmpty { null }, reimbursement?.poolName).joinToString(" · ").ifEmpty { null },
+        supporting = listOfNotNull(part.note, sub.ifEmpty { null }, reimbursement?.poolName).joinToString(" · ").ifEmpty { null },
         trailing = {
             Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 MoneyText(Money(part.amount.amountMinor, currency))

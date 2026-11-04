@@ -118,6 +118,7 @@ private fun MovementEntity.toDomain(parts: List<MovementPartEntity>, tags: List<
             tagIds = tags.filter { it.partId == part.id }.map { TagId(it.tagId) },
             poolId = part.poolId?.let(::PoolId),
             fundId = part.fundId?.let(::FundId),
+            note = part.note,
         )
     },
 )

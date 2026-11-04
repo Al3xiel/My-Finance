@@ -28,6 +28,9 @@ sealed interface BusinessError {
     data object NoParts : BusinessError
     data object PartsMismatch : BusinessError
     data object InvalidPart : BusinessError
+
+    /** El detalle de una parte del gasto pasa del tope (80 caracteres). */
+    data object PartNoteTooLong : BusinessError
     data object ReasonRequired : BusinessError
 
     /** Las transferencias no se corrigen ni se anulan (D12). */

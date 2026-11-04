@@ -1,5 +1,6 @@
 package com.al3xiel.my_finances.feature.movements.ui
 
+import com.al3xiel.my_finances.core.designsystem.MoneyInputFilter
 import com.al3xiel.my_finances.core.MainDispatcherRule
 import com.al3xiel.my_finances.domain.model.BusinessError
 import com.al3xiel.my_finances.domain.model.CategoryId
@@ -84,28 +85,93 @@ class ExpenseEditorViewModelTest {
     }
 
     @Test
-    fun multiplePartsShowWhatIsStillUnassignedAndRefuseToSaveUntilTheySum() {
+    fun withTwoOrMorePartsTheTotalIsTheSumOfTheParts() {
         val vm = viewModel()
         vm.onAction(ExpenseEditorUiAction.EditTotal("10"))
         vm.onAction(ExpenseEditorUiAction.AddPart)
         val (first, second) = vm.uiState.value.parts.map { it.key }
 
-        assertEquals("10", vm.uiState.value.parts.first().amountText)
-        assertEquals(0L, vm.uiState.value.unassignedMinor)
+        // Al pasar a dos partes la primera conserva lo tecleado como total.
+        assertEquals(1_000L, MoneyInputFilter.toMinor(vm.uiState.value.totalText))
         vm.onAction(ExpenseEditorUiAction.EditPartAmount(first, "6"))
-        assertEquals(400L, vm.uiState.value.unassignedMinor)
+        assertEquals(600L, MoneyInputFilter.toMinor(vm.uiState.value.totalText))
 
         vm.onAction(ExpenseEditorUiAction.SelectPartCategory(second, f.food))
-        vm.onAction(ExpenseEditorUiAction.EditPartAmount(second, "3"))
-        vm.onAction(ExpenseEditorUiAction.Save)
-        assertEquals(BusinessError.PartsMismatch, vm.uiState.value.error)
-        assertEquals(0, f.store.events.size)
+        vm.onAction(ExpenseEditorUiAction.EditPartAmount(second, "3.50"))
+        assertEquals(950L, MoneyInputFilter.toMinor(vm.uiState.value.totalText))
 
-        vm.onAction(ExpenseEditorUiAction.EditPartAmount(second, "4"))
-        assertEquals(0L, vm.uiState.value.unassignedMinor)
-        assertNull(vm.uiState.value.error)
         vm.onAction(ExpenseEditorUiAction.Save)
-        assertEquals(2, (f.store.events.single().event as ExpenseRegistered).parts.size)
+        val event = f.store.events.single().event as ExpenseRegistered
+        assertEquals(f.pen(950), event.total)
+        assertEquals(listOf(f.pen(600), f.pen(350)), event.parts.map { it.amount })
+        assertNull(vm.uiState.value.error)
+    }
+
+    @Test
+    fun theTotalCannotBeTypedOverWhileThereAreTwoOrMoreParts() {
+        val vm = viewModel()
+        vm.onAction(ExpenseEditorUiAction.AddPart)
+        val (first, second) = vm.uiState.value.parts.map { it.key }
+        vm.onAction(ExpenseEditorUiAction.EditPartAmount(first, "2"))
+        vm.onAction(ExpenseEditorUiAction.EditPartAmount(second, "3"))
+
+        vm.onAction(ExpenseEditorUiAction.EditTotal("99"))
+
+        assertEquals(500L, MoneyInputFilter.toMinor(vm.uiState.value.totalText))
+    }
+
+    @Test
+    fun goingBackToOnePartKeepsItsAmountAsTheTotal() {
+        val vm = viewModel()
+        vm.onAction(ExpenseEditorUiAction.AddPart)
+        val (first, second) = vm.uiState.value.parts.map { it.key }
+        vm.onAction(ExpenseEditorUiAction.EditPartAmount(first, "6"))
+        vm.onAction(ExpenseEditorUiAction.EditPartAmount(second, "4"))
+
+        vm.onAction(ExpenseEditorUiAction.RemovePart(second))
+
+        assertEquals(1, vm.uiState.value.parts.size)
+        assertEquals(600L, MoneyInputFilter.toMinor(vm.uiState.value.totalText))
+        vm.onAction(ExpenseEditorUiAction.EditTotal("7"))
+        assertEquals(700L, MoneyInputFilter.toMinor(vm.uiState.value.totalText))
+    }
+
+    @Test
+    fun eachPartCanCarryADetailThatIsSaved() {
+        val vm = viewModel()
+        vm.onAction(ExpenseEditorUiAction.EditTotal("8"))
+        vm.onAction(ExpenseEditorUiAction.AddPart)
+        val (first, second) = vm.uiState.value.parts.map { it.key }
+        vm.onAction(ExpenseEditorUiAction.EditPartAmount(first, "5"))
+        vm.onAction(ExpenseEditorUiAction.EditPartAmount(second, "3"))
+        vm.onAction(ExpenseEditorUiAction.EditPartNote(first, "Pastillas de Boby"))
+
+        assertEquals(listOf("Pastillas de Boby", ""), vm.uiState.value.parts.map { it.note })
+        vm.onAction(ExpenseEditorUiAction.Save)
+
+        val parts = (f.store.events.single().event as ExpenseRegistered).parts
+        assertEquals(listOf<String?>("Pastillas de Boby", null), parts.map { it.note })
+    }
+
+    @Test
+    fun theDetailStopsAtEightyCharactersWhileTyping() {
+        val vm = viewModel()
+        val key = vm.uiState.value.parts.single().key
+
+        vm.onAction(ExpenseEditorUiAction.EditPartNote(key, "a".repeat(100)))
+
+        assertEquals(80, vm.uiState.value.parts.single().note.length)
+    }
+
+    @Test
+    fun correctionLoadsTheDetailOfEachPart() {
+        val movement = f.expenseMovement("m1", f.bbva, "p1" to 400, "p2" to 100)
+        f.movements.movements[movement.id] = movement.copy(parts = movement.parts.mapIndexed { i, p -> p.copy(note = if (i == 0) "Pastillas" else null) })
+
+        val state = viewModel("m1").uiState.value
+
+        assertEquals(listOf("Pastillas", ""), state.parts.map { it.note })
+        assertEquals(500L, MoneyInputFilter.toMinor(state.totalText))
     }
 
     @Test

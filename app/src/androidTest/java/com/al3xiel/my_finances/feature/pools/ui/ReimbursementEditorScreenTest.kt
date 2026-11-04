@@ -1,5 +1,11 @@
 package com.al3xiel.my_finances.feature.pools.ui
 
+import java.time.LocalDate
+import com.al3xiel.my_finances.core.money.CurrencyCode
+import com.al3xiel.my_finances.core.money.Money
+import com.al3xiel.my_finances.domain.model.PoolId
+import com.al3xiel.my_finances.domain.model.PartId
+import com.al3xiel.my_finances.feature.pools.domain.model.PendingPartLine
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -49,5 +55,19 @@ class ReimbursementEditorScreenTest {
         val save = InstrumentationRegistry.getInstrumentation().targetContext.getString(R.string.editor_save)
         rule.onNodeWithText(save).assertIsDisplayed().performClick()
         assertEquals(listOf<ReimbursementEditorUiAction>(ReimbursementEditorUiAction.Save), actions)
+    }
+
+    @Test
+    fun aPendingPartShowsItsDetailSoYouKnowWhatItIs() {
+        val withNote = state.copy(
+            lines = listOf(
+                ReimbursementLineUi(
+                    PendingPartLine(PartId("p1"), PoolId("dogs"), "Perros", LocalDate.of(2026, 10, 3), 1, "Mascotas", emptyList(), Money(6_000, CurrencyCode.PEN), "Pastillas de Boby"),
+                    Money(0, CurrencyCode.PEN), "",
+                ),
+            ),
+        )
+        rule.setContent { MyfinancesTheme { ReimbursementEditorContent(withNote, {}, personLocked = true) } }
+        rule.onNodeWithText("Pastillas de Boby").assertIsDisplayed()
     }
 }

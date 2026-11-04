@@ -36,4 +36,6 @@ data class MovementPart(
     val tagIds: List<TagId>,
     val poolId: PoolId? = null,
     val fundId: FundId? = null,
+    /** Detalle de la parte (nombre o nota del usuario), si lo tiene. */
+    val note: String? = null,
 )

@@ -69,7 +69,7 @@ class FundEventSerializationTest {
         fundSamples.forEach {
             assertEquals(AggregateType.FUND, it.aggregateType)
             assertEquals("f1", it.aggregateId)
-            assertEquals(1, it.schemaVersion)
+            assertEquals(DomainEvent.CURRENT_SCHEMA_VERSION, it.schemaVersion)
         }
         assertFalse(fundSamples.isEmpty())
     }

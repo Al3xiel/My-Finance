@@ -1,5 +1,9 @@
 package com.al3xiel.my_finances.feature.movements.ui
 
+import com.al3xiel.my_finances.core.designsystem.MoneyInputFilter
+import com.al3xiel.my_finances.core.designsystem.MoneyText
+import com.al3xiel.my_finances.core.designsystem.SectionRow
+import com.al3xiel.my_finances.core.designsystem.SectionCard
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -87,13 +91,23 @@ fun ExpenseEditorContent(
             stringResource(if (state.isCorrection) R.string.expense_correct_title else R.string.expense_new_title),
             style = MaterialTheme.typography.titleLarge,
         )
-        MoneyInput(
-            value = state.totalText,
-            onValueChange = { onAction(ExpenseEditorUiAction.EditTotal(it)) },
-            label = stringResource(R.string.editor_total),
-            modifier = Modifier.fillMaxWidth(),
-            large = true,
-        )
+        if (state.parts.size >= 2) {
+            // La suma de las partes: se calcula sola y respeta "ocultar montos".
+            SectionCard {
+                SectionRow(
+                    headline = stringResource(R.string.editor_total_auto),
+                    trailing = { MoneyText(Money(MoneyInputFilter.toMinor(state.totalText) ?: 0L, CurrencyCode.PEN), style = MaterialTheme.typography.titleLarge) },
+                )
+            }
+        } else {
+            MoneyInput(
+                value = state.totalText,
+                onValueChange = { onAction(ExpenseEditorUiAction.EditTotal(it)) },
+                label = stringResource(R.string.editor_total),
+                modifier = Modifier.fillMaxWidth(),
+                large = true,
+            )
+        }
         EntityChips(
             label = stringResource(R.string.editor_account),
             options = state.accountOptions,
@@ -117,7 +131,6 @@ fun ExpenseEditorContent(
         state.parts.forEachIndexed { index, part ->
             ExpensePartCard(index + 1, part, state, onAction)
         }
-        if (state.parts.size > 1) UnassignedIndicator(state.unassignedMinor)
         if (state.overspentFunds.isNotEmpty()) {
             Text(stringResource(R.string.expense_fund_overspent, state.overspentFunds.joinToString()), color = MaterialTheme.colorScheme.error)
         }
@@ -143,16 +156,6 @@ fun ExpenseEditorContent(
     }
 }
 
-@Composable
-private fun UnassignedIndicator(unassignedMinor: Long) {
-    val amount = moneyDisplayText(Money(abs(unassignedMinor), CurrencyCode.PEN), hidden = LocalHideAmounts.current)
-    when {
-        unassignedMinor > 0 -> Text(stringResource(R.string.expense_unassigned, amount), color = MaterialTheme.colorScheme.error)
-        unassignedMinor < 0 -> Text(stringResource(R.string.expense_over_assigned, amount), color = MaterialTheme.colorScheme.error)
-        else -> Text(stringResource(R.string.expense_fully_assigned), color = MaterialTheme.colorScheme.primary)
-    }
-}
-
 private val previewState = ExpenseEditorUiState(
     loaded = true,
     totalText = "10",
@@ -166,7 +169,6 @@ private val previewState = ExpenseEditorUiState(
     accountOptions = listOf(EntityOption("a", "BBVA")),
     categoryOptions = listOf(EntityOption("c1", "Comida"), EntityOption("c2", "Hogar")),
     tagOptions = listOf(EntityOption("t1", "Viaje")),
-    unassignedMinor = 100,
 )
 
 @Preview(showBackground = true)
@@ -178,5 +180,5 @@ private fun ExpenseEditorContentPreview() {
 @Preview(showBackground = true, uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun ExpenseEditorContentDarkPreview() {
-    MyfinancesTheme { ExpenseEditorContent(previewState.copy(isCorrection = true, parts = previewState.parts.take(1), unassignedMinor = 0), {}) }
+    MyfinancesTheme { ExpenseEditorContent(previewState.copy(isCorrection = true, parts = previewState.parts.take(1)), {}) }
 }

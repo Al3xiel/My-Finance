@@ -47,6 +47,8 @@ data class MovementPartEntity(
     val reimbursementStatus: ReimbursementStatus = ReimbursementStatus.PENDING,
     @ColumnInfo(name = "created_sequence", defaultValue = "0") val createdSequence: Long = 0,
     @ColumnInfo(name = "fund_id") val fundId: String? = null,
+    /** Detalle de la parte (nombre o nota del usuario); lo escribe el proyector de movimientos desde `ExpensePartData.note`. */
+    val note: String? = null,
 )
 
 @Entity(tableName = "movement_part_tags", primaryKeys = ["part_id", "tag_id"], indices = [Index("tag_id")])

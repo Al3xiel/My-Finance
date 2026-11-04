@@ -113,6 +113,7 @@
     <string name="error_no_parts">Agrega al menos una parte</string>
     <string name="error_parts_mismatch">Las partes no suman el total</string>
     <string name="error_invalid_part">Una de las partes no es válida</string>
+    <string name="error_part_note_too_long">El detalle de una parte puede tener hasta 80 caracteres.</string>
     <string name="error_reason_required">Escribe un motivo</string>
     <string name="error_reconciliation_already_open">Esta cuenta ya tiene una conciliación abierta</string>
     <string name="error_reconciliation_not_open">Esta conciliación ya se resolvió o se canceló</string>
@@ -381,6 +382,7 @@
     <string name="dialog_date_confirm">Aceptar</string>
     <string name="history_entry">%1$s · %2$s</string>
     <string name="editor_total">Monto total</string>
+    <string name="editor_total_auto">Total (suma de las partes)</string>
     <string name="editor_amount">Monto</string>
     <string name="editor_account">Cuenta</string>
     <string name="editor_date">Fecha</string>
@@ -398,14 +400,13 @@
     <string name="expense_correct_title">Corregir gasto</string>
     <string name="expense_parts">Partes</string>
     <string name="expense_part_title">Parte %1$d</string>
+    <string name="expense_part_note">Detalle (opcional)</string>
+    <string name="expense_part_note_hint">Ej.: pastillas de Boby</string>
     <string name="expense_add_part">Agregar parte</string>
     <string name="expense_remove_part">Quitar parte</string>
     <string name="expense_part_amount">Monto de la parte</string>
     <string name="expense_part_category">Categoría</string>
     <string name="expense_part_tags">Conceptos</string>
-    <string name="expense_unassigned">Falta asignar %1$s</string>
-    <string name="expense_over_assigned">Te pasaste por %1$s</string>
-    <string name="expense_fully_assigned">Todo asignado</string>
     <string name="income_new_title">Nuevo ingreso</string>
     <string name="income_correct_title">Corregir ingreso</string>
     <string name="income_source">Fuente de ingreso</string>

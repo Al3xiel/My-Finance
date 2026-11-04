@@ -20,6 +20,8 @@ data class PersonPartRow(
     @ColumnInfo(name = "category_name") val categoryName: String,
     val amount: Long,
     val pending: Long,
+    /** Detalle de la parte (nombre o nota del usuario), si lo tiene. */
+    val note: String? = null,
 )
 
 /**
@@ -58,7 +60,7 @@ interface PersonQueryDao {
     @Query(
         """
         SELECT p.id AS part_id, pl.name AS pool_name, m.occurred_on AS occurred_on, c.name AS category_name,
-               p.amount_minor AS amount, p.amount_minor - p.reimbursed_minor AS pending
+               p.amount_minor AS amount, p.amount_minor - p.reimbursed_minor AS pending, p.note AS note
         FROM movement_parts p
         JOIN movements m ON m.id = p.movement_id
         JOIN pools pl ON pl.id = p.pool_id

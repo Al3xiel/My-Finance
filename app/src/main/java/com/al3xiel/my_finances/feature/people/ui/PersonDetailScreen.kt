@@ -160,7 +160,7 @@ fun PersonDetailContent(
                             if (index > 0) SectionDivider()
                             Line(
                                 (listOf(part.categoryName) + part.tagNames).joinToString(" · "),
-                                "${part.poolName} · ${dayText(part.occurredOn)}",
+                                listOfNotNull(part.note, part.poolName, dayText(part.occurredOn)).joinToString(" · "),
                                 part.pending,
                             )
                         }

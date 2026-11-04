@@ -1,5 +1,7 @@
 package com.al3xiel.my_finances.feature.movements.ui.components
 
+import com.al3xiel.my_finances.feature.movements.domain.rules.PART_NOTE_MAX_LENGTH
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -43,6 +45,16 @@ fun ExpensePartCard(number: Int, part: PartDraft, state: ExpenseEditorUiState, o
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
+            OutlinedTextField(
+                value = part.note,
+                onValueChange = { onAction(ExpenseEditorUiAction.EditPartNote(part.key, it)) },
+                label = { Text(stringResource(R.string.expense_part_note)) },
+                placeholder = { Text(stringResource(R.string.expense_part_note_hint)) },
+                supportingText = { Text("${part.note.length}/$PART_NOTE_MAX_LENGTH") },
+                singleLine = true,
+                shape = MaterialTheme.shapes.medium,
+                modifier = Modifier.fillMaxWidth(),
+            )
             EntityChips(
                 label = stringResource(R.string.expense_part_category),
                 options = state.categoryOptions,

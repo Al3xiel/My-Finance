@@ -1,5 +1,6 @@
 package com.al3xiel.my_finances.feature.movements.domain.usecase
 
+import com.al3xiel.my_finances.feature.movements.domain.rules.normalizePartNote
 import com.al3xiel.my_finances.core.id.IdGenerator
 import com.al3xiel.my_finances.core.money.Money
 import com.al3xiel.my_finances.domain.model.AccountId
@@ -67,7 +68,7 @@ class RegisterExpenseUseCase @Inject constructor(
         }
 
         val id = MovementId(ids.newId())
-        val data = parts.map { ExpensePartData(PartId(ids.newId()), it.amount, it.categoryId, it.tagIds, it.poolId, it.fundId) }
+        val data = parts.map { ExpensePartData(PartId(ids.newId()), it.amount, it.categoryId, it.tagIds, it.poolId, it.fundId, normalizePartNote(it.note)) }
         recorder.record(ExpenseRegistered(id, accountId, total, data, reconciliationId, note), occurredOn)
         return Outcome.Ok(id)
     }

@@ -40,6 +40,8 @@ object FieldClassification {
         "ExpenseRegistered.note" to remove,
         "TransferRegistered.note" to remove,
         "MovementCorrected.snapshot.note" to remove,
+        "ExpenseRegistered.parts.note" to remove,
+        "MovementCorrected.snapshot.parts.note" to remove,
         "MovementCorrected.reason" to remove,
         "MovementVoided.reason" to remove,
         "ReimbursementReceived.note" to remove,

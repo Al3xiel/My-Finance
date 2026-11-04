@@ -51,6 +51,26 @@ class CorrectMovementUseCaseTest {
     }
 
     @Test
+    fun aCorrectionCarriesTheDetailOfEachPartAndCanClearIt() = runTest {
+        f.expenseMovement("m1", f.bbva, "p1" to 400, "p2" to 100)
+        val draft = expenseDraft(f.input(300, partId = PartId("p1"), note = " Pastillas "), f.input(50, partId = PartId("p2"), note = null))
+
+        assertEquals(Outcome.Ok(Unit), correct(m1, draft, "detalle"))
+
+        val parts = ((f.store.events.single().event as MovementCorrected).snapshot as MovementSnapshot.Expense).parts
+        assertEquals(listOf<String?>("Pastillas", null), parts.map { it.note })
+    }
+
+    @Test
+    fun aCorrectionWithAnOverlongDetailIsRejected() = runTest {
+        f.expenseMovement("m1", f.bbva, "p1" to 400)
+        val draft = expenseDraft(f.input(400, partId = PartId("p1"), note = "a".repeat(81)))
+
+        assertEquals(failed(BusinessError.PartNoteTooLong), correct(m1, draft, "detalle"))
+        assertEquals(0, f.store.events.size)
+    }
+
+    @Test
     fun correctedIncome() = runTest {
         f.incomeMovement("m1", f.bbva, 500)
         val draft = MovementDraft.Income(f.cash, f.pen(700), f.source, null, f.today)

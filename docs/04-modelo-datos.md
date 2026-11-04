@@ -122,7 +122,8 @@ Convención: `?` = opcional. Todo `Money` va en la moneda de la cuenta involucra
 
 ```
 ExpensePartData = partId, amount, categoryId, tagIds: List<TagId>,
-                  poolId?, fundId?          // a lo sumo uno de los dos
+                  poolId?, fundId?,         // a lo sumo uno de los dos
+                  note?                     // detalle de la parte (≤ 80 caracteres); lo agrega la schemaVersion 2
 FeeData         = amount, categoryId        // genera un gasto aparte en la cuenta origen
 ```
 
@@ -406,7 +407,7 @@ erDiagram
 | Tabla | Columnas | Notas |
 |---|---|---|
 | `movements` | `id PK, type, account_id FK, counter_account_id FK?, amount_minor, currency, income_source_id FK?, person_id FK?, note, occurred_on, status (ACTIVE/VOIDED), revision INT, last_sequence` | `type`: `INCOME, EXPENSE, TRANSFER, REIMBURSEMENT, LOAN_DISBURSEMENT, LOAN_REPAYMENT, ADJUSTMENT, FUND_UNTRACKED_SPEND`. `revision` crece con cada corrección |
-| `movement_parts` | `id PK, movement_id FK, amount_minor, category_id FK, pool_id FK?, pool_period_id FK?, fund_id FK? (lo agrega la v3), reimbursed_minor, reimbursement_status, kind (NORMAL/FEE/UNTRACKED)` | Gastos. La comisión de una transferencia y el gasto no registrado de un fondo generan una parte sintética (`kind` = `FEE` / `UNTRACKED`, sin `fund_id`) para que cuenten por categoría (D11) |
+| `movement_parts` | `id PK, movement_id FK, amount_minor, category_id FK, pool_id FK?, pool_period_id FK?, fund_id FK? (lo agrega la v3), reimbursed_minor, reimbursement_status, kind (NORMAL/FEE/UNTRACKED), note? (detalle de la parte; lo agrega la v7)` | Gastos. La comisión de una transferencia y el gasto no registrado de un fondo generan una parte sintética (`kind` = `FEE` / `UNTRACKED`, sin `fund_id`) para que cuenten por categoría (D11) |
 | `movement_part_tags` | `part_id FK, tag_id FK` · PK compuesta | M:N |
 | `ledger_entries` | `id PK, sequence, movement_id FK?, account_id FK, delta_minor (±), entry_kind, occurred_on, is_voided, voided_sequence? (lo agrega la v5)` | **Corazón contable**: cada cambio de saldo es una fila. Transferencia = 2 filas (−origen, +destino). `movement_id` es nulo en `OPENING` (D16). `id` = `<sequence del evento>-<n>`: determinista, para que el replay reproduzca las mismas filas |
 | `account_balances` | `account_id PK, balance_minor, last_sequence` | Caché de `Σ delta` no anulados |
@@ -624,3 +625,4 @@ Resultado: BBVA 780 · BCP 170 · Efectivo 95 · Apartado Pasajes 45 · Por cobr
 | D72 | Monto | El campo de monto mantiene el teclado numérico del sistema (accesibilidad, IME, sin lógica nueva); no hay teclado propio. Convención, vetable (2026-11-03) |
 | D73 | Estados | Un solo `StatusBadge` con icono y texto para todos los estados; el color solo refuerza (2026-11-03) |
 | D74 | Héroe de Inicio | El saldo en cuentas es el único número grande de Inicio; los otros indicadores van en tarjetas pequeñas. No cambia ninguna fórmula de 5.5 (2026-11-03) |
+| D75 | Detalle por parte | Cada parte de un gasto puede llevar un **detalle** opcional de hasta 80 caracteres (`ExpensePartData.note`, columna `movement_parts.note`) para saber a qué se refiere. Cambia un evento existente: `schemaVersion` **2** con upcaster v1→v2 (las partes ganan `note` nulo) en `ExpenseRegistered` y en el snapshot `EXPENSE` de `MovementCorrected`; la versión es una sola para todos los eventos y los tipos sin cambio pasan igual. Los eventos guardados no se reescriben y su hash sigue verificando. La base pasa a la v7 (`MIGRATION_6_7`, columna nula). El detalle es texto del usuario: el diagnóstico exportable lo elimina y la rendición compartida no lo incluye (2026-11-04) |

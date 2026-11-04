@@ -9,6 +9,7 @@ import com.al3xiel.my_finances.data.database.migration.MIGRATION_2_3
 import com.al3xiel.my_finances.data.database.migration.MIGRATION_3_4
 import com.al3xiel.my_finances.data.database.migration.MIGRATION_4_5
 import com.al3xiel.my_finances.data.database.migration.MIGRATION_5_6
+import com.al3xiel.my_finances.data.database.migration.MIGRATION_6_7
 import com.al3xiel.my_finances.data.eventstore.EventStoreImpl
 import com.al3xiel.my_finances.data.eventstore.EventTriggersCallback
 import com.al3xiel.my_finances.data.projection.EventProjector
@@ -77,7 +78,7 @@ abstract class DatabaseModule {
             DatabaseFiles(requireNotNull(context.getDatabasePath(DATABASE_NAME).absoluteFile.parentFile)).recover()
             return Room.databaseBuilder(context, AppDatabase::class.java, DATABASE_NAME)
                 .openHelperFactory(SupportOpenHelperFactory(keyProvider.getOrCreate()))
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
                 .addCallback(EventTriggersCallback)
                 .build()
         }

@@ -92,6 +92,18 @@ class MovementDetailScreenTest {
     }
 
     @Test
+    fun aPartShowsItsDetailAndAPartWithoutOneShowsNone() {
+        val parts = listOf(
+            MovementPart(PartId("p1"), Money(2_000, CurrencyCode.PEN), CategoryId("c1"), PartKind.NORMAL, emptyList(), note = "Pastillas de Boby"),
+            MovementPart(PartId("p2"), Money(1_000, CurrencyCode.PEN), CategoryId("c1"), PartKind.NORMAL, emptyList()),
+        )
+        val withDetail = state.copy(detail = state.detail!!.copy(movement = movement.copy(parts = parts)))
+        rule.setContent { MyfinancesTheme { MovementDetailContent(withDetail, {}, {}) } }
+        rule.onNodeWithText("Pastillas de Boby", substring = true).assertIsDisplayed()
+        rule.onNodeWithText("null", substring = true).assertDoesNotExist()
+    }
+
+    @Test
     fun aPartWithoutAPoolShowsNoReimbursementBadge() {
         show()
         rule.onNodeWithText("Pendiente").assertDoesNotExist()

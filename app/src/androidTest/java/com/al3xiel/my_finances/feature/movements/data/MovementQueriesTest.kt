@@ -114,7 +114,7 @@ class MovementQueriesTest {
 
     private fun linkToPool(partId: String, minor: Long, category: CategoryId) = runBlocking {
         database.poolDao().upsertPool(PoolEntity("dogs", "Perros", "mom", PoolKind.PERMANENT, null, "", false))
-        database.movementDao().updatePartCore(partId, minor, category.value, "dogs", null)
+        database.movementDao().updatePartCore(partId, minor, category.value, "dogs", null, null)
     }
 
     @Test
@@ -141,6 +141,15 @@ class MovementQueriesTest {
         append(day(20), MovementVoided(MovementId("m1"), "duplicado", null))
 
         assertEquals(emptyList<Any>(), movements.observeDetail(MovementId("m1")).first()!!.reimbursements)
+    }
+
+    @Test
+    fun aPartDetailComesBackWithItsPart() = runBlocking {
+        database.movementDao().updatePartCore("p1", 2_000, food.value, null, null, "Pastillas de Boby")
+
+        val parts = movements.find(MovementId("m1"))!!.parts
+
+        assertEquals(listOf<String?>("Pastillas de Boby", null), parts.map { it.note })
     }
 
     @Test

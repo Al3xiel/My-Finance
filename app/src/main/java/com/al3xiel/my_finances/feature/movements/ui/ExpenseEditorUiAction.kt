@@ -13,6 +13,7 @@ sealed interface ExpenseEditorUiAction {
     data class SelectOccurredOn(val occurredOn: LocalDate) : ExpenseEditorUiAction
     data class EditNote(val text: String) : ExpenseEditorUiAction
     data class EditPartAmount(val key: Int, val text: String) : ExpenseEditorUiAction
+    data class EditPartNote(val key: Int, val text: String) : ExpenseEditorUiAction
     data class SelectPartCategory(val key: Int, val id: CategoryId) : ExpenseEditorUiAction
     data class TogglePartTag(val key: Int, val id: TagId) : ExpenseEditorUiAction
 

@@ -16,6 +16,8 @@ data class PendingPartLine(
     val categoryName: String,
     val tagNames: List<String>,
     val pending: Money,
+    /** Detalle de la parte (nombre o nota del usuario), si lo tiene. */
+    val note: String? = null,
 ) {
     fun toPendingPart() = PendingPart(partId, occurredOn, createdSequence, pending)
 }
